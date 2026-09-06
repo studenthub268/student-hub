@@ -10,13 +10,21 @@ import { eq } from 'drizzle-orm';
 import { checkRateLimit } from './actions/rate-limit';
 import { POLICY_VERSION } from './constants';
 
-if (!process.env.AUTH_SECRET) {
-  throw new Error(
-    'AUTH_SECRET is missing. Generate one with: openssl rand -base64 32'
-  );
+// No eager AUTH_SECRET throw here: it killed `next build` whenever the var
+// was absent (e.g. CI without secrets configured). NextAuth itself raises
+// MissingSecret at runtime if auth is actually invoked without one.
+function requireAuthSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error(
+      'AUTH_SECRET is missing. Generate one with: openssl rand -base64 32'
+    );
+  }
+  return secret;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: requireAuthSecret(),
   // Table mappings are REQUIRED: without them the adapter invents its own
   // default tables named "user"/"account" (singular), and every OAuth
   // callback dies with AdapterError (42P01) → shown as "Server error".
