@@ -13,7 +13,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 /** Black brand panel — mirrors the homepage hero card. Compact for the short login form. */
 function BrandPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden bg-[#111] p-6 sm:p-8 flex flex-col text-white">
+    <div className="relative hidden overflow-hidden bg-[#111] p-6 sm:p-8 lg:flex flex-col text-white">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#0D9488]/40 via-[#111] to-[#111]" />
       <div className="relative z-10 flex h-full flex-col justify-between gap-y-5">{children}</div>
     </div>
@@ -199,6 +199,18 @@ export function LoginForm() {
             </p>
           </div>
         </BrandPanel>
+      </div>
+
+      {/* Mobile-only OAuth + signup toggle — the black brand panel is hidden on small screens */}
+      <div className="lg:hidden flex flex-col gap-4 border-t-2 border-black/20 p-6 sm:p-8">
+        <p className="text-center text-xs font-bold tracking-widest text-black/60">OR CONTINUE WITH</p>
+        <OAuthButtons />
+        <p className="text-center text-sm font-medium text-black/70">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="font-bold text-black underline underline-offset-4 hover:text-white transition-colors">
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );
