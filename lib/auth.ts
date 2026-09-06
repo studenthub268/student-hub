@@ -16,15 +16,19 @@ import { POLICY_VERSION } from './constants';
 // NextAuth raises MissingSecret at runtime if auth runs without a secret.
 const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET,
-  // Table mappings are REQUIRED: without them the adapter invents its own
-  // default tables named "user"/"account" (singular), and every OAuth
-  // callback dies with AdapterError (42P01) → shown as "Server error".
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  get adapter() {
+    // Built on access, not at module load: DrizzleAdapter runs an
+    // instanceof check that the lazy DB proxy only satisfies after init.
+    // Table mappings are REQUIRED: without them the adapter invents its own
+    // default tables named "user"/"account" (singular), and every OAuth
+    // callback dies with AdapterError (42P01) → shown as "Server error".
+    return DrizzleAdapter(db, {
+      usersTable: users,
+      accountsTable: accounts,
+      sessionsTable: sessions,
+      verificationTokensTable: verificationTokens,
+    });
+  },
   session: { strategy: 'jwt' },
   providers: [
     GitHub({
