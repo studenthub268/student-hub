@@ -14,6 +14,77 @@ async function isAdmin(email: string): Promise<boolean> {
   return !!admin;
 }
 
+/**
+ * One-shot loader for the admin panel: a single auth check and all panel
+ * queries in parallel. The panel previously fired 7 server actions per load,
+ * each re-running auth() + an admin lookup — 14+ sequential round-trips of
+ * latency before anything rendered. Refresh after mutations re-uses this.
+ */
+export async function getAdminPanelData() {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
+
+  const [blockedIpsList, admins, resourcesList, messagesList, reportList, emailData, recentAutoBlocks] = await Promise.all([
+    db.query.blockedIps.findMany({ orderBy: [desc(blockedIps.blockedAt)] }),
+    db.query.adminEmails.findMany(),
+    db
+      .select({
+        id: resources.id,
+        title: resources.title,
+        description: resources.description,
+        type: resources.type,
+        subject: resources.subject,
+        department: resources.department,
+        professor: resources.professor,
+        downloads: resources.downloads,
+        likes: resources.likes,
+        createdAt: resources.createdAt,
+        uploader: { name: users.name, email: users.email },
+      })
+      .from(resources)
+      .leftJoin(users, eq(resources.uploaderId, users.id))
+      .orderBy(desc(resources.createdAt)),
+    db.query.messages.findMany({ orderBy: [desc(messages.createdAt)] }),
+    db
+      .select({
+        id: reports.id,
+        reason: reports.reason,
+        description: reports.description,
+        createdAt: reports.createdAt,
+        resource: { id: resources.id, title: resources.title },
+        reporter: { name: users.name, email: users.email },
+      })
+      .from(reports)
+      .leftJoin(resources, eq(reports.resourceId, resources.id))
+      .leftJoin(users, eq(reports.reporterId, users.id))
+      .orderBy(desc(reports.createdAt)),
+    getEmailHealthStatsInternal().catch(() => null),
+    db
+      .select({
+        id: blockedIps.id,
+        ip: blockedIps.ip,
+        reason: blockedIps.reason,
+        type: blockedIps.type,
+        blockedAt: blockedIps.blockedAt,
+      })
+      .from(blockedIps)
+      .where(sql`${blockedIps.blockedBy} = 'system' and ${blockedIps.blockedAt} >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}`)
+      .orderBy(desc(blockedIps.blockedAt))
+      .limit(20),
+  ]);
+
+  return {
+    blockedIps: blockedIpsList,
+    admins,
+    resources: resourcesList,
+    messages: messagesList,
+    reports: reportList,
+    emailStats: emailData,
+    autoBlocks: recentAutoBlocks,
+  };
+}
+
 export async function addAdminEmail(email: string) {
   const session = await auth();
   if (!session?.user?.email) throw new Error("Not authenticated");
@@ -256,12 +327,7 @@ export async function dismissReportAndDeleteResource(reportId: string, resourceI
 
 // ============ EMAIL HEALTH ============
 
-export async function getEmailHealthStats() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-  const admin = await isAdmin(session.user.email);
-  if (!admin) throw new Error("Admin only");
-
+async function getEmailHealthStatsInternal() {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
@@ -335,4 +401,12 @@ export async function getEmailHealthStats() {
     suppressedCount: suppressedCount[0]?.count || 0,
     recentSuppressions,
   };
+}
+
+/** Public wrapper kept for any standalone email-stats use. */
+export async function getEmailHealthStats() {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
+  return getEmailHealthStatsInternal();
 }

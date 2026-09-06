@@ -2,22 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  getBlockedIps,
+  getAdminPanelData,
   unblockIp,
   blockIp,
-  getAdminEmails,
   addAdminEmail,
   removeAdminEmail,
-  getAllResources,
   adminDeleteResource,
   adminUpdateResource,
-  getAllMessages,
   deleteMessage,
-  getAllReports,
   deleteReport,
   dismissReportAndDeleteResource,
-  getEmailHealthStats,
-  getRecentAutoBlocks,
 } from "@/lib/actions/admin";
 import { toast } from "react-hot-toast";
 import {
@@ -43,6 +37,45 @@ import type { BlockedIp, AdminEmail, Message } from "@/lib/db/schema";
 import type { LucideIcon } from "lucide-react";
 
 type Tab = "security" | "resources" | "reports" | "messages" | "admins" | "email";
+
+// sessionStorage cache so revisits within the same tab render instantly and
+// revalidate in the background. Stale-while-revalidate: cached data shows
+// immediately, fresh data replaces it when the server responds.
+const ADMIN_CACHE_KEY = "admin-panel-cache-v1";
+const ADMIN_CACHE_TTL_MS = 60_000;
+
+type AdminPanelData = {
+  blockedIps: BlockedIp[];
+  admins: AdminEmail[];
+  resources: AdminResource[];
+  messages: Message[];
+  reports: AdminReport[];
+  emailStats: EmailStats | null;
+  autoBlocks: AutoBlock[];
+};
+
+function readCache(): { data: AdminPanelData; age: number } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(ADMIN_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt: number; data: AdminPanelData };
+    const age = Date.now() - parsed.savedAt;
+    if (age > 5 * 60_000) return null; // hard-stale: don't show pre-refresh
+    return { data: parsed.data, age };
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(data: AdminPanelData) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+  } catch {
+    // Quota exceeded — caching is best-effort only
+  }
+}
 
 interface AdminResource {
   id: string;
@@ -82,53 +115,52 @@ interface AutoBlock {
   blockedAt: Date;
 }
 
+// Hydrate from the sessionStorage cache synchronously on first render so a
+// revisit paints full data immediately (no spinner, no guest flash).
+const initialCache = readCache();
+
 export default function AdminPanel() {
-  const [blockedIps, setBlockedIps] = useState<BlockedIp[]>([]);
-  const [adminEmails, setAdminEmails] = useState<AdminEmail[]>([]);
-  const [resourcesList, setResourcesList] = useState<AdminResource[]>([]);
-  const [messagesList, setMessagesList] = useState<Message[]>([]);
-  const [reportsList, setReportsList] = useState<AdminReport[]>([]);
+  const [blockedIps, setBlockedIps] = useState<BlockedIp[]>(initialCache?.data.blockedIps ?? []);
+  const [adminEmails, setAdminEmails] = useState<AdminEmail[]>(initialCache?.data.admins ?? []);
+  const [resourcesList, setResourcesList] = useState<AdminResource[]>(initialCache?.data.resources ?? []);
+  const [messagesList, setMessagesList] = useState<Message[]>(initialCache?.data.messages ?? []);
+  const [reportsList, setReportsList] = useState<AdminReport[]>(initialCache?.data.reports ?? []);
   const [newIp, setNewIp] = useState("");
   const [newIpReason, setNewIpReason] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialCache);
   const [activeTab, setActiveTab] = useState<Tab>("security");
   const [editingResource, setEditingResource] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "", subject: "", type: "", professor: "", department: "" });
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
-  const [emailStats, setEmailStats] = useState<EmailStats | null>(null);
-  const [autoBlocks, setAutoBlocks] = useState<AutoBlock[]>([]);
+  const [emailStats, setEmailStats] = useState<EmailStats | null>(initialCache?.data.emailStats ?? null);
+  const [autoBlocks, setAutoBlocks] = useState<AutoBlock[]>(initialCache?.data.autoBlocks ?? []);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (opts?: { background?: boolean }) => {
     try {
-      const [ips, admins, resources, messages, reportList, emailData, recentAutoBlocks] = await Promise.all([
-        getBlockedIps(),
-        getAdminEmails(),
-        getAllResources(),
-        getAllMessages(),
-        getAllReports(),
-        getEmailHealthStats().catch(() => null),
-        getRecentAutoBlocks().catch(() => []),
-      ]);
-      setBlockedIps(ips);
-      setAdminEmails(admins);
-      setResourcesList(resources);
-      setMessagesList(messages);
-      setReportsList(reportList);
-      setEmailStats(emailData);
-      setAutoBlocks(recentAutoBlocks);
+      const data = await getAdminPanelData();
+      setBlockedIps(data.blockedIps);
+      setAdminEmails(data.admins);
+      setResourcesList(data.resources);
+      setMessagesList(data.messages);
+      setReportsList(data.reports);
+      setEmailStats(data.emailStats);
+      setAutoBlocks(data.autoBlocks);
+      writeCache(data);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to load admin data"));
+      if (!opts?.background) toast.error(getErrorMessage(error, "Failed to load admin data"));
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // loadData is async (all state updates occur after await) and is also
-    // reused by event handlers to refresh after mutations.
+    // Revalidate in the background; data may already be on screen from cache.
+    // Fresh cache (< 60s old) skips the refetch entirely. loadData is async
+    // (setState happens after awaits) and reused by mutation handlers.
+    if (initialCache && initialCache.age < ADMIN_CACHE_TTL_MS) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadData();
+    loadData({ background: !!initialCache });
   }, [loadData]);
 
   // ---- IP Management ----
@@ -349,9 +381,9 @@ export default function AdminPanel() {
           <form onSubmit={handleBlockIp} className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
             <h3 className="font-bold text-lg mb-4">Block an IP address</h3>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input type="text" value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="IP address" className="flex-1 h-12 px-4 rounded-xl border-2 border-black bg-white text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
-              <input type="text" value={newIpReason} onChange={(e) => setNewIpReason(e.target.value)} placeholder="Reason" className="flex-1 h-12 px-4 rounded-xl border-2 border-black bg-white text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
-              <button type="submit" className="h-12 px-6 rounded-full bg-[#111] text-white font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all">Block</button>
+              <input type="text" value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="IP address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
+              <input type="text" value={newIpReason} onChange={(e) => setNewIpReason(e.target.value)} placeholder="Reason" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
+              <button type="submit" className="w-full sm:w-auto h-12 sm:h-14 px-6 rounded-full bg-[#111] text-white font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all">Block</button>
             </div>
           </form>
 
@@ -559,8 +591,8 @@ export default function AdminPanel() {
           <form onSubmit={handleAddAdmin} className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
             <h3 className="font-bold text-lg mb-4">Add admin</h3>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="Email address" className="flex-1 h-12 px-4 rounded-xl border-2 border-black bg-white text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
-              <button type="submit" className="h-12 px-6 rounded-full bg-[#111] text-white font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all flex items-center gap-2">
+              <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="Email address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
+              <button type="submit" className="w-full sm:w-auto h-12 sm:h-14 px-6 rounded-full bg-[#111] text-white font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
                 <Plus className="w-4 h-4" /> Add Admin
               </button>
             </div>
