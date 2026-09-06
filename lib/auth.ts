@@ -26,12 +26,16 @@ const authConfig: NextAuthConfig = {
   // Table mappings are REQUIRED: without them the adapter invents its own
   // default tables named "user"/"account" (singular), and every OAuth
   // callback dies with AdapterError (42P01) → shown as "Server error".
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  // The adapter is built through a getter so the lazy DB proxy is only
+  // materialized (and instanceof-checked) when auth first runs.
+  get adapter() {
+    return DrizzleAdapter(db, {
+      usersTable: users,
+      accountsTable: accounts,
+      sessionsTable: sessions,
+      verificationTokensTable: verificationTokens,
+    });
+  },
   session: { strategy: 'jwt' },
   providers: [
     GitHub({
