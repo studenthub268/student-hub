@@ -49,12 +49,12 @@ return (
               {link.label}
             </Link>
           ))}
+          <AdminLink />
         </div>
 
         {/* Right: Search + Admin + Auth (desktop) + Hamburger (mobile) */}
         <div className="flex items-center space-x-3">
           <div className="hidden lg:block"><NavbarSearch /></div>
-          <div className="hidden md:block"><AdminLink /></div>
           <div className="hidden md:block"><NavbarAuth /></div>
 
           {/* Hamburger */}
@@ -94,10 +94,8 @@ return (
               </Link>
             ))}
 
-            {/* Admin Link (mobile) */}
-            <div className="px-6 py-3 border-b border-black/10">
-              <AdminLink dark />
-            </div>
+            {/* Admin Link (mobile) — inline with nav links */}
+            <AdminLink dark />
 
             {/* Auth Section */}
             <NavbarAuth mobile onClose={() => setMobileOpen(false)} />

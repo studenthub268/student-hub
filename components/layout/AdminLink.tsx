@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Shield } from "lucide-react";
 
 export function AdminLink({ dark }: { dark?: boolean }) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -32,15 +31,14 @@ export function AdminLink({ dark }: { dark?: boolean }) {
 
   if (!isAdmin) return null;
 
-  // Dark mode for mobile menu (black text on white bg)
+  // Mobile menu variant (full-width row, matches NAV_LINKS styling)
   if (dark) {
     return (
       <Link
         href="/admin"
-        className="flex items-center gap-2 px-6 py-4 text-base font-bold text-black hover:bg-[#0D9488] transition-colors"
+        className="flex items-center px-6 py-4 text-base font-bold text-black hover:bg-[#0D9488] transition-colors"
       >
-        <Shield className="w-4 h-4" />
-        Admin Panel
+        Admin
         {messageCount > 0 && (
           <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
             {messageCount > 99 ? "99+" : messageCount}
@@ -50,13 +48,12 @@ export function AdminLink({ dark }: { dark?: boolean }) {
     );
   }
 
-  // Default: navbar mode (white text on dark nav)
+  // Desktop navbar variant — plain text, same styling as Home/Browse/Upload/Contact
   return (
     <Link
       href="/admin"
-      className="flex items-center gap-1.5 text-sm font-bold tracking-wider text-black hover:text-[#0D9488] transition-colors relative"
+      className="text-sm font-medium text-black hover:text-gray-500 transition-colors relative"
     >
-      <Shield className="w-4 h-4" />
       Admin
       {messageCount > 0 && (
         <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
