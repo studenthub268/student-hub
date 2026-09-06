@@ -18,6 +18,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://student-hub-uet.vercel.app"),
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png" }],
+  },
   title: "Student Hub — Study Smarter. Share More.",
   description: "Notes, past papers and study resources uploaded by students, for students. Free, accessible, peer-powered.",
   openGraph: {
