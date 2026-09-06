@@ -367,7 +367,7 @@ export default function AdminPanel() {
                 const badgeColor = blockType === "attack" ? "bg-red-100 text-red-700 border-red-300" : "bg-gray-100 text-gray-700 border-gray-300";
                 const badgeLabel = blockType === "attack" ? "Attack" : "Manual";
                 return (
-                  <div key={entry.id} className="flex items-center justify-between p-4 rounded-xl border-2 border-black/5 bg-white hover:shadow-md transition-shadow">
+                  <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-red-50 border border-red-200 flex items-center justify-center">
                         <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -402,7 +402,7 @@ export default function AdminPanel() {
             </div>
           ) : (
             resourcesList.map((res) => (
-              <div key={res.id} className="p-4 rounded-xl border-2 border-black/5 bg-white">
+                  <div key={res.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
                 {editingResource === res.id ? (
                   /* Edit mode */
                   <div className="space-y-3">
@@ -432,7 +432,7 @@ export default function AdminPanel() {
                         {res.downloads} downloads · {res.likes} likes · {new Date(res.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                       <Link href={`/resource/${res.id}`} target="_blank" className="p-2 rounded-lg border-2 border-black/10 hover:bg-gray-100 transition-colors">
                         <ExternalLink className="w-4 h-4" />
                       </Link>
@@ -463,9 +463,8 @@ export default function AdminPanel() {
             reportsList.map((report) => {
               const reportedResource = report.resource;
               return (
-              <div key={report.id} className="p-4 rounded-xl border-2 border-red-100 bg-white">
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0 flex-1">
+              <div key={report.id} className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 rounded-xl border-2 border-red-100 bg-white">
+                <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">Report</span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200">{report.reason}</span>
@@ -479,7 +478,7 @@ export default function AdminPanel() {
                       <p className="text-xs text-black/60 font-medium mt-2 p-3 bg-gray-50 rounded-lg">{report.description}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                     {reportedResource?.id && (
                       <Link href={`/resource/${reportedResource.id}`} target="_blank" className="p-2 rounded-lg border-2 border-black/10 hover:bg-gray-100 transition-colors">
                         <ExternalLink className="w-4 h-4" />
@@ -502,7 +501,6 @@ export default function AdminPanel() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
               </div>
               );
             })
@@ -521,7 +519,7 @@ export default function AdminPanel() {
           ) : (
             messagesList.map((msg) => (
               <div key={msg.id} className="p-4 rounded-xl border-2 border-black/5 bg-white">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedMessage(expandedMessage === msg.id ? null : msg.id)}>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[#0D9488]/10 flex items-center justify-center flex-shrink-0">
@@ -536,7 +534,7 @@ export default function AdminPanel() {
                       <p className="text-xs text-black/50 font-medium mt-2 ml-11 truncate">{msg.message}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                     <span className="text-xs text-black/30 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
                     {expandedMessage === msg.id ? <ChevronUp className="w-4 h-4 text-black/30" /> : <ChevronDown className="w-4 h-4 text-black/30" />}
                     <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors">
@@ -570,7 +568,7 @@ export default function AdminPanel() {
 
           <div className="space-y-3">
             {adminEmails.map((admin) => (
-              <div key={admin.id} className="flex items-center justify-between p-4 rounded-xl border-2 border-black/5 bg-white">
+              <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
                 <div>
                   <p className="font-bold text-sm">{admin.email}</p>
                   <p className="text-xs text-black/40 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>

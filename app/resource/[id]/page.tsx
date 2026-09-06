@@ -152,7 +152,7 @@ export default async function ResourceDetailPage({
 
         {/* Right Column: Preview */}
         <div className="lg:col-span-2">
-          <div className="rounded-[2rem] border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden h-[600px] lg:h-full min-h-[800px] flex flex-col">
+          <div className="rounded-[2rem] border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden h-[60vh] sm:h-[70vh] lg:h-full lg:min-h-[800px] flex flex-col">
             <div className="bg-[#111] border-b-2 border-black p-4 px-6 flex justify-between items-center">
               <span className="text-sm font-medium text-white tracking-wider">Document Preview</span>
               <div className="flex gap-2">
