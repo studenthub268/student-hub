@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin", "/upload", "/profile", "/report", "/offline"],
       },
     ],
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || "https://student-hub-uet.vercel.app"}/sitemap.xml`,
+    sitemap: `${process.env.APP_URL || "https://student-hub-uet.vercel.app"}/sitemap.xml`,
   };
 }

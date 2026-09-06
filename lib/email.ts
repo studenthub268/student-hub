@@ -57,7 +57,7 @@ export async function sendPasswordResetEmail(
   const limit = await checkEmailSendLimit(to);
   if (!limit.allowed) return { success: false, error: limit.error };
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.APP_URL || "http://localhost:3000";
   const resetUrl = `${appUrl}/auth/reset-password?token=${token}`;
 
   try {
@@ -158,7 +158,7 @@ export async function sendVerificationEmail(
   const limit = await checkEmailSendLimit(to);
   if (!limit.allowed) return { success: false, error: limit.error };
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.APP_URL || "http://localhost:3000";
   const verifyUrl = `${appUrl}/auth/verify-email?token=${token}`;
 
   try {

@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://student-hub-uet.vercel.app"),
+  metadataBase: new URL(process.env.APP_URL || "https://student-hub-uet.vercel.app"),
   icons: {
     icon: [{ url: "/favicon.png", type: "image/png" }],
     apple: [{ url: "/favicon.png" }],

@@ -20,7 +20,7 @@ Add these in **Project → Settings → Environment Variables** (production scop
 | `DATABASE_URL` | Neon Console → Project → Connection Details → **Pooled** connection string. Add `?sslmode=require` if missing. | ✅ |
 | `AUTH_SECRET` | Generate with `openssl rand -base64 32` (use a *different* value than local/dev) | ✅ |
 | `AUTH_URL` | Your production URL, e.g. `https://student-hub-xxx.vercel.app` (no trailing slash) | ✅ |
-| `NEXT_PUBLIC_APP_URL` | Same as `AUTH_URL` — used in email links & metadata | ✅ |
+| `APP_URL` | Same as `AUTH_URL` — used in email links & metadata (server-side only, no `NEXT_PUBLIC_` prefix needed) | ✅ |
 | `R2_ACCOUNT_ID` | Cloudflare Dashboard → account ID | ✅ |
 | `R2_ACCESS_KEY_ID` | Cloudflare R2 → Manage R2 API Tokens | ✅ |
 | `R2_SECRET_ACCESS_KEY` | Same place as above | ✅ |
@@ -71,7 +71,7 @@ vercel --prod   # production
 - [ ] Site loads at the `*.vercel.app` URL (or your custom domain: **Settings → Domains**)
 - [ ] Login / signup works (check `AUTH_URL` and OAuth callback URLs match the live domain)
 - [ ] File upload works (R2 keys + `R2_PUBLIC_URL` are for the production bucket)
-- [ ] Password-reset / verification emails send and use `NEXT_PUBLIC_APP_URL` in their links
+- [ ] Password-reset / verification emails send and use `APP_URL` in their links
 - [ ] Resend webhook points at `https://your-app.vercel.app/api/webhooks/resend`
 - [ ] Admin panel is reachable only for your admin emails
 - [ ] `robots.txt` and `sitemap.xml` reflect the production domain

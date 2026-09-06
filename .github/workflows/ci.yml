@@ -27,7 +27,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
 

@@ -103,7 +103,7 @@ Fill in your values:
 DATABASE_URL=your_neon_connection_string
 AUTH_SECRET=your_generated_secret
 AUTH_URL=http://localhost:3000
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+APP_URL=http://localhost:3000
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
 GOOGLE_CLIENT_ID=your_google_client_id
@@ -242,7 +242,7 @@ Set these in Vercel Dashboard → Settings → Environment Variables:
 | `R2_SECRET_ACCESS_KEY` | R2 secret key |
 | `R2_BUCKET_NAME` | R2 bucket name |
 | `R2_PUBLIC_URL` | R2 public bucket URL |
-| `NEXT_PUBLIC_APP_URL` | Public app URL for email links |
+| `APP_URL` | Public app URL for email links (server-side only) |
 | `RESEND_API_KEY` | Resend API key for transactional email |
 | `EMAIL_FROM` | Verified sender address for emails |
 | `RESEND_WEBHOOK_SECRET` | Resend webhook secret |
