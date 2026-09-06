@@ -445,10 +445,14 @@ async function runUiPhase(rows) {
         wrongDisabled.length === 0,
         `${zeroPills.length - wrongDisabled.length}/${zeroPills.length} disabled${wrongDisabled.length ? ` — NOT disabled: ${wrongDisabled.map(([l]) => l).join(", ")}` : ""}`);
     }
-    // Search must narrow the advertised facet totals.
+    // Search must narrow the advertised facet totals — asserted against DB
+    // truth (scale-independent): the All Types facet after q=discrete must
+    // equal the number of DB rows matching "discrete". On a tiny DB where
+    // every resource matches, that equals the total — still correct.
+    const expectedNarrowed = filterRows(rows, { q: "discrete" }).length;
     check("UI: search narrows facet totals",
-      (disabledState["All Types"]?.count ?? rows.length) < rows.length,
-      `All Types=${disabledState["All Types"]?.count} total=${rows.length}`);
+      (disabledState["All Types"]?.count ?? -1) === expectedNarrowed,
+      `All Types=${disabledState["All Types"]?.count} expected=${expectedNarrowed} total=${rows.length}`);
     // Reset for the interaction checks below.
     await page.fill("input[placeholder*='title']", "");
     await page.waitForURL((u) => !u.searchParams.has("q") || u.searchParams.get("q") === "", { timeout: 15000 });
