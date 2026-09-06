@@ -10,32 +10,21 @@ import { eq } from 'drizzle-orm';
 import { checkRateLimit } from './actions/rate-limit';
 import { POLICY_VERSION } from './constants';
 
-// No eager AUTH_SECRET throw here: it killed `next build` whenever the var
-// was absent (e.g. CI without secrets configured). NextAuth itself raises
-// MissingSecret at runtime if auth is actually invoked without one.
+// No eager AUTH_SECRET check or adapter construction here: either would
+// kill `next build` in environments without secrets (e.g. CI). NextAuth's
+// lazy-config form defers everything until the first real request, and
+// NextAuth raises MissingSecret at runtime if auth runs without a secret.
 const authConfig: NextAuthConfig = {
-  get secret() {
-    const secret = process.env.AUTH_SECRET;
-    if (!secret) {
-      throw new Error(
-        'AUTH_SECRET is missing. Generate one with: openssl rand -base64 32'
-      );
-    }
-    return secret;
-  },
+  secret: process.env.AUTH_SECRET,
   // Table mappings are REQUIRED: without them the adapter invents its own
   // default tables named "user"/"account" (singular), and every OAuth
   // callback dies with AdapterError (42P01) → shown as "Server error".
-  // The adapter is built through a getter so the lazy DB proxy is only
-  // materialized (and instanceof-checked) when auth first runs.
-  get adapter() {
-    return DrizzleAdapter(db, {
-      usersTable: users,
-      accountsTable: accounts,
-      sessionsTable: sessions,
-      verificationTokensTable: verificationTokens,
-    });
-  },
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),
   session: { strategy: 'jwt' },
   providers: [
     GitHub({
@@ -111,4 +100,4 @@ const authConfig: NextAuthConfig = {
   },
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+export const { handlers, auth, signIn, signOut } = NextAuth(async () => authConfig);
