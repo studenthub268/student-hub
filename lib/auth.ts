@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth, { type NextAuthConfig } from 'next-auth';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from './db';
 import Credentials from 'next-auth/providers/credentials';
@@ -13,18 +13,16 @@ import { POLICY_VERSION } from './constants';
 // No eager AUTH_SECRET throw here: it killed `next build` whenever the var
 // was absent (e.g. CI without secrets configured). NextAuth itself raises
 // MissingSecret at runtime if auth is actually invoked without one.
-function requireAuthSecret(): string {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) {
-    throw new Error(
-      'AUTH_SECRET is missing. Generate one with: openssl rand -base64 32'
-    );
-  }
-  return secret;
-}
-
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: requireAuthSecret(),
+const authConfig: NextAuthConfig = {
+  get secret() {
+    const secret = process.env.AUTH_SECRET;
+    if (!secret) {
+      throw new Error(
+        'AUTH_SECRET is missing. Generate one with: openssl rand -base64 32'
+      );
+    }
+    return secret;
+  },
   // Table mappings are REQUIRED: without them the adapter invents its own
   // default tables named "user"/"account" (singular), and every OAuth
   // callback dies with AdapterError (42P01) → shown as "Server error".
@@ -107,4 +105,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-});
+};
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
