@@ -217,6 +217,8 @@ CI (`.github/workflows/ci.yml`) runs the same gate on every push/PR: lint → ty
 
 ##  Deployment
 
+Full step-by-step guide: **[DEPLOYMENT.md](./DEPLOYMENT.md)** — importing the repo into Vercel, all required environment variables, OAuth callback URLs, migrations, and a post-deploy checklist.
+
 This project is optimized for [Vercel](https://vercel.com):
 
 ```bash
