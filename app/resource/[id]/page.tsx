@@ -5,28 +5,38 @@ import { db } from "@/lib/db";
 import { resources, users, likes } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
+import { unstable_cache } from "next/cache";
 import { ArrowLeft, User, Calendar, FileText, FileImage, File } from "lucide-react";
 import { format } from "date-fns";
 import { getTypeConfig } from "@/lib/constants";
 import { formatFileSize } from "@/lib/utils";
 import ResourceActions from "./ResourceActions";
 
-export const dynamic = "force-dynamic";
+// The page still runs per request (auth() reads cookies for the like state),
+// but the resource payload is cached across requests and invalidated by the
+// revalidatePath(`/resource/${id}`) calls in like/edit/delete actions.
+const queryResourceCached = (id: string) =>
+  unstable_cache(
+    async () =>
+      db
+        .select({
+          id: resources.id, title: resources.title, description: resources.description,
+          type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
+          fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
+          uploaderId: resources.uploaderId, professor: resources.professor,
+          downloads: resources.downloads, likes: resources.likes, createdAt: resources.createdAt,
+          uploader: { name: users.name },
+        })
+        .from(resources)
+        .leftJoin(users, eq(resources.uploaderId, users.id))
+        .where(eq(resources.id, id))
+        .limit(1),
+    [`resource-${id}`],
+    { revalidate: 300 }
+  );
 
 async function queryResource(id: string) {
-  return await db
-    .select({
-      id: resources.id, title: resources.title, description: resources.description,
-      type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
-      fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
-      uploaderId: resources.uploaderId, professor: resources.professor,
-      downloads: resources.downloads, likes: resources.likes, createdAt: resources.createdAt,
-      uploader: { name: users.name },
-    })
-    .from(resources)
-    .leftJoin(users, eq(resources.uploaderId, users.id))
-    .where(eq(resources.id, id))
-    .limit(1);
+  return queryResourceCached(id)();
 }
 
 export default async function ResourceDetailPage({

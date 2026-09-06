@@ -5,7 +5,10 @@ import { resources, users } from "@/lib/db/schema";
 import { desc, eq, and, or, ilike, sql } from "drizzle-orm";
 import { escapeLike } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+// Cached at the CDN and revalidated in the background; searchParams make each
+// query variant its own cache entry. Mutations (upload/delete/admin) call
+// revalidatePath("/browse") so new data appears within seconds.
+export const revalidate = 120;
 
 const CARD_COLUMNS = {
   id: resources.id,
