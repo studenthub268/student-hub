@@ -1,5 +1,5 @@
-const STATIC_CACHE = "student-hub-static-v2";
-const DYNAMIC_CACHE = "student-hub-dynamic-v2";
+const STATIC_CACHE = "student-hub-static-v3";
+const DYNAMIC_CACHE = "student-hub-dynamic-v3";
 
 // Dev servers reuse deterministic chunk URLs with changing contents; the
 // service worker must never serve them cache-first or code changes will
@@ -16,10 +16,17 @@ const PRECACHE_URLS = [
   "/login",
   "/signup",
   "/terms",
+  "/offline", // must be precached: it is the offline fallback for any uncached page
   "/logo.png",
   "/favicon.png",
+  "/icon-192.png",
+  "/icon-512.png",
   "/manifest.json",
 ];
+
+// Cap on dynamically cached pages/subresources so one long session (or many
+// cached R2 PDFs) can't grow the cache without bound and hit quota errors.
+const MAX_DYNAMIC_ENTRIES = 60;
 
 // Install — precache critical assets
 self.addEventListener("install", (event) => {
@@ -43,9 +50,20 @@ self.addEventListener("activate", (event) => {
             .map((name) => caches.delete(name))
         )
       )
+      .then(() => trimDynamicCache())
       .then(() => self.clients.claim())
   );
 });
+
+// Oldest-first trim: cache.keys() returns entries in insertion order, so
+// dropping from the front approximates LRU for a browsing session.
+async function trimDynamicCache() {
+  const cache = await caches.open(DYNAMIC_CACHE);
+  const keys = await cache.keys();
+  if (keys.length <= MAX_DYNAMIC_ENTRIES) return;
+  const excess = keys.slice(0, keys.length - MAX_DYNAMIC_ENTRIES);
+  await Promise.all(excess.map((request) => cache.delete(request)));
+}
 
 // Fetch — network first for pages, cache first for static assets
 self.addEventListener("fetch", (event) => {
@@ -62,6 +80,8 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.endsWith(".png") ||
     url.pathname.endsWith(".jpg") ||
+    url.pathname.endsWith(".jpeg") ||
+    url.pathname.endsWith(".webp") ||
     url.pathname.endsWith(".svg") ||
     url.pathname.endsWith(".ico") ||
     url.pathname.endsWith(".woff") ||
@@ -99,12 +119,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages — network first, fallback to cache, fallback to offline page
+  // Pages — network first, fallback to cache, fallback to offline page.
+  // Covers both precached routes and any page visited at least once while
+  // online; uncached navigations land on the precached /offline page.
   event.respondWith(
     fetch(request)
       .then((response) => {
         const clone = response.clone();
-        caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
+        caches.open(DYNAMIC_CACHE).then((cache) => {
+          cache.put(request, clone);
+          trimDynamicCache();
+        });
         return response;
       })
       .catch(() => {

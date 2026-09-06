@@ -11,20 +11,35 @@ interface NavbarAuthProps {
   onClose?: () => void;
 }
 
+interface SessionUser { id: string; name?: string | null; email?: string | null; image?: string | null }
+
+// Module-level session cache shared by every NavbarAuth instance (desktop +
+// mobile menu). Without it, opening the hamburger re-fetches the session and
+// briefly renders the guest "Get Started" view before the profile appears.
+let cachedUser: SessionUser | null = null;
+let sessionPromise: Promise<SessionUser | null> | null = null;
+
+function fetchSession(): Promise<SessionUser | null> {
+  if (!sessionPromise) {
+    sessionPromise = fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((session) => {
+        cachedUser = session?.user ?? null;
+        return cachedUser;
+      })
+      .catch(() => null);
+  }
+  return sessionPromise;
+}
+
 export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
-  const [user, setUser] = useState<{ id: string; name?: string | null; email?: string | null; image?: string | null } | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(cachedUser);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const res = await fetch("/api/auth/session");
-        const session = await res.json();
-        if (session?.user) setUser(session.user);
-      } catch {}
-    };
-    fetchSession();
+    if (cachedUser) return; // already known — render it immediately
+    fetchSession().then((u) => setUser(u));
   }, []);
 
   useEffect(() => {
