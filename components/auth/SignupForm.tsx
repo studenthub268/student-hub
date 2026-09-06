@@ -253,7 +253,7 @@ export function SignupForm() {
           <div className="flex flex-col gap-5">
             <BrandMark />
 
-            <p className="text-4xl font-bold leading-[0.95] tracking-[-0.02em] uppercase text-white">
+            <p className="text-3xl sm:text-4xl font-bold leading-[0.95] tracking-[-0.02em] uppercase text-white">
               <span className="whitespace-nowrap">Study smarter.</span>
               <br />
               <span className="text-[#2DD4BF] whitespace-nowrap">Share more.</span>

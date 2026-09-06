@@ -124,7 +124,7 @@ export function LoginForm() {
         {/* Form side — roomy spacing so it matches the panel's height */}
         <div className="p-6 sm:p-8 lg:p-9 flex flex-col justify-center">
           <div className="mb-8">
-            <h2 className="whitespace-nowrap text-[2.75rem] font-extrabold leading-none tracking-tight text-black">Welcome back</h2>
+            <h2 className="text-3xl sm:text-[2.75rem] font-extrabold leading-none tracking-tight text-black">Welcome back</h2>
             <p className="text-sm sm:text-base text-black/60 font-medium tracking-wider mt-2">Sign in to your account</p>
           </div>
 
@@ -174,7 +174,7 @@ export function LoginForm() {
           <div className="flex flex-col gap-4">
             <BrandMark />
 
-            <p className="text-[2.75rem] font-extrabold leading-[0.95] tracking-tight uppercase text-white">
+            <p className="text-3xl sm:text-[2.75rem] font-extrabold leading-[0.95] tracking-tight uppercase text-white">
               <span className="whitespace-nowrap">Study smarter.</span>
               <br />
               <span className="text-[#2DD4BF] whitespace-nowrap">Share more.</span>

@@ -83,7 +83,7 @@ Designed for students, by students — the tagline isn't decoration; the whole p
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/student-hub.git
+git clone https://github.com/studenthub268/student-hub.git
 cd student-hub
 ```
 
@@ -266,6 +266,6 @@ Built with ❤️ for students everywhere. Share knowledge, help each other succ
 <p align="center">
   <strong>Study Smarter. Share More.</strong><br>
   <a href="https://student-hub-uet.vercel.app">Live Demo</a> · 
-  <a href="https://github.com/YOUR_USERNAME/student-hub/issues">Report Bug</a> · 
-  <a href="https://github.com/YOUR_USERNAME/student-hub/pulls">Contribute</a>
+  <a href="https://github.com/studenthub268/student-hub/issues">Report Bug</a> · 
+  <a href="https://github.com/studenthub268/student-hub/pulls">Contribute</a>
 </p>
