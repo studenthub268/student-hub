@@ -1,0 +1,79 @@
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Navbar } from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import { Toaster } from "react-hot-toast";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://student-hub-uet.vercel.app"),
+  title: "Student Hub — Study Smarter. Share More.",
+  description: "Notes, past papers and study resources uploaded by students, for students. Free, accessible, peer-powered.",
+  openGraph: {
+    title: "Student Hub — Study Smarter. Share More.",
+    description: "Notes, past papers and study resources uploaded by students, for students.",
+    url: "/",
+    siteName: "Student Hub",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Student Hub — Study Smarter. Share More.",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Student Hub — Study Smarter, Share More With Students",
+    description: "Access free notes, past papers and study materials uploaded by students. Join Student Hub — the peer-powered academic resource platform for every student.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Student Hub",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0D9488",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+        <Toaster position="bottom-right" />
+        <ServiceWorkerRegister />
+      </body>
+    </html>
+  );
+}

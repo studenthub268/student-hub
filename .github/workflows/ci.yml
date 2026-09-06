@@ -1,0 +1,70 @@
+# CI — runs the same gate as `npm run preflight` on every push and PR:
+# ESLint → tsc → production build → `next start` → the 3-phase smoke suite
+# (HTTP/SSR + headless-Chrome UI + auth E2E) against the live database.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   DATABASE_URL  — Neon pooled connection string (the smoke suite reads the
+#                   real DB and phase 3 creates/deletes one test user)
+#   AUTH_SECRET   — required at import time by lib/auth.ts
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Lint + typecheck + smoke
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure Chrome is available (playwright-core drives system Chrome)
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+          else
+            wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google.gpg
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google.gpg] https://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+            sudo apt-get update
+            sudo apt-get install -y google-chrome-stable
+            google-chrome --version
+          fi
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Start the app (production build)
+        run: |
+          npm run start &
+          npx --yes wait-on http://127.0.0.1:3000 --timeout 120000
+          curl -s -o /dev/null -w "app up: HTTP %{http_code}\n" http://127.0.0.1:3000/
+
+      - name: Smoke suite (3 phases, against the live DB)
+        run: node scripts/smoke-browse.mjs
