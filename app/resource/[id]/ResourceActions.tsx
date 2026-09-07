@@ -11,7 +11,6 @@ import { getErrorMessage } from "@/lib/utils";
 interface ResourceActionsProps {
   resourceId: string;
   initialLikes: number;
-  initialDownloads: number;
   fileUrl: string;
   fileName: string;
   hasLikedInitially: boolean;
@@ -21,14 +20,12 @@ interface ResourceActionsProps {
 export default function ResourceActions({
   resourceId,
   initialLikes,
-  initialDownloads,
   fileUrl,
   fileName,
   hasLikedInitially,
   uploaderId,
 }: ResourceActionsProps) {
   const [likes, setLikes] = useState(initialLikes);
-  const [downloads, setDownloads] = useState(initialDownloads);
   const [hasLiked, setHasLiked] = useState(hasLikedInitially);
   const [isLiking, setIsLiking] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -75,7 +72,6 @@ export default function ResourceActions({
       URL.revokeObjectURL(blobUrl);
       toast.success("Download started!", { id: "download" });
       await recordDownload(resourceId);
-      setDownloads(prev => prev + 1);
     } catch {
       toast.error("Failed to download file", { id: "download" });
     }
@@ -103,7 +99,7 @@ export default function ResourceActions({
   return (
     <div className="flex flex-wrap items-center gap-4 mt-8">
       <button onClick={handleDownload} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#0D9488] border-2 border-black text-black px-6 py-3 rounded-full font-bold tracking-wider text-sm hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#111] transition-all">
-        <Download size={20} strokeWidth={2} /> Download ({downloads})
+        <Download size={20} strokeWidth={2} /> Download
       </button>
       <button onClick={handleLike} disabled={isLiking}
         className={"flex-1 sm:flex-none flex items-center justify-center gap-2 border-2 border-black px-6 py-3 rounded-full font-bold tracking-wider text-sm transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#111] " + (hasLiked ? "bg-red-500 text-white border-black" : "bg-white text-black") + " disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"}>

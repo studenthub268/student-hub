@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Upload, Download, Heart, Calendar, FileText, ArrowRight } from "lucide-react";
+import { Upload, Heart, Calendar, FileText, ArrowRight } from "lucide-react";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Resource, User } from "@/lib/db/schema";
@@ -9,14 +9,12 @@ import { Resource, User } from "@/lib/db/schema";
 interface ProfileContentProps {
   profile: User | null;
   resources: Resource[];
-  totalDownloads: number;
   totalLikes: number;
 }
 
 export default function ProfileContent({
   profile,
   resources,
-  totalDownloads,
   totalLikes,
 }: ProfileContentProps) {
   const joinDate = profile?.createdAt
@@ -51,21 +49,13 @@ export default function ProfileContent({
         </div>
 
         {/* Stats */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="rounded-[2rem] border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_#111] flex flex-col items-center justify-center text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0D9488] border-2 border-black mb-4">
               <FileText className="h-6 w-6 text-black" strokeWidth={2} />
             </div>
             <span className="text-4xl font-black tracking-tighter text-black">{resources.length}</span>
             <span className="text-xs font-bold tracking-wider text-black/50 mt-1">Uploads</span>
-          </div>
-
-          <div className="rounded-[2rem] border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_#111] flex flex-col items-center justify-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0D9488] border-2 border-black mb-4">
-              <Download className="h-6 w-6 text-black" strokeWidth={2} />
-            </div>
-            <span className="text-4xl font-black tracking-tighter text-black">{totalDownloads}</span>
-            <span className="text-xs font-bold tracking-wider text-black/50 mt-1">Downloads</span>
           </div>
 
           <div className="rounded-[2rem] border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_#111] flex flex-col items-center justify-center text-center">

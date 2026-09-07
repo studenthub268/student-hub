@@ -16,13 +16,11 @@ export default async function ProfilePage() {
   }
 
   let userResources: Awaited<ReturnType<typeof getResources>> = [];
-  let totalDownloads = 0;
   let totalLikes = 0;
   let profile = null;
 
   try {
     userResources = await getResources(session.user.id);
-    totalDownloads = userResources.reduce((sum, r) => sum + (r.downloads || 0), 0);
     totalLikes = userResources.reduce((sum, r) => sum + (r.likes || 0), 0);
     profile = await db.query.users.findFirst({
       where: (users, { eq }) => eq(users.id, session.user.id),
@@ -36,7 +34,6 @@ export default async function ProfilePage() {
       <ProfileContent
         profile={profile || null}
         resources={userResources}
-        totalDownloads={totalDownloads}
         totalLikes={totalLikes}
       />
       {/* Privacy-policy right-to-erasure (see /terms, Section 14) */}

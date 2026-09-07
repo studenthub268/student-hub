@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, Heart, ArrowUpRight } from "lucide-react";
+import { Heart, ArrowUpRight } from "lucide-react";
 import { Resource } from "@/lib/db/schema";
 import { formatFileSize } from "@/lib/utils";
 
@@ -43,10 +43,6 @@ export function ResourceCard({ resource }: ResourceCardProps) {
               <div className="flex items-center gap-2 group/stat hover:text-red-600 transition-colors cursor-pointer">
                 <Heart className="h-5 w-5 group-hover/stat:fill-red-600" strokeWidth={1.5} />
                 <span>{resource.likes}</span>
-              </div>
-              <div className="flex items-center gap-2 group/stat hover:text-blue-600 transition-colors cursor-pointer">
-                <Download className="h-5 w-5" strokeWidth={1.5} />
-                <span>{resource.downloads}</span>
               </div>
               <button
                 type="button"

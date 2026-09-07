@@ -133,7 +133,6 @@ export default async function ResourceDetailPage({
               <ResourceActions 
                 resourceId={resource.id}
                 initialLikes={resource.likes || 0}
-                initialDownloads={resource.downloads || 0}
                 fileUrl={resource.fileUrl}
                 fileName={resource.title}
                 hasLikedInitially={hasLikedInitially}
