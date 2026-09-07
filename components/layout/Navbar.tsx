@@ -94,8 +94,9 @@ return (
               </Link>
             ))}
 
-            {/* Admin Link (mobile) — inline with nav links */}
-            <AdminLink dark />
+            {/* Admin Link (mobile) — inline with nav links; closes the menu on tap,
+                same as every other menu item */}
+            <AdminLink dark onNavigate={() => setMobileOpen(false)} />
 
             {/* Auth Section */}
             <NavbarAuth mobile onClose={() => setMobileOpen(false)} />

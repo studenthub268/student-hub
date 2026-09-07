@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-export function AdminLink({ dark }: { dark?: boolean }) {
+export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: () => void }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
 
@@ -36,6 +36,7 @@ export function AdminLink({ dark }: { dark?: boolean }) {
     return (
       <Link
         href="/admin"
+        onClick={onNavigate}
         className="flex items-center px-6 py-4 text-base font-bold text-black hover:bg-[#0D9488] transition-colors"
       >
         Admin
