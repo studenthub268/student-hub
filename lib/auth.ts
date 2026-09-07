@@ -9,7 +9,7 @@ import { users, accounts, sessions, verificationTokens } from './db/schema';
 import { eq } from 'drizzle-orm';
 import { checkRateLimit } from './actions/rate-limit';
 import { POLICY_VERSION } from './constants';
-import { sendSignInNotificationEmail } from './email';
+import { sendSignInNotificationEmail, sendWelcomeEmail } from './email';
 
 // One "new sign-in" notification per user+provider per hour, max — guards
 // against rapid re-auth loops without needing a DB table. Module-level, so
@@ -17,6 +17,11 @@ import { sendSignInNotificationEmail } from './email';
 // backs this up globally.
 const SIGNIN_NOTIFY_DEDUPE_MS = 60 * 60 * 1000;
 const lastSignInNotified = new Map<string, number>();
+
+// Welcome-email guard: one welcome per user per serverless instance. The
+// linkAccount event itself fires only once per provider identity, but a
+// user who links BOTH Google and GitHub would otherwise get two welcomes.
+const welcomedUserIds = new Set<string>();
 
 // No eager AUTH_SECRET check or adapter construction here: either would
 // kill `next build` in environments without secrets (e.g. CI). NextAuth's
@@ -179,6 +184,24 @@ const authConfig: NextAuthConfig = {
         }
       } catch (error) {
         console.error('[auth] Sign-in notification failed:', error);
+      }
+    },
+    // Fires exactly once per provider identity — a fresh OAuth signup OR an
+    // existing password account linking Google/GitHub for the first time.
+    // Either way it is the user's activation moment: introduce Student Hub.
+    // Best-effort — never break the sign-in because of a welcome email.
+    async linkAccount({ user, account }) {
+      if (account.provider !== 'google' && account.provider !== 'github') return;
+      if (!user.id || !user.email) return;
+      if (welcomedUserIds.has(user.id)) return;
+      welcomedUserIds.add(user.id);
+      try {
+        const result = await sendWelcomeEmail(user.email, user.name);
+        if (!result.success) {
+          console.warn(`[auth] Welcome email not sent to ${user.email}: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('[auth] Welcome email failed:', error);
       }
     },
   },

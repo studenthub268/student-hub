@@ -395,6 +395,159 @@ function signInNotificationText(provider: string, whenUtc: string, appUrl: strin
   ].join("\n");
 }
 
+/* ------------------------------------------------------------------ */
+/*  Welcome email (first activation / first provider link)              */
+/* ------------------------------------------------------------------ */
+
+/** Minimal HTML escaping for user-controlled values (names) in emails. */
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function welcomeHtml(greetingName: string, appUrl: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#0d9488;padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#111111;letter-spacing:-0.02em;">
+                Student Hub
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#111111;">
+                Welcome to Student Hub${greetingName ? `, ${greetingName}` : ""}!
+              </h2>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Your account is ready. Student Hub is a peer-powered library of
+                study material — notes, past papers, quizzes and more, shared by
+                students for students. Everything is free.
+              </p>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
+                <tr>
+                  <td style="padding:14px 18px;background-color:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;">
+                    <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#134e4a;">
+                      📚 <strong>Browse & download</strong> — search by subject, department or professor
+                    </p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#134e4a;">
+                      ⬆️ <strong>Upload & share</strong> — help classmates and build your library
+                    </p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#134e4a;">
+                      ❤️ <strong>Like & organize</strong> — keep your favourite resources close
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+                <tr>
+                  <td style="background-color:#0d9488;border-radius:9999px;">
+                    <a href="${appUrl}/browse"
+                       style="display:inline-block;padding:14px 40px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.02em;">
+                      Explore Study Materials
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;color:#6b7280;">
+                Got notes sitting around? <a href="${appUrl}/upload" style="color:#0d9488;font-weight:700;">Upload your first resource</a> and help your campus out.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;text-align:center;">
+                You're receiving this because your Student Hub account is now active.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function welcomeText(greetingName: string, appUrl: string): string {
+  return [
+    `Welcome to Student Hub${greetingName ? `, ${greetingName}` : ""}!`,
+    "",
+    "Your account is ready. Student Hub is a peer-powered library of study",
+    "material — notes, past papers, quizzes and more, shared by students for",
+    "students. Everything is free.",
+    "",
+    "- Browse & download: search by subject, department or professor",
+    "- Upload & share: help classmates and build your library",
+    "- Like & organize: keep your favourite resources close",
+    "",
+    `Explore study materials: ${appUrl}/browse`,
+    `Upload your first resource: ${appUrl}/upload`,
+  ].join("\n");
+}
+
+/**
+ * Introductory email sent once when an account becomes active — right after
+ * an email/password signup verifies their address, or the first time a
+ * Google/GitHub identity is linked. Best-effort: callers must never let a
+ * welcome failure break signup/verification/sign-in.
+ */
+export async function sendWelcomeEmail(
+  to: string,
+  name?: string | null
+): Promise<{ success: boolean; error?: string }> {
+  const limit = await checkEmailSendLimit(to);
+  if (!limit.allowed) return { success: false, error: limit.error };
+
+  const appUrl = process.env.APP_URL || "http://localhost:3000";
+  const firstName = (name || "").trim().split(/\s+/)[0] || "";
+  const greetingName = firstName ? escapeHtml(firstName) : "";
+
+  try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn("RESEND_API_KEY not set — skipping welcome email");
+      return { success: false, error: "Email service not configured" };
+    }
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to,
+      subject: "Welcome to Student Hub 🎓",
+      html: welcomeHtml(greetingName, appUrl),
+      text: welcomeText(firstName, appUrl),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to send welcome email:", err);
+    return { success: false, error: "Failed to send email" };
+  }
+}
+
 /**
  * "New sign-in" security notification, sent for every sign-in method
  * (Google, GitHub, email/password), in the style of the major platforms.

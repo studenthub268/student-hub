@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { eq, sql } from "drizzle-orm";
 import { checkRateLimit } from "./rate-limit";
-import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
+import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
 import { validatePasswordStrength } from "@/lib/password";
 import { POLICY_VERSION } from "@/lib/constants";
 import { deleteR2Object } from "@/lib/r2";
@@ -348,6 +348,17 @@ export async function verifyEmail(token: string) {
         verificationToken: null,
       })
       .where(eq(users.id, user.id));
+
+    // First-activation moment: introduce Student Hub. Best-effort — a
+    // welcome failure must never fail verification.
+    try {
+      const welcome = await sendWelcomeEmail(user.email, user.name);
+      if (!welcome.success) {
+        console.warn(`Welcome email not sent to ${user.email}: ${welcome.error}`);
+      }
+    } catch (e) {
+      console.error("Welcome email failed:", e);
+    }
 
     return { success: true };
   } catch (error) {
