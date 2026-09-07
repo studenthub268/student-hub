@@ -1,6 +1,6 @@
 import NextAuth, { type NextAuthConfig } from 'next-auth';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db } from './db';
+import { getDb } from './db';
 import Credentials from 'next-auth/providers/credentials';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
@@ -17,12 +17,13 @@ import { POLICY_VERSION } from './constants';
 const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET,
   get adapter() {
-    // Built on access, not at module load: DrizzleAdapter runs an
-    // instanceof check that the lazy DB proxy only satisfies after init.
+    // Built on access, not at module load. getDb() returns the real
+    // NeonHttpDatabase (not the lazy proxy) because DrizzleAdapter's
+    // prototype-based `is()` check fails on proxies.
     // Table mappings are REQUIRED: without them the adapter invents its own
     // default tables named "user"/"account" (singular), and every OAuth
     // callback dies with AdapterError (42P01) → shown as "Server error".
-    return DrizzleAdapter(db, {
+    return DrizzleAdapter(getDb(), {
       usersTable: users,
       accountsTable: accounts,
       sessionsTable: sessions,
@@ -54,7 +55,7 @@ const authConfig: NextAuthConfig = {
         const isAllowed = await checkRateLimit(`login:${email}`, 10, 900);
         if (!isAllowed) return null;
 
-        const [user] = await db.select().from(users).where(eq(users.email, email));
+        const [user] = await getDb().select().from(users).where(eq(users.email, email));
 
         if (!user || !user.passwordHash) return null;
 
@@ -85,7 +86,7 @@ const authConfig: NextAuthConfig = {
     async createUser({ user }) {
       if (!user.id) return;
       try {
-        await db
+        await getDb()
           .update(users)
           .set({ acceptedTermsAt: new Date(), termsVersion: POLICY_VERSION })
           .where(eq(users.id, user.id));
