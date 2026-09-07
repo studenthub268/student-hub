@@ -10,6 +10,16 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [status, setStatus] = useState<"loading" | "success" | "error">(token ? "loading" : "error");
+  // Unverified users can be signed in while they verify (nag-banner flow),
+  // so the success CTA depends on whether a session already exists.
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((session) => setSignedIn(!!session?.user))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -51,10 +61,10 @@ export default function VerifyEmailPage() {
         <div className="flex flex-col gap-4">
           {status === "success" && (
             <Link
-              href="/login"
+              href={signedIn ? "/" : "/login"}
               className="w-full text-center text-lg h-16 flex items-center justify-center rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-wider hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all"
             >
-              Go to Login
+              {signedIn ? "Go to Home" : "Go to Login"}
             </Link>
           )}
           {status === "error" && (

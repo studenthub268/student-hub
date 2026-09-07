@@ -40,24 +40,43 @@ export default function UploadForm() {
     }
   });
 
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // XHR (not fetch) so we get real upload progress events for the bar.
+  const uploadFileWithProgress = (formData: FormData) =>
+    new Promise<{ key: string; publicUrl: string }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/upload");
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setUploadProgress(Math.min(99, Math.round((e.loaded / e.total) * 100)));
+        }
+      };
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText) as { key: string; publicUrl: string; error?: string };
+          if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+          else reject(new Error(data.error || "Failed to upload file"));
+        } catch {
+          reject(new Error("Failed to upload file"));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Failed to upload file"));
+      xhr.send(formData);
+    });
+
   const doUpload = async () => {
     if (!file) return;
     setIsUploading(true);
     setShowDuplicateWarning(false);
+    setUploadProgress(0);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData.error || "Failed to upload file");
-
-      const { key, publicUrl } = uploadData;
+      const { key, publicUrl } = await uploadFileWithProgress(formData);
+      setUploadProgress(100);
 
       await uploadResource({
         title,
@@ -248,8 +267,22 @@ export default function UploadForm() {
           className="w-full text-lg h-16 rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-wider hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
           disabled={isUploading || !file}
         >
-          {isUploading ? "Uploading..." : "Publish Resource"}
+          {isUploading ? (uploadProgress < 100 ? `Uploading ${uploadProgress}%` : "Saving resource...") : "Publish Resource"}
         </button>
+
+        {isUploading && (
+          <div className="mt-4">
+            <div className="h-2.5 w-full rounded-full border border-black/10 bg-gray-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[#0D9488] transition-all duration-200"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-xs font-bold tracking-wider text-black/40 text-center">
+              {uploadProgress < 100 ? `Uploading your file… ${uploadProgress}%` : "Finishing up…"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Duplicate Warning Modal */}
