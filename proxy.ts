@@ -1,6 +1,6 @@
 import { auth } from "./lib/auth";
 import { NextResponse, type NextRequest } from "next/server";
-import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap } from "./lib/ip-block";
+import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap, invalidateBlockedIpsCache } from "./lib/ip-block";
 import { cleanupOldEmailEvents } from "./lib/cleanup";
 import { checkBounceRateAlert } from "./lib/alerts";
 import { notifyAutoBlock } from "./lib/alerts";
@@ -55,6 +55,8 @@ export async function proxy(request: NextRequest) {
         reason: `Auto-blocked: ${attack}`,
         blockedBy: "system",
       });
+      // Make the block effective immediately on this instance.
+      invalidateBlockedIpsCache();
       // Make the lockout visible: log + notify admins (rate-limited).
       notifyAutoBlock(ip, attack);
     } catch {}
@@ -90,7 +92,10 @@ export async function proxy(request: NextRequest) {
     pathname === "/find" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/api/webhooks/");
+    pathname.startsWith("/api/webhooks/") ||
+    // UI-hint status endpoints: they answer guests themselves (200 JSON),
+    // so the login redirect here would only waste a round trip.
+    pathname.startsWith("/api/check-");
 
   if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();

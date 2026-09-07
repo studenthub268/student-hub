@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
 import { blockedIps } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
 
 // Attack patterns to detect.
 // IMPORTANT: these run on EVERY request URL, and a match auto-blocks the
@@ -89,15 +88,32 @@ export function getIpAddress(request: Request): string {
   return "127.0.0.1";
 }
 
+// Blocked-IP cache: the proxy checks EVERY request against this table, and
+// a Neon HTTP roundtrip per request is the single largest source of
+// navigation latency on the site. The list is tiny and changes rarely, so it
+// is cached in memory for 60s — a fresh block propagates to other instances
+// within 60s and is instant on the instance that made the change (see
+// invalidateBlockedIpsCache).
+const BLOCKED_IPS_TTL_MS = 60 * 1000;
+let blockedIpsCache: { ips: Set<string>; loadedAt: number } | null = null;
+
+/** Drop the in-memory blocked-IP cache so the next check re-reads the DB. */
+export function invalidateBlockedIpsCache(): void {
+  blockedIpsCache = null;
+}
+
 export async function isIpBlocked(ip: string): Promise<boolean> {
-  try {
-    const blocked = await db.query.blockedIps.findFirst({
-      where: eq(blockedIps.ip, ip),
-    });
-    return !!blocked;
-  } catch {
-    return false;
+  const now = Date.now();
+  if (!blockedIpsCache || now - blockedIpsCache.loadedAt > BLOCKED_IPS_TTL_MS) {
+    try {
+      const rows = await db.select({ ip: blockedIps.ip }).from(blockedIps);
+      blockedIpsCache = { ips: new Set(rows.map((r) => r.ip)), loadedAt: now };
+    } catch {
+      // Fail open, and keep serving the stale cache if we have one.
+      if (!blockedIpsCache) return false;
+    }
   }
+  return blockedIpsCache.ips.has(ip);
 }
 
 export function detectAttack(url: string, userAgent: string): string | null {

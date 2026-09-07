@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { eq, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { deleteR2Object } from "@/lib/r2";
+import { invalidateBlockedIpsCache } from "@/lib/ip-block";
 
 async function isAdmin(email: string): Promise<boolean> {
   const admin = await db.query.adminEmails.findFirst({
@@ -133,6 +134,7 @@ export async function blockIp(ip: string, reason: string) {
     reason,
     blockedBy: session.user.email,
   });
+  invalidateBlockedIpsCache();
 
   return { success: true };
 }
@@ -145,6 +147,7 @@ export async function unblockIp(ip: string) {
   if (!admin) throw new Error("Only admins can unblock IPs");
 
   await db.delete(blockedIps).where(eq(blockedIps.ip, ip));
+  invalidateBlockedIpsCache();
   return { success: true };
 }
 

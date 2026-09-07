@@ -7,26 +7,60 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
   const [isAdmin, setIsAdmin] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
 
+  // Admin status is re-checked at most once a minute per tab: it is cached
+  // in sessionStorage so navigating around the site doesn't refetch it on
+  // every mount, and the two endpoints are fetched in parallel instead of
+  // serially. Only POSITIVE (admin) results are cached — a guest's "no" is
+  // never cached, so an admin signing in sees the link immediately.
+  const ADMIN_STATUS_CACHE_KEY = "admin-status-cache-v1";
+  const ADMIN_STATUS_TTL_MS = 60_000;
+
   useEffect(() => {
-    fetch("/api/check-admin")
-      .then((res) => {
-        if (res.ok) return res.json();
-        return null;
-      })
-      .then((data) => {
-        if (data?.admin === true) {
+    /* eslint-disable react-hooks/set-state-in-effect -- cached values are already final; setting synchronously avoids a guest-view flash, which is the whole point of the cache */
+    try {
+      const raw = sessionStorage.getItem(ADMIN_STATUS_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { savedAt: number; count: number };
+        if (Date.now() - parsed.savedAt < ADMIN_STATUS_TTL_MS) {
           setIsAdmin(true);
-          return fetch("/api/admin/message-count");
+          setMessageCount(parsed.count || 0);
+          return;
         }
-        return null;
-      })
-      .then((res) => res?.json())
-      .then((data) => {
-        if (data?.count) setMessageCount(data.count);
+      }
+    } catch {
+      // corrupted cache — just refetch
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    let cancelled = false;
+    Promise.all([
+      fetch("/api/check-admin").then((res) => (res.ok ? res.json() : null)),
+      fetch("/api/admin/message-count")
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null),
+    ])
+      .then(([adminData, countData]) => {
+        if (cancelled) return;
+        if (adminData?.admin === true) {
+          const count = countData?.count || 0;
+          setIsAdmin(true);
+          setMessageCount(count);
+          try {
+            sessionStorage.setItem(
+              ADMIN_STATUS_CACHE_KEY,
+              JSON.stringify({ savedAt: Date.now(), count })
+            );
+          } catch {
+            // best-effort cache only
+          }
+        }
       })
       .catch(() => {
-        setIsAdmin(false);
+        if (!cancelled) setIsAdmin(false);
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (!isAdmin) return null;

@@ -15,11 +15,44 @@ export function VerificationBanner() {
   const [state, setState] = useState<"loading" | "hidden" | "show">("loading");
   const [sending, setSending] = useState(false);
 
+  // Cached per tab for 60s so navigating doesn't refetch on every mount.
+  // Only POSITIVE (signed-in) results are cached — a guest's "no" is never
+  // cached, so someone signing in never has the banner wrongly suppressed.
+  const VERIFIED_CACHE_KEY = "verified-status-cache-v1";
+  const VERIFIED_TTL_MS = 60_000;
+
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- cached value is already final; setting synchronously avoids a banner flash */
+    try {
+      const raw = sessionStorage.getItem(VERIFIED_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { savedAt: number; verified: boolean };
+        if (Date.now() - parsed.savedAt < VERIFIED_TTL_MS) {
+          setState(parsed.verified ? "hidden" : "show");
+          return;
+        }
+      }
+    } catch {
+      // corrupted cache — just refetch
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+
     fetch("/api/check-verified")
       .then((res) => res.json())
       .then((data) => {
-        setState(data?.authenticated && data?.verified === false ? "show" : "hidden");
+        if (data?.authenticated) {
+          setState(data.verified === false ? "show" : "hidden");
+          try {
+            sessionStorage.setItem(
+              VERIFIED_CACHE_KEY,
+              JSON.stringify({ savedAt: Date.now(), verified: data.verified !== false })
+            );
+          } catch {
+            // best-effort cache only
+          }
+        } else {
+          setState("hidden");
+        }
       })
       .catch(() => setState("hidden"));
   }, []);

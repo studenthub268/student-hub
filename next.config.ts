@@ -52,6 +52,13 @@ const securityHeaders = [
 ];
 
 export default {
+  experimental: {
+    // Client router cache: reuse prefetched RSC payloads for 30s so
+    // back/forward and repeat navigation render instantly instead of
+    // refetching the server for every dynamic page (default dynamic
+    // staleTime is 0, which makes every click a full server round trip).
+    staleTimes: { dynamic: 30, static: 180 },
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
