@@ -148,6 +148,42 @@ const authConfig: NextAuthConfig = {
     },
   },
   callbacks: {
+    // Runs with `user` ONLY at sign-in; every other call must return the
+    // token untouched.
+    async jwt({ token, user, account, profile }) {
+      if (user?.id && account && account.provider !== "credentials") {
+        // OAuth sign-in: make the provider's avatar authoritative. Critical
+        // for accounts LINKED via allowDangerousEmailAccountLinking — their
+        // user row was created by email/password signup with image = null,
+        // and the adapter never back-fills it, so the Google/GitHub profile
+        // picture silently never showed (initials chip instead).
+        const oauthProfile = profile as Record<string, unknown> | null | undefined;
+        const oauthImage = (oauthProfile?.["picture"] ?? oauthProfile?.["avatar_url"]) as
+          | string
+          | undefined
+          | null;
+        const updates: { image?: string; name?: string } = {};
+        if (typeof oauthImage === "string" && oauthImage) {
+          // Live in the token too — the default token was built from the DB
+          // row, which is null for linked accounts until the write below.
+          token.picture = oauthImage;
+          if (oauthImage !== user.image) updates.image = oauthImage;
+        }
+        if (!user.name && typeof oauthProfile?.["name"] === "string" && oauthProfile["name"]) {
+          token.name = oauthProfile["name"] as string;
+          updates.name = oauthProfile["name"] as string;
+        }
+        if (Object.keys(updates).length > 0) {
+          try {
+            await getDb().update(users).set(updates).where(eq(users.id, user.id));
+          } catch (error) {
+            // Never block sign-in because of a profile sync hiccup.
+            console.error("[auth] Failed to sync OAuth profile data:", error);
+          }
+        }
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
