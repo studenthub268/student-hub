@@ -279,6 +279,55 @@ export async function isEmailVerified(
   }
 }
 
+/**
+ * Re-send the verification email for the SIGNED-IN user's address. The
+ * session (not a client-supplied email) identifies the target, so there is
+ * no enumeration risk. Rate limited per email; a no-op when already
+ * verified.
+ */
+export async function resendVerificationEmail(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, error: "Please sign in first" };
+    }
+    const email = session.user.email;
+
+    // Rate limit: 3 resend emails per hour per address
+    const isAllowed = await checkRateLimit(`resend-verification:${email}`, 3, 3600);
+    if (!isAllowed) {
+      return { success: false, error: "Too many requests. Please try again later." };
+    }
+
+    const user = await db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.email, email),
+    });
+    if (!user) {
+      return { success: false, error: "Account not found" };
+    }
+    if (user.emailVerified) {
+      return { success: false, error: "Your email is already verified" };
+    }
+
+    // Reuse the pending token when one exists (signup always creates one);
+    // otherwise issue a fresh token so the link works.
+    let token = user.verificationToken;
+    if (!token) {
+      token = randomUUID();
+      await db.update(users).set({ verificationToken: token }).where(eq(users.id, user.id));
+    }
+
+    const emailResult = await sendVerificationEmail(user.email, token);
+    if (!emailResult.success) {
+      return { success: false, error: "Failed to send the email. Please try again later." };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    return { success: false, error: "Something went wrong. Please try again." };
+  }
+}
+
 export async function verifyEmail(token: string) {
   try {
     const user = await db.query.users.findFirst({

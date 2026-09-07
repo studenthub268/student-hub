@@ -162,13 +162,17 @@ const authConfig: NextAuthConfig = {
           | string
           | undefined
           | null;
-        const updates: { image?: string; name?: string } = {};
+        const updates: { image?: string; name?: string; emailVerified?: Date } = {};
         if (typeof oauthImage === "string" && oauthImage) {
           // Live in the token too — the default token was built from the DB
           // row, which is null for linked accounts until the write below.
           token.picture = oauthImage;
           if (oauthImage !== user.image) updates.image = oauthImage;
         }
+        // OAuth providers only hand out VERIFIED email addresses, so treat
+        // the email as verified — otherwise unverified-email checks (login
+        // gate, verification banner) wrongly punish OAuth users.
+        if (!("emailVerified" in user) || !user.emailVerified) updates.emailVerified = new Date();
         if (!user.name && typeof oauthProfile?.["name"] === "string" && oauthProfile["name"]) {
           token.name = oauthProfile["name"] as string;
           updates.name = oauthProfile["name"] as string;

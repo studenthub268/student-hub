@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
+import { VerificationBanner } from "@/components/layout/VerificationBanner";
 import Footer from "@/components/layout/Footer";
 import { Toaster } from "react-hot-toast";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -75,6 +76,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
+        <VerificationBanner />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
