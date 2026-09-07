@@ -6,7 +6,7 @@ import { resources, users } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
-import { eq, desc, ilike, and, or } from "drizzle-orm";
+import { eq, desc, ilike, and, or, isNull, sql } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
 import { escapeLike } from "@/lib/utils";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from "@/lib/uploads";
@@ -96,8 +96,22 @@ export async function deleteResource(resourceId: string) {
   revalidateTag("recent-resources", "default");
 }
 
-export async function checkDuplicateResources(title: string, subject: string) {
+export async function checkDuplicateResources(
+  title: string,
+  subject: string,
+  department?: string
+) {
   try {
+    // A same-title resource only counts as a duplicate when it belongs to the
+    // SAME department (compared case-insensitively). A different department
+    // means it is that department's own material — a genuinely new resource.
+    // Both sides missing a department counts as the same; a department on one
+    // side only counts as different.
+    const normalizedDepartment = department?.trim().toLowerCase() || null;
+    const departmentFilter = normalizedDepartment
+      ? sql`lower(${resources.department}) = ${normalizedDepartment}`
+      : isNull(resources.department);
+
     const duplicates = await db
       .select({
         id: resources.id,
@@ -116,7 +130,8 @@ export async function checkDuplicateResources(title: string, subject: string) {
             ilike(resources.title, `%${escapeLike(title)}%`),
             ilike(resources.title, escapeLike(title))
           ),
-          eq(resources.subject, subject)
+          eq(resources.subject, subject),
+          departmentFilter
         )
       )
       .orderBy(desc(resources.createdAt))

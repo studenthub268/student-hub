@@ -21,7 +21,7 @@ export default function UploadForm() {
   const [professor, setProfessor] = useState("");
   const [department, setDepartment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [duplicates, setDuplicates] = useState<{ id: string; title: string; subject: string; uploader: { name: string | null } | null }[]>([]);
+  const [duplicates, setDuplicates] = useState<{ id: string; title: string; subject: string; department: string | null; uploader: { name: string | null } | null }[]>([]);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -94,9 +94,10 @@ export default function UploadForm() {
       return;
     }
 
-    // Check for duplicates before uploading
+    // Check for duplicates before uploading — same title only counts when
+    // the department matches too (a different department = a new resource).
     if (title.trim().length >= 3 && subject.trim().length >= 2) {
-      const found = await checkDuplicateResources(title.trim(), subject.trim());
+      const found = await checkDuplicateResources(title.trim(), subject.trim(), department.trim() || undefined);
       if (found.length > 0) {
         setDuplicates(found);
         setShowDuplicateWarning(true);
@@ -279,7 +280,7 @@ export default function UploadForm() {
                   <div className="min-w-0">
                     <p className="font-bold text-black truncate">{dup.title}</p>
                     <p className="text-xs font-medium text-black/50 mt-0.5">
-                      {dup.subject} · Uploaded by {dup.uploader?.name || 'Anonymous'}
+                      {dup.subject}{dup.department ? ` · ${dup.department}` : ""} · Uploaded by {dup.uploader?.name || 'Anonymous'}
                     </p>
                   </div>
                 </Link>
