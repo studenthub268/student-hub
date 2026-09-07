@@ -7,6 +7,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { deleteR2Object } from "@/lib/r2";
 import { invalidateBlockedIpsCache } from "@/lib/ip-block";
+import { isPermanentAdmin } from "@/lib/constants";
 
 async function isAdmin(email: string): Promise<boolean> {
   const admin = await db.query.adminEmails.findFirst({
@@ -205,6 +206,12 @@ export async function removeAdminEmail(email: string) {
   const superAdmin = await isAdmin(session.user.email);
   if (!superAdmin) throw new Error("Only admins can remove admins");
 
+  // Owner accounts are permanent — no one (including themselves via API)
+  // can remove them, so the site can never lose its last real admin.
+  if (isPermanentAdmin(email)) {
+    throw new Error("This admin account is permanent and cannot be removed");
+  }
+
   await db.delete(adminEmails).where(eq(adminEmails.email, email));
   return { success: true };
 }
@@ -370,6 +377,9 @@ export async function adminDeleteUser(userId: string) {
   if (!target) throw new Error("User not found");
   if (target.email === session.user.email) {
     throw new Error("You cannot delete your own account");
+  }
+  if (isPermanentAdmin(target.email)) {
+    throw new Error("This account is a permanent admin and cannot be deleted");
   }
 
   const uploaded = await db

@@ -34,9 +34,11 @@ import {
   ExternalLink,
   Flag,
   Ban,
+  Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { getErrorMessage } from "@/lib/utils";
+import { isPermanentAdmin } from "@/lib/constants";
 import type { BlockedIp, AdminEmail, Message } from "@/lib/db/schema";
 import type { LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
@@ -647,6 +649,7 @@ export default function AdminPanel() {
           ) : (
             usersList.map((u) => {
               const isUserAdmin = adminEmails.some((a) => a.email.toLowerCase() === u.email.toLowerCase());
+              const isPermanent = isPermanentAdmin(u.email);
               const providerChips = u.providers.length > 0 ? u.providers : ["credentials"];
               return (
                 <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
@@ -655,9 +658,11 @@ export default function AdminPanel() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-bold text-sm truncate">{u.name || "Student"}</p>
-                        {isUserAdmin && (
+                        {isUserAdmin && (isPermanent ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner · Admin</span>
+                        ) : (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0D9488]/15 text-[#0D9488] border border-[#0D9488]/30">Admin</span>
-                        )}
+                        ))}
                         {!u.emailVerified && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200">Unverified</span>
                         )}
@@ -675,17 +680,25 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                     {isUserAdmin ? (
-                      <button onClick={() => handleDemoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-gray-100 transition-all">
-                        <ShieldOff className="w-4 h-4" /> Remove Admin
-                      </button>
+                      isPermanent ? (
+                        <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/40">
+                          <Lock className="w-3.5 h-3.5" /> Permanent
+                        </span>
+                      ) : (
+                        <button onClick={() => handleDemoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-gray-100 transition-all">
+                          <ShieldOff className="w-4 h-4" /> Remove Admin
+                        </button>
+                      )
                     ) : (
                       <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-[#0D9488] hover:border-[#0D9488] transition-all">
                         <ShieldCheck className="w-4 h-4" /> Make Admin
                       </button>
                     )}
-                    <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
+                    {!isPermanent && (
+                      <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                        <Trash2 className="w-4 h-4" /> Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -708,17 +721,31 @@ export default function AdminPanel() {
           </form>
 
           <div className="space-y-3">
-            {adminEmails.map((admin) => (
-              <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
-                <div>
-                  <p className="font-bold text-sm">{admin.email}</p>
-                  <p className="text-xs text-black/40 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
+            {adminEmails.map((admin) => {
+              const permanent = isPermanentAdmin(admin.email);
+              return (
+                <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-sm">{admin.email}</p>
+                      {permanent && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-black/40 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
+                  </div>
+                  {permanent ? (
+                    <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/40">
+                      <Lock className="w-3.5 h-3.5" /> Permanent
+                    </span>
+                  ) : (
+                    <button onClick={() => handleRemoveAdmin(admin.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                      <Trash2 className="w-4 h-4" /> Remove
+                    </button>
+                  )}
                 </div>
-                <button onClick={() => handleRemoveAdmin(admin.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
-                  <Trash2 className="w-4 h-4" /> Remove
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

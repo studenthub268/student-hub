@@ -2,6 +2,18 @@
 // first OAuth sign-in record this version alongside the consent timestamp.
 export const POLICY_VERSION = "0.1.2";
 
+// Owner/creator accounts that are PERMANENT admins: the server refuses to
+// remove them from the admin list or delete the account, and the admin panel
+// hides the remove/demote buttons. Override via env if the site ever changes
+// hands.
+const OWNER_EMAIL = process.env.OWNER_ADMIN_EMAIL || "abubakartanveer826@gmail.com";
+export const PERMANENT_ADMIN_EMAILS: readonly string[] = [OWNER_EMAIL.toLowerCase()];
+
+export function isPermanentAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return PERMANENT_ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
 export const DEPARTMENTS = [
   "Computer Science",
   "Software Engineering",
