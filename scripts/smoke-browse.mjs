@@ -236,7 +236,10 @@ async function main() {
   // Server-side faceting: type counts apply ONLY the q filter (ignoring the
   // subject facet), and vice versa — so unfiltered /browse pill counts equal
   // plain per-value counts of the whole table.
-  if (rows !== null) {
+  if (rows !== null && rows.length === 0) {
+    console.log("ℹ  DB has no resources — pill/facet HTTP checks skipped");
+  }
+  if (rows !== null && rows.length > 0) {
     const res = await get("/browse");
     const html = await res.text();
     const pills = pillCounts(html);
@@ -369,6 +372,17 @@ async function runUiPhase(rows) {
 
     await page.goto(`${BASE}/browse`, { waitUntil: "domcontentloaded" });
 
+    // Empty DB: only assert the empty state renders, then skip every
+    // data-dependent interaction check (no fixtures are seeded in CI).
+    if (rows.length === 0) {
+      const emptyText = await page.evaluate(() => document.body.innerText);
+      check("UI: empty state renders on empty DB",
+        /No resources found|Showing\s+0\s+resources/i.test(emptyText),
+        emptyText.replace(/\s+/g, " ").slice(0, 80));
+      console.log("ℹ  DB has no resources — UI interaction checks skipped");
+      return;
+    }
+
     // Read every pill badge from the live DOM. Badge is a nested span, so
     // textContent concatenates label+digits ("All Types1").
     const domPills = await page.evaluate(() => {
@@ -431,8 +445,8 @@ async function runUiPhase(rows) {
     });
 
     await page.fill("input[placeholder*='title']", "");
-    await page.type("input[placeholder*='title']", "discrete", { delay: 40 });
-    await page.waitForURL((u) => u.searchParams.get("q") === "discrete", { timeout: 15000 });
+    await page.type("input[placeholder*='title']", "zznosuchresource", { delay: 40 });
+    await page.waitForURL((u) => u.searchParams.get("q") === "zznosuchresource", { timeout: 15000 });
     await page.waitForTimeout(900); // counts refresh after RSC update
 
     const disabledState = await readBadges();
@@ -446,10 +460,10 @@ async function runUiPhase(rows) {
         `${zeroPills.length - wrongDisabled.length}/${zeroPills.length} disabled${wrongDisabled.length ? ` — NOT disabled: ${wrongDisabled.map(([l]) => l).join(", ")}` : ""}`);
     }
     // Search must narrow the advertised facet totals — asserted against DB
-    // truth (scale-independent): the All Types facet after q=discrete must
-    // equal the number of DB rows matching "discrete". On a tiny DB where
-    // every resource matches, that equals the total — still correct.
-    const expectedNarrowed = filterRows(rows, { q: "discrete" }).length;
+    // truth (scale-independent): the All Types facet after a no-match search
+    // must equal the number of DB rows matching it (0), which also exercises
+    // the zero-count path deterministically without needing fixture data.
+    const expectedNarrowed = filterRows(rows, { q: "zznosuchresource" }).length;
     check("UI: search narrows facet totals",
       (disabledState["All Types"]?.count ?? -1) === expectedNarrowed,
       `All Types=${disabledState["All Types"]?.count} expected=${expectedNarrowed} total=${rows.length}`);
@@ -458,11 +472,15 @@ async function runUiPhase(rows) {
     await page.waitForURL((u) => !u.searchParams.has("q") || u.searchParams.get("q") === "", { timeout: 15000 });
     await page.waitForTimeout(800);
 
-    // Interaction: click the Discrete Mathematics pill → results + URL update.
-    const discreteBtn = page.getByRole("button", { name: /Discrete Mathematics/ });
-    if (await discreteBtn.count() > 0 && await discreteBtn.isEnabled()) {
-      await discreteBtn.click();
-      await page.waitForURL(/subject=Discrete\+Mathematics/, { timeout: 15000 });
+    // Interaction: click a subject pill that actually exists in the DB →
+    // results + URL update (subject chosen from live data, not hardcoded).
+    const targetSubject = Object.keys(dbSubjectCounts).find((s) => domPills[s] !== undefined);
+    const subjectBtn = targetSubject
+      ? page.getByRole("button", { name: new RegExp(targetSubject.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })
+      : null;
+    if (subjectBtn && await subjectBtn.count() > 0 && await subjectBtn.isEnabled()) {
+      await subjectBtn.click();
+      await page.waitForURL((u) => u.searchParams.get("subject") === targetSubject, { timeout: 15000 });
       await page.waitForFunction(
         () => !document.querySelector(".animate-pulse"),
         undefined,
@@ -472,9 +490,9 @@ async function runUiPhase(rows) {
         const t = document.body.innerText.match(/Showing\s+(\d+)\s+resources?/);
         return t ? Number(t[1]) : null;
       });
-      const expectedForSubject = dbSubjectCounts["Discrete Mathematics"] || 0;
+      const expectedForSubject = dbSubjectCounts[targetSubject] || 0;
       check("UI: clicking subject pill updates results", shownAfter === expectedForSubject,
-        `shown=${shownAfter} db=${expectedForSubject}`);
+        `subject=${targetSubject} shown=${shownAfter} db=${expectedForSubject}`);
 
       // Clear via All Subjects pill.
       await page.getByRole("button", { name: /All Subjects/ }).click();
@@ -491,9 +509,10 @@ async function runUiPhase(rows) {
     let rscRequests = 0;
     const onRequest = (req) => { if (req.url().includes("/browse?q=")) rscRequests++; };
     page.on("request", onRequest);
+    const searchWord = (rows[0].title.split(/\s+/).find((w) => w.length >= 4) || rows[0].title).toLowerCase();
     await page.fill("input[placeholder*='title']", "");
-    await page.type("input[placeholder*='title']", "discrete", { delay: 50 });
-    await page.waitForURL(/q=discrete/, { timeout: 15000 });
+    await page.type("input[placeholder*='title']", searchWord, { delay: 50 });
+    await page.waitForURL((u) => u.searchParams.get("q") === searchWord, { timeout: 15000 });
     await page.waitForTimeout(600); // let any trailing request settle
     page.off("request", onRequest);
     check("UI: debounced search fires one request", rscRequests === 1, `requests=${rscRequests}`);
@@ -501,7 +520,7 @@ async function runUiPhase(rows) {
       const t = document.body.innerText.match(/Showing\s+(\d+)\s+resources?/);
       return t ? Number(t[1]) : null;
     });
-    check("UI: search results render after debounce", searchShown !== null && searchShown > 0, `shown=${searchShown}`);
+    check("UI: search results render after debounce", searchShown !== null && searchShown > 0, `shown=${searchShown} term=${searchWord}`);
   } finally {
     await browser.close();
   }

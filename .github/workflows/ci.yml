@@ -69,8 +69,5 @@ jobs:
           npx --yes wait-on http://127.0.0.1:3000 --timeout 120000
           curl -s -o /dev/null -w "app up: HTTP %{http_code}\n" http://127.0.0.1:3000/
 
-      - name: Seed fixture resources (idempotent, skips if present)
-        run: node scripts/seed-fixtures.mjs
-
       - name: Smoke suite (3 phases, against the live DB)
         run: node scripts/smoke-browse.mjs

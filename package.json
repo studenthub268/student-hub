@@ -11,7 +11,6 @@
     "start": "next start",
     "lint": "eslint",
     "smoke": "node scripts/smoke-browse.mjs",
-    "db:seed": "node scripts/seed-fixtures.mjs",
     "preflight": "npm run lint && tsc --noEmit && node scripts/smoke-browse.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

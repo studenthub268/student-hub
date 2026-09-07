@@ -203,12 +203,12 @@ The smoke suite (`scripts/smoke-browse.mjs`) runs against a **live server + data
 2. **UI phase** — headless Chrome (via `playwright-core`, driving your installed system Chrome; override with `CHROME_PATH`) reads badges from the real DOM, clicks pills, verifies debounced search fires exactly one request
 3. **Auth phase** — signup → DB token verification → blocked login while unverified → verify link → login → navbar → sign-out, then cleans up its test user (`SMOKE_SKIP_AUTH=1` to skip)
 
+All phases are **DB-state agnostic**: with an empty database they assert the empty state and skip the data-dependent checks; with real resources they validate against live counts. No fixtures are seeded.
+
 Useful scripts:
 
 ```bash
 npm run smoke                       # smoke suite only (expects a server on :3000)
-node scripts/seed-fixtures.mjs      # seed richer dev fixtures (54 resources)
-node scripts/seed-fixtures.mjs --clean   # remove fixtures; --force to reseed
 ```
 
 CI (`.github/workflows/ci.yml`) runs the same gate on every push/PR: lint → typecheck → production build → `next start` → smoke suite. Required repo secrets: `DATABASE_URL`, `AUTH_SECRET`.
