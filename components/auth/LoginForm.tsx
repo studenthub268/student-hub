@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
@@ -80,10 +80,37 @@ function PerkList() {
   );
 }
 
+/** Friendly copy for OAuth errors NextAuth bounces back as ?error= params. */
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  OAuthAccountNotLinked:
+    "This email is already registered with a password. Please sign in with your email and password.",
+  AccountNotLinked:
+    "This email is already registered with a password. Please sign in with your email and password.",
+  OAuthCallbackError:
+    "We couldn't complete the sign-in with the provider. Please try again.",
+  OAuthSigninError:
+    "We couldn't start the sign-in with the provider. Please try again.",
+  AccessDenied: "Sign-in was denied. Please try again.",
+  Configuration:
+    "We hit a temporary problem signing you in. Please try again in a moment.",
+};
+
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // OAuth failures bounce back here as ?error=<code>. Show a friendly toast
+  // and scrub the URL so a refresh doesn't re-toast.
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get("error");
+    if (!error) return;
+    toast.error(
+      OAUTH_ERROR_MESSAGES[error] ??
+        "Something went wrong while signing you in. Please try again."
+    );
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -739,6 +739,8 @@ async function runAuthPhase() {
  *     the user through it (probe row deleted afterwards, cascade cleans up)
  *  4. the CSRF→POST signin handshake redirects to the real providers,
  *     never to error=Configuration
+ * 5. the custom auth error page (pages.error → /auth/error) renders for a
+ *     signed-out visitor — no proxy gate, no redirect loop
  */
 async function runOAuthPhase() {
   // 1-3 need the database
@@ -801,6 +803,15 @@ async function runOAuthPhase() {
       loc.startsWith("https://");
     check(`OAuth: signin/${provider} handshake reaches provider`, ok,
       `got ${res.status} → ${loc.split("?")[0] || "(none)"}`);
+  }
+
+  // 5. custom auth error page: signed-out visitors must reach it directly —
+  // if the proxy ever gates /auth/* or the page loops, users get stuck.
+  {
+    const res = await get("/auth/error?error=Configuration");
+    check("OAuth: custom auth error page renders for signed-out visitor",
+      res.status === 200 && !res.headers.get("location"),
+      `got ${res.status}${res.headers.get("location") ? " + redirect" : ""}`);
   }
 }
 
