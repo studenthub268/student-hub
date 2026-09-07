@@ -28,6 +28,9 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       APP_URL: http://localhost:3000
+      # The app runs on 127.0.0.1 in CI; NextAuth rejects non-HTTPS hosts in
+      # production mode unless explicitly trusted.
+      AUTH_TRUST_HOST: "true"
     steps:
       - uses: actions/checkout@v4
 
