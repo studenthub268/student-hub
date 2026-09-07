@@ -9,6 +9,7 @@ import {
   removeAdminEmail,
   adminDeleteResource,
   adminUpdateResource,
+  adminDeleteUser,
   deleteMessage,
   deleteReport,
   dismissReportAndDeleteResource,
@@ -16,7 +17,10 @@ import {
 import { toast } from "react-hot-toast";
 import {
   Shield,
+  ShieldCheck,
+  ShieldOff,
   Users,
+  UserCog,
   Globe,
   Trash2,
   Plus,
@@ -35,13 +39,14 @@ import Link from "next/link";
 import { getErrorMessage } from "@/lib/utils";
 import type { BlockedIp, AdminEmail, Message } from "@/lib/db/schema";
 import type { LucideIcon } from "lucide-react";
+import { Avatar } from "@/components/ui/Avatar";
 
-type Tab = "security" | "resources" | "reports" | "messages" | "admins" | "email";
+type Tab = "security" | "resources" | "reports" | "messages" | "users" | "admins" | "email";
 
 // sessionStorage cache so revisits within the same tab render instantly and
 // revalidate in the background. Stale-while-revalidate: cached data shows
 // immediately, fresh data replaces it when the server responds.
-const ADMIN_CACHE_KEY = "admin-panel-cache-v1";
+const ADMIN_CACHE_KEY = "admin-panel-cache-v2";
 const ADMIN_CACHE_TTL_MS = 60_000;
 
 type AdminPanelData = {
@@ -52,6 +57,7 @@ type AdminPanelData = {
   reports: AdminReport[];
   emailStats: EmailStats | null;
   autoBlocks: AutoBlock[];
+  users: AdminUser[];
 };
 
 function readCache(): { data: AdminPanelData; age: number } | null {
@@ -85,7 +91,6 @@ interface AdminResource {
   subject: string;
   department: string | null;
   professor: string | null;
-  downloads: number;
   likes: number;
   createdAt: Date;
   uploader: { name: string | null; email: string | null } | null;
@@ -115,6 +120,17 @@ interface AutoBlock {
   blockedAt: Date;
 }
 
+interface AdminUser {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+  emailVerified: Date | null;
+  createdAt: Date;
+  providers: string[];
+  resourceCount: number;
+}
+
 // Hydrate from the sessionStorage cache synchronously on first render so a
 // revisit paints full data immediately (no spinner, no guest flash).
 const initialCache = readCache();
@@ -135,6 +151,7 @@ export default function AdminPanel() {
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
   const [emailStats, setEmailStats] = useState<EmailStats | null>(initialCache?.data.emailStats ?? null);
   const [autoBlocks, setAutoBlocks] = useState<AutoBlock[]>(initialCache?.data.autoBlocks ?? []);
+  const [usersList, setUsersList] = useState<AdminUser[]>(initialCache?.data.users ?? []);
 
   const loadData = useCallback(async (opts?: { background?: boolean }) => {
     try {
@@ -146,6 +163,7 @@ export default function AdminPanel() {
       setReportsList(data.reports);
       setEmailStats(data.emailStats);
       setAutoBlocks(data.autoBlocks);
+      setUsersList(data.users);
       writeCache(data);
     } catch (error) {
       if (!opts?.background) toast.error(getErrorMessage(error, "Failed to load admin data"));
@@ -283,6 +301,38 @@ export default function AdminPanel() {
     }
   };
 
+  // ---- User Management ----
+  const handlePromoteUser = async (email: string) => {
+    try {
+      await addAdminEmail(email);
+      toast.success(`${email} is now an admin`);
+      loadData();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const handleDemoteUser = async (email: string) => {
+    try {
+      await removeAdminEmail(email);
+      toast.success(`${email} is no longer an admin`);
+      loadData();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const handleDeleteUser = async (id: string, email: string) => {
+    if (!confirm(`Delete the account ${email}? Their uploaded resources and data are permanently removed. This cannot be undone.`)) return;
+    try {
+      await adminDeleteUser(id);
+      toast.success(`Deleted account ${email}`);
+      loadData();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -296,7 +346,8 @@ export default function AdminPanel() {
     { key: "resources", label: "Resources", icon: FileText, count: resourcesList.length },
     { key: "reports", label: "Reports", icon: Flag, count: reportsList.length },
     { key: "messages", label: "Messages", icon: Mail, count: messagesList.length },
-    { key: "admins", label: "Admins", icon: Users, count: adminEmails.length },
+    { key: "users", label: "Users", icon: UserCog, count: usersList.length },
+    { key: "admins", label: "Admins", icon: ShieldCheck, count: adminEmails.length },
     { key: "email", label: "Email", icon: Mail, count: emailStats?.totals?.bounced || 0 },
   ];
 
@@ -461,7 +512,7 @@ export default function AdminPanel() {
                         {res.subject} · {res.type} · {res.uploader?.name || "Anonymous"}
                       </p>
                       <p className="text-xs text-black/30 font-medium">
-                        {res.downloads} downloads · {res.likes} likes · {new Date(res.createdAt).toLocaleDateString()}
+                        {res.likes} likes · {new Date(res.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
@@ -581,6 +632,64 @@ export default function AdminPanel() {
                 )}
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* ===== USERS TAB ===== */}
+      {activeTab === "users" && (
+        <div className="space-y-3">
+          {usersList.length === 0 ? (
+            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
+              <Users className="w-12 h-12 mx-auto text-black/20 mb-4" />
+              <p className="text-black/40 font-medium">No users yet</p>
+            </div>
+          ) : (
+            usersList.map((u) => {
+              const isUserAdmin = adminEmails.some((a) => a.email.toLowerCase() === u.email.toLowerCase());
+              const providerChips = u.providers.length > 0 ? u.providers : ["credentials"];
+              return (
+                <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar image={u.image} name={u.name} email={u.email} size={40} />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-sm truncate">{u.name || "Student"}</p>
+                        {isUserAdmin && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0D9488]/15 text-[#0D9488] border border-[#0D9488]/30">Admin</span>
+                        )}
+                        {!u.emailVerified && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200">Unverified</span>
+                        )}
+                        {providerChips.map((p) => (
+                          <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                            {p === "credentials" ? "Email" : p === "github" ? "GitHub" : p === "google" ? "Google" : p}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-black/50 font-medium truncate">{u.email}</p>
+                      <p className="text-xs text-black/30 font-medium">
+                        {u.resourceCount} resource{u.resourceCount === 1 ? "" : "s"} · Joined {new Date(u.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                    {isUserAdmin ? (
+                      <button onClick={() => handleDemoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-gray-100 transition-all">
+                        <ShieldOff className="w-4 h-4" /> Remove Admin
+                      </button>
+                    ) : (
+                      <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-[#0D9488] hover:border-[#0D9488] transition-all">
+                        <ShieldCheck className="w-4 h-4" /> Make Admin
+                      </button>
+                    )}
+                    <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       )}

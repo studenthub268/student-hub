@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { blockedIps, adminEmails, resources, messages, reports, users, emailEvents, suppressedEmails } from "@/lib/db/schema";
+import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { eq, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -25,7 +25,7 @@ export async function getAdminPanelData() {
   if (!session?.user?.email) throw new Error("Not authenticated");
   if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
 
-  const [blockedIpsList, admins, resourcesList, messagesList, reportList, emailData, recentAutoBlocks] = await Promise.all([
+  const [blockedIpsList, admins, resourcesList, messagesList, reportList, emailData, recentAutoBlocks, usersRows, accountsRows, resourceCounts] = await Promise.all([
     db.query.blockedIps.findMany({ orderBy: [desc(blockedIps.blockedAt)] }),
     db.query.adminEmails.findMany(),
     db
@@ -37,7 +37,6 @@ export async function getAdminPanelData() {
         subject: resources.subject,
         department: resources.department,
         professor: resources.professor,
-        downloads: resources.downloads,
         likes: resources.likes,
         createdAt: resources.createdAt,
         uploader: { name: users.name, email: users.email },
@@ -72,7 +71,32 @@ export async function getAdminPanelData() {
       .where(sql`${blockedIps.blockedBy} = 'system' and ${blockedIps.blockedAt} >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}`)
       .orderBy(desc(blockedIps.blockedAt))
       .limit(20),
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        image: users.image,
+        emailVerified: users.emailVerified,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .orderBy(desc(users.createdAt)),
+    db
+      .select({ userId: accounts.userId, provider: accounts.provider })
+      .from(accounts),
+    db
+      .select({ uploaderId: resources.uploaderId, count: sql<number>`count(*)::int` })
+      .from(resources)
+      .groupBy(resources.uploaderId),
   ]);
+
+  // Merge sign-in providers + upload counts onto each user for the Users tab.
+  const usersWithMeta = usersRows.map((u) => ({
+    ...u,
+    providers: accountsRows.filter((a) => a.userId === u.id).map((a) => a.provider),
+    resourceCount: resourceCounts.find((rc) => rc.uploaderId === u.id)?.count ?? 0,
+  }));
 
   return {
     blockedIps: blockedIpsList,
@@ -82,6 +106,7 @@ export async function getAdminPanelData() {
     reports: reportList,
     emailStats: emailData,
     autoBlocks: recentAutoBlocks,
+    users: usersWithMeta,
   };
 }
 
@@ -319,6 +344,41 @@ export async function dismissReportAndDeleteResource(reportId: string, resourceI
 
   // Delete all reports for this resource
   await db.delete(reports).where(eq(reports.resourceId, resourceId));
+
+  revalidatePath("/");
+  revalidatePath("/browse");
+  return { success: true };
+}
+
+// ============ USERS ============
+
+/**
+ * Delete a user account and everything they own. DB rows cascade via FKs
+ * (accounts, sessions, resources, likes, reports); their uploaded R2 files
+ * are removed explicitly first so storage doesn't keep orphans.
+ */
+export async function adminDeleteUser(userId: string) {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  const admin = await isAdmin(session.user.email);
+  if (!admin) throw new Error("Admin only");
+
+  const target = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  if (!target) throw new Error("User not found");
+  if (target.email === session.user.email) {
+    throw new Error("You cannot delete your own account");
+  }
+
+  const uploaded = await db
+    .select({ fileKey: resources.fileKey })
+    .from(resources)
+    .where(eq(resources.uploaderId, userId));
+  for (const row of uploaded) {
+    if (row.fileKey) {
+      await deleteR2Object(row.fileKey);
+    }
+  }
+  await db.delete(users).where(eq(users.id, userId));
 
   revalidatePath("/");
   revalidatePath("/browse");
