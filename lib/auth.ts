@@ -9,6 +9,14 @@ import { users, accounts, sessions, verificationTokens } from './db/schema';
 import { eq } from 'drizzle-orm';
 import { checkRateLimit } from './actions/rate-limit';
 import { POLICY_VERSION } from './constants';
+import { sendSignInNotificationEmail } from './email';
+
+// One "new sign-in" notification per user+provider per hour, max — guards
+// against rapid re-auth loops without needing a DB table. Module-level, so
+// per serverless instance; the daily per-address email limit in lib/email
+// backs this up globally.
+const SIGNIN_NOTIFY_DEDUPE_MS = 60 * 60 * 1000;
+const lastSignInNotified = new Map<string, number>();
 
 // No eager AUTH_SECRET check or adapter construction here: either would
 // kill `next build` in environments without secrets (e.g. CI). NextAuth's
@@ -143,6 +151,34 @@ const authConfig: NextAuthConfig = {
           .where(eq(users.id, user.id));
       } catch (error) {
         console.error('Failed to record policy consent for OAuth user:', error);
+      }
+    },
+    // Professional touch, like the major platforms: email the user on every
+    // sign-in (Google, GitHub, or email/password) — "New sign-in to your
+    // account". Sessions last 30 days, so this fires rarely — and the dedupe
+    // above keeps rapid re-auth loops from spamming. Best-effort: a
+    // notification failure must never break or slow-fail the sign-in itself.
+    async signIn({ user, account }) {
+      if (!account || !user.id || !user.email) return;
+      const providerLabel =
+        account.provider === 'google' ? 'Google'
+        : account.provider === 'github' ? 'GitHub'
+        : 'Email & password';
+
+      const key = `${user.id}:${account.provider}`;
+      const now = Date.now();
+      const last = lastSignInNotified.get(key);
+      if (last && now - last < SIGNIN_NOTIFY_DEDUPE_MS) return;
+      if (lastSignInNotified.size > 5000) lastSignInNotified.clear();
+      lastSignInNotified.set(key, now);
+
+      try {
+        const result = await sendSignInNotificationEmail(user.email, providerLabel);
+        if (!result.success) {
+          console.warn(`[auth] Sign-in notification not sent to ${user.email}: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('[auth] Sign-in notification failed:', error);
       }
     },
   },

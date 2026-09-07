@@ -300,3 +300,133 @@ function verifyEmailText(verifyUrl: string): string {
     "If you didn't create a Student Hub account, you can safely ignore this email.",
   ].join("\n");
 }
+
+/* ------------------------------------------------------------------ */
+/*  Sign-in notification email (Google/GitHub/email-password sign-ins)  */
+/* ------------------------------------------------------------------ */
+
+function signInNotificationHtml(provider: string, whenUtc: string, appUrl: string): string {
+  const resetUrl = `${appUrl}/login/forgot-password`;
+  const contactUrl = `${appUrl}/contact`;
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#0d9488;padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#111111;letter-spacing:-0.02em;">
+                Student Hub
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#111111;">
+                New sign-in to your account
+              </h2>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Hi there — you just signed in to <strong>Student Hub</strong> using
+                <strong>${provider}</strong> on <strong>${whenUtc}</strong>.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                If this was you, you're all set — no action is needed.
+              </p>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
+                <tr>
+                  <td style="background-color:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;">
+                    <p style="margin:0;font-size:13px;line-height:1.6;color:#9a3412;">
+                      <strong>Not you?</strong> If you don't recognize this sign-in,
+                      <a href="${resetUrl}" style="color:#c2410c;font-weight:700;">reset your password</a>
+                      right away and
+                      <a href="${contactUrl}" style="color:#c2410c;font-weight:700;">contact us</a>.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <a href="${appUrl}"
+                 style="display:inline-block;padding:12px 36px;font-size:15px;font-weight:700;color:#111111;background-color:#0d9488;border-radius:9999px;text-decoration:none;letter-spacing:0.02em;">
+                Go to Student Hub
+              </a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;text-align:center;">
+                You're receiving this because a sign-in occurred on your Student Hub account.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function signInNotificationText(provider: string, whenUtc: string, appUrl: string): string {
+  return [
+    "Student Hub — New sign-in to your account",
+    "",
+    `You just signed in to Student Hub using ${provider} on ${whenUtc}.`,
+    "",
+    "If this was you, you're all set — no action is needed.",
+    "If you don't recognize this sign-in, reset your password right away:",
+    `${appUrl}/login/forgot-password`,
+    "",
+    `Visit Student Hub: ${appUrl}`,
+  ].join("\n");
+}
+
+/**
+ * "New sign-in" security notification, sent for every sign-in method
+ * (Google, GitHub, email/password), in the style of the major platforms.
+ * Best-effort: callers must never let a notification failure break the
+ * sign-in flow.
+ */
+export async function sendSignInNotificationEmail(
+  to: string,
+  provider: string
+): Promise<{ success: boolean; error?: string }> {
+  const limit = await checkEmailSendLimit(to);
+  if (!limit.allowed) return { success: false, error: limit.error };
+
+  const appUrl = process.env.APP_URL || "http://localhost:3000";
+  const whenUtc = new Date().toUTCString().replace("GMT", "UTC");
+
+  try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn("RESEND_API_KEY not set — skipping sign-in notification email");
+      return { success: false, error: "Email service not configured" };
+    }
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to,
+      subject: `New sign-in to Student Hub via ${provider}`,
+      html: signInNotificationHtml(provider, whenUtc, appUrl),
+      text: signInNotificationText(provider, whenUtc, appUrl),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to send sign-in notification email:", err);
+    return { success: false, error: "Failed to send email" };
+  }
+}
