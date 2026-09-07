@@ -565,11 +565,19 @@ async function runAuthPhase() {
       `line=${consentLine} links=${termsLink}`);
 
     await page.getByRole("button", { name: /Sign Up/ }).click();
-    await page.waitForFunction(
-      () => document.body.innerText.includes("Check your inbox"),
-      undefined,
-      { timeout: 20000 }
-    );
+    try {
+      await page.waitForFunction(
+        () => document.body.innerText.includes("Check your inbox"),
+        undefined,
+        { timeout: 20000 }
+      );
+    } catch (e) {
+      // Surface what the page actually shows (toast errors render into body)
+      const pageText = await page.evaluate(() =>
+        document.body.innerText.replace(/\s+/g, " ").slice(0, 300)
+      );
+      throw new Error(`signup never showed "Check your inbox" — page says: ${pageText}`);
+    }
     check("auth: signup accepted, verification prompt shown", true);
 
     // 2. Grab the verification token straight from the DB (email delivery is

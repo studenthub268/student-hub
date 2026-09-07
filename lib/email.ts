@@ -4,7 +4,18 @@ import { db } from "@/lib/db";
 import { suppressedEmails } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+/**
+ * Lazily construct the Resend client. `new Resend(undefined)` THROWS at
+ * construction, so building it at module top-level makes every module import
+ * fail (e.g. CI without RESEND_API_KEY) — the signup server action would 500
+ * on first use. Instead, resolve on first send and return null when the key
+ * is not configured; callers treat null as "email skipped".
+ */
+function getResendClient(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
 
 const FROM_ADDRESS = process.env.EMAIL_FROM || "Student Hub <noreply@studenthub.dev>";
 
@@ -61,6 +72,11 @@ export async function sendPasswordResetEmail(
   const resetUrl = `${appUrl}/auth/reset-password?token=${token}`;
 
   try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn("RESEND_API_KEY not set — skipping password reset email (token still issued)");
+      return { success: false, error: "Email service not configured" };
+    }
     await resend.emails.send({
       from: FROM_ADDRESS,
       to,
@@ -162,6 +178,11 @@ export async function sendVerificationEmail(
   const verifyUrl = `${appUrl}/auth/verify-email?token=${token}`;
 
   try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn("RESEND_API_KEY not set — skipping verification email (token still issued)");
+      return { success: false, error: "Email service not configured" };
+    }
     await resend.emails.send({
       from: FROM_ADDRESS,
       to,
