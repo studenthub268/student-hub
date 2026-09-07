@@ -32,10 +32,7 @@ export default function Footer() {
               Upload
             </Link>
             <Link href="/terms" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
-              Terms
-            </Link>
-            <Link href="/privacy" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
-              Privacy
+              Terms & Privacy
             </Link>
           </div>
         </div>
