@@ -3,12 +3,33 @@ import { auth } from "@/lib/auth";
 import { putR2Object } from "@/lib/r2";
 import { randomUUID } from "crypto";
 import { validateFile } from "@/lib/uploads";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verified email required to push files to storage — matches the
+    // uploadResource gate, so unverified users can't consume storage for
+    // resources they aren't allowed to publish.
+    const uploaderEmail = session.user.email;
+    if (!uploaderEmail) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const [uploader] = await db
+      .select({ emailVerified: users.emailVerified })
+      .from(users)
+      .where(eq(users.email, uploaderEmail));
+    if (!uploader?.emailVerified) {
+      return NextResponse.json(
+        { error: "Verify your email address before uploading — check your inbox for the verification link, or use 'Resend verification email' at the top of the page." },
+        { status: 403 }
+      );
     }
 
     const formData = await request.formData();

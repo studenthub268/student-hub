@@ -1,5 +1,13 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
+// 'unsafe-eval' is required only by React dev tooling — production keeps a
+// tighter script policy. (A full nonce-based CSP is the next hardening step;
+// it forces every prerendered page to render dynamically, so it's a bigger
+// change than it looks.)
+const scriptSrc = `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} https://challenges.cloudflare.com`;
+
 const securityHeaders = [
   {
     key: "X-DNS-Prefetch-Control",
@@ -37,7 +45,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://student-hub-uet.vercel.app https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
       "font-src 'self' https://fonts.gstatic.com",
