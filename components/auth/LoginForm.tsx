@@ -6,7 +6,6 @@ import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { signIn } from "next-auth/react";
 import { BookOpen, Search, Users } from "lucide-react";
-import { isEmailVerified } from "@/lib/actions/auth";
 import { getErrorMessage } from "@/lib/utils";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
@@ -117,14 +116,8 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      // Check verification status before attempting sign-in so we can
-      // show a targeted message for unverified accounts.
-      const verification = await isEmailVerified(email);
-      if (verification.verified === false && verification.exists) {
-        toast.error("Please verify your email first. Check your inbox for the verification link.");
-        return;
-      }
-
+      // Unverified accounts CAN sign in now — the persistent verification
+      // banner on every page nudges them to verify instead of a hard block.
       const result = await signIn("credentials", {
         email,
         password,

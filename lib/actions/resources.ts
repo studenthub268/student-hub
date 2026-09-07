@@ -39,8 +39,22 @@ export async function uploadResource(formData: {
   file_size: number;
 }) {
   const session = await auth();
-  if (!session?.user) {
+  const uploaderEmail = session?.user?.email;
+  if (!session?.user || !uploaderEmail) {
     throw new Error("Authentication required");
+  }
+
+  // Verified email required to upload: unverified users can sign in and
+  // browse (nagged by the banner), but can't contribute content until they
+  // prove ownership of their address.
+  const [uploader] = await db
+    .select({ emailVerified: users.emailVerified })
+    .from(users)
+    .where(eq(users.email, uploaderEmail));
+  if (!uploader?.emailVerified) {
+    throw new Error(
+      "Verify your email address before uploading — check your inbox for the verification link, or use 'Resend verification email' at the top of the page."
+    );
   }
 
   const validatedData = resourceSchema.parse(formData);

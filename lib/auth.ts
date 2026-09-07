@@ -111,10 +111,9 @@ const authConfig: NextAuthConfig = {
 
         if (!user || !user.passwordHash) return null;
 
-        // Block unverified users — they must verify their email first
-        if (!user.emailVerified) {
-          throw new Error("EMAIL_NOT_VERIFIED");
-        }
+        // Unverified users MAY sign in: a persistent top-of-page banner nags
+        // them to verify on every page and uploads are gated until verified.
+        // Blocking login entirely left the banner nothing to show for.
 
         const isValid = await bcrypt.compare(credentials.password as string, user.passwordHash);
 
