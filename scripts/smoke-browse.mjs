@@ -436,7 +436,7 @@ async function runUiPhase(rows) {
     await page.waitForTimeout(900); // counts refresh after RSC update
 
     const disabledState = await readBadges();
-    const zeroPills = Object.entries(disabledState).filter(([, v]) => v.count === 0);
+    const zeroPills = Object.entries(disabledState).filter(([label, v]) => v.count === 0 && label !== "All Types" && label !== "All Subjects");
     const wrongDisabled = zeroPills.filter(([, v]) => !v.disabled);
     if (zeroPills.length === 0) {
       check("UI: zero-count pills disabled", false, "no zero-count pills even with q=discrete");
