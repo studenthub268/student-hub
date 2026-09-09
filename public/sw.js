@@ -1,5 +1,10 @@
-const STATIC_CACHE = "student-hub-static-v4";
-const DYNAMIC_CACHE = "student-hub-dynamic-v4";
+const STATIC_CACHE = "student-hub-static-v5";
+const DYNAMIC_CACHE = "student-hub-dynamic-v5";
+
+// Status endpoints (verification banner, admin flag) — cached so signed-in
+// pages render correctly offline and instantly, refreshed in background.
+const STATUS_CACHE = "student-hub-status-v5";
+const STATUS_PATHS = ["/api/check-verified", "/api/check-admin"];
 
 // Dev servers reuse deterministic chunk URLs with changing contents; the
 // service worker must never serve them cache-first or code changes will
@@ -74,7 +79,35 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   // Skip API calls and server actions
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) return;
+  if (url.pathname.startsWith("/auth/")) return;
+
+  // Status endpoints — stale-while-revalidate so the verification/admin
+  // banner works offline and never delays a page render.
+  if (STATUS_PATHS.includes(url.pathname)) {
+    event.respondWith(
+      caches.open(STATUS_CACHE).then((cache) =>
+        cache.match(request).then((cached) => {
+          const network = fetch(request)
+            .then((response) => {
+              if (response.ok) cache.put(request, response.clone());
+              return response;
+            })
+            .catch(() => cached);
+          return cached || network;
+        })
+      )
+    );
+    return;
+  }
+
+  // Never intercept file downloads (R2) or auth callbacks
+  if (
+    url.hostname.includes("r2.") ||
+    url.hostname.includes("vercel-storage") ||
+    url.pathname.startsWith("/api/download")
+  ) {
+    return;
+  }
 
   // Static assets — cache first, then network
   if (
@@ -119,28 +152,49 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages — network first, fallback to cache, fallback to offline page.
-  // Covers both precached routes and any page visited at least once while
-  // online; uncached navigations land on the precached /offline page.
+  // Pages — STALE-WHILE-REVALIDATE: serve the cached page instantly (works
+  // offline), then refresh the cache in the background. First-ever visits
+  // still come from the network. Cached pages expire after 24h offline.
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(DYNAMIC_CACHE).then((cache) => {
-          cache.put(request, clone);
-          trimDynamicCache();
+    caches.open(DYNAMIC_CACHE).then((cache) =>
+      cache.match(request).then((cached) => {
+        const isStale = !cached ||
+          (cached.headers.get("sw-cached-at") &&
+            Date.now() - new Date(cached.headers.get("sw-cached-at")).getTime() > 86_400_000);
+
+        const fetchAndCache = fetch(request)
+          .then((response) => {
+            if (response.ok && response.type === "basic") {
+              const clone = response.clone();
+              const headers = new Headers(response.headers);
+              headers.set("sw-cached-at", new Date().toISOString());
+              cache.put(
+                request,
+                new Response(clone.body, {
+                  status: response.status,
+                  statusText: response.statusText,
+                  headers,
+                })
+              );
+              trimDynamicCache();
+            }
+            return response;
+          })
+          .catch(() => undefined);
+
+        // Stale (or offline): answer from cache immediately while the
+        // network refresh happens in the background.
+        if (cached && !isStale) {
+          fetchAndCache;
+          return cached;
+        }
+        return fetchAndCache.then((response) => {
+          if (response) return response;
+          // Offline fallback for navigations
+          if (request.mode === "navigate") return caches.match("/offline");
+          return cached || new Response("Offline", { status: 503 });
         });
-        return response;
       })
-      .catch(() => {
-        return caches.match(request).then((cached) => {
-          if (cached) return cached;
-          // Offline fallback for navigation
-          if (request.mode === "navigate") {
-            return caches.match("/offline");
-          }
-          return new Response("Offline", { status: 503 });
-        });
-      })
+    )
   );
 });
