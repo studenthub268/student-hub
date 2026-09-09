@@ -36,7 +36,7 @@ export default function ProfileContent({
               <Avatar image={profile?.image} name={profile?.name} email={profile?.email} size={88} />
             </div>
             <h1 className="mt-6 text-2xl font-black tracking-tight text-black">
-              {profile?.name ? profile.name.trim().split(/\s+/)[0] : "Student"}
+              {profile?.name || "Student"}
             </h1>
             <p className="mt-1 text-sm font-medium text-black/60 break-all">
               {profile?.email}
