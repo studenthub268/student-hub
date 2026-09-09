@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://student-hub-uet.vercel.app"),
   icons: {
     icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "any" },
       { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
       { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
     ],
@@ -80,7 +81,14 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
-        <Toaster position="bottom-right" />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            className: "sh-toast sh-toast-default",
+            success: { className: "sh-toast sh-toast-success" },
+            error: { className: "sh-toast sh-toast-error" },
+          }}
+        />
         <ServiceWorkerRegister />
       </body>
     </html>

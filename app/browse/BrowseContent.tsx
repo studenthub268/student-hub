@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, ChevronDown } from "lucide-react";
 import { SUBJECTS, RESOURCE_TYPES } from "@/lib/constants";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import type { Resource } from "@/lib/db/schema";
@@ -56,6 +56,9 @@ function FilterPill({ label, active, count, disabled, pending, onClick }: Filter
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+// On phones, only the first few subject chips show until "Show more" is tapped.
+const MOBILE_SUBJECT_LIMIT = 6;
+
 export default function BrowseContent({
   resources,
   typeCounts,
@@ -69,7 +72,18 @@ export default function BrowseContent({
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "all");
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get("subject") || "all");
+  const [showAllSubjects, setShowAllSubjects] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Track viewport width so the subject list collapses only on phones.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsMobile(!mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   // Navigate with the new params — the server (single source of truth)
   // re-queries and streams back results + fresh facet counts.
@@ -195,7 +209,17 @@ export default function BrowseContent({
                 applyParams({ subject: "all" });
               }}
             />
-            {SUBJECTS.map((subject) => (
+            {(isMobile && !showAllSubjects
+              ? [
+                  ...SUBJECTS.slice(0, MOBILE_SUBJECT_LIMIT),
+                  // Keep an active chip visible even if it sits past the cut-off
+                  ...(selectedSubject !== "all" &&
+                  !SUBJECTS.slice(0, MOBILE_SUBJECT_LIMIT).includes(selectedSubject)
+                    ? [selectedSubject]
+                    : []),
+                ]
+              : SUBJECTS
+            ).map((subject) => (
               <FilterPill
                 key={subject}
                 label={subject}
@@ -209,6 +233,18 @@ export default function BrowseContent({
                 }}
               />
             ))}
+            {isMobile && SUBJECTS.length > MOBILE_SUBJECT_LIMIT && (
+              <button
+                onClick={() => setShowAllSubjects((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-black/30 text-black/60 transition-colors hover:border-black hover:text-black"
+              >
+                {showAllSubjects ? "Show less" : `Show more (${SUBJECTS.length - MOBILE_SUBJECT_LIMIT})`}
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${showAllSubjects ? "rotate-180" : ""}`}
+                  strokeWidth={2}
+                />
+              </button>
+            )}
           </div>
         </div>
       </div>
