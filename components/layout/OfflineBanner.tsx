@@ -35,7 +35,10 @@ export function OfflineBanner() {
           cache: "no-store",
           // Abort quickly so the banner never hangs in limbo
           signal: AbortSignal.timeout(5000),
-        });
+          // Low priority: connectivity probes must never compete with real
+          // page content for bandwidth.
+          priority: "low",
+        } as RequestInit & { priority: "low" });
         setOffline(!res.ok);
       } catch {
         setOffline(true);

@@ -12,6 +12,12 @@ import { DeployWatcher } from "@/components/DeployWatcher";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  // Serve only the weights actually used (400/500/700 via font-bold etc.):
+  // smaller font files, fewer font variants to download before text paints.
+  weight: ["400", "500", "700"],
+  display: "swap", // text renders immediately in the fallback font
+  adjustFontFallback: true, // metric-compatible fallback => no layout shift
+  preload: true,
 });
 
 

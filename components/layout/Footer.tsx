@@ -22,13 +22,13 @@ export default function Footer() {
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-            <Link href="/" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
+            <Link href="/" prefetch className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
               Home
             </Link>
-            <Link href="/browse" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
+            <Link href="/browse" prefetch className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
               Browse Resources
             </Link>
-            <Link href="/upload" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
+            <Link href="/upload" prefetch className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
               Upload
             </Link>
             <Link href="/terms" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">

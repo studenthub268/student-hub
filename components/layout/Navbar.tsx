@@ -46,7 +46,7 @@ return (
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" prefetch className="flex items-center gap-2 group">
             <Image src="/logo.png" alt="Student Hub Logo" width={64} height={64} className="w-8 h-8 rounded-full object-contain" priority />
             <span className="text-xl font-bold tracking-tighter text-black ml-1 group-hover:opacity-80">Student Hub</span>
           </Link>
@@ -55,7 +55,7 @@ return (
         {/* Desktop Nav Links */}
         <div className="hidden md:flex items-center md:space-x-5 lg:space-x-8">
           {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-medium text-black hover:text-gray-500 transition-colors">
+            <Link key={link.href} href={link.href} prefetch className="text-sm font-medium text-black hover:text-gray-500 transition-colors">
               {link.label}
             </Link>
           ))}
