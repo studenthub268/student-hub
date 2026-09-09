@@ -47,7 +47,7 @@ export default function NavbarSearch({
       onClick={onOpenSearch}
       className="relative flex items-center cursor-pointer group"
     >
-      <Search className="absolute left-3 h-4 w-4 text-gray-400 pointer-events-none transition-colors group-hover:text-black" />
+      <Search className="absolute left-3 h-4 w-4 text-black/70 pointer-events-none transition-colors group-hover:text-black" />
       <input
         type="text"
         readOnly
@@ -55,7 +55,7 @@ export default function NavbarSearch({
         placeholder={fullWidth ? "Search resources, subjects…" : "Search…"}
         tabIndex={-1}
         aria-hidden
-        className={`h-10 ${fullWidth ? "w-full" : "w-40 md:w-56"} rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-gray-500 transition-colors group-hover:bg-white`}
+        className={`h-10 ${fullWidth ? "w-full" : "w-40 md:w-56"} rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-black/60 transition-colors group-hover:bg-white`}
       />
     </div>
   );

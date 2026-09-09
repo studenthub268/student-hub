@@ -120,14 +120,14 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
       >
         {/* Input row */}
         <form onSubmit={handleSubmit} className="relative flex items-center border-b-2 border-black">
-          <Search className="absolute left-5 h-5 w-5 text-black/40 pointer-events-none" strokeWidth={2} />
+          <Search className="absolute left-5 h-5 w-5 text-black/70 pointer-events-none" strokeWidth={2} />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search resources, subjects…"
-            className="w-full h-16 pl-14 pr-14 text-lg font-medium outline-none placeholder:text-black/30"
+            className="w-full h-16 pl-14 pr-14 text-lg font-medium outline-none placeholder:text-black/40"
             autoComplete="off"
           />
           {query && (
