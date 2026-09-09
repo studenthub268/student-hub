@@ -40,7 +40,7 @@ return (
           {pathname !== "/" && (
             <button
               onClick={() => router.back()}
-              className="md:hidden p-2 rounded-xl text-black hover:bg-black/10 active:bg-black/15 transition-all press"
+              className="md:hidden p-2 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -70,7 +70,7 @@ return (
           {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden flex items-center justify-center h-10 w-10 rounded-xl text-black hover:bg-black/10 active:bg-black/15 transition-all press"
+            className="md:hidden flex items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
