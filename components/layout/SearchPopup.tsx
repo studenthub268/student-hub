@@ -34,12 +34,25 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  // Autofocus the input shortly after mount (state starts empty — the
-  // parent remounts us per open via `key`, so no reset effect is needed).
+  // Fresh state + autofocus on EVERY open. The component stays mounted while
+  // `open` toggles, so a mount-once effect never re-ran — the input wasn't
+  // focused and users had to click it a second time before typing.
   useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 50);
+    if (!open) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- reset-on-open is the point; it runs once per open, not in a loop */
+    setQuery("");
+    setResourceSuggestions([]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // The portal attaches a frame after `open` flips (see `mounted`), so
+    // retry briefly until the input exists.
+    let tries = 0;
+    const focus = () => {
+      if (inputRef.current) inputRef.current.focus();
+      else if (tries++ < 10) setTimeout(focus, 30);
+    };
+    const t = setTimeout(focus, 20);
     return () => clearTimeout(t);
-  }, []);
+  }, [open]);
 
   // Debounced live results from the server action
   useEffect(() => {
@@ -129,6 +142,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
             placeholder="Search resources, subjects…"
             className="w-full h-16 pl-14 pr-14 text-lg font-medium outline-none placeholder:text-black/40"
             autoComplete="off"
+            autoFocus
           />
           {query && (
             <button
