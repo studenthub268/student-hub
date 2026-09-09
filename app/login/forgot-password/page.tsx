@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleResetRequest} className="space-y-6">
+          <form onSubmit={handleResetRequest} noValidate className="space-y-6">
             <div>
               <label className="mb-2 block text-sm font-bold text-black tracking-wider">Email Address</label>
               <input

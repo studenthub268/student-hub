@@ -128,7 +128,7 @@ export default function UploadForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} noValidate className="space-y-8">
       <div>
         <label className="mb-2 block text-sm font-bold text-black tracking-wider">Title <span className="text-red-500">*</span></label>
         <input

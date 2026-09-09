@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        <form onSubmit={handlePasswordReset} className="space-y-6">
+        <form onSubmit={handlePasswordReset} noValidate className="space-y-6">
           <div>
             <label className="mb-2 block text-sm font-bold text-black tracking-wider">New Password</label>
             <PasswordInput

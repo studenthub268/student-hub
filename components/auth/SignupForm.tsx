@@ -169,7 +169,7 @@ export function SignupForm() {
             <p className="text-sm sm:text-base text-black/60 font-medium tracking-wider mt-2">Join the student hub today</p>
           </div>
 
-          <form onSubmit={handleSignup} className="space-y-4">
+          <form onSubmit={handleSignup} noValidate className="space-y-4">
             <div>
               <label className="mb-2 block text-sm font-bold text-black tracking-widest">Full Name</label>
               <input

@@ -7,6 +7,7 @@ import { toggleLike, recordDownload } from "@/lib/actions/likes";
 import { deleteResource } from "@/lib/actions/resources";
 import { useRouter } from "next/navigation";
 import { getErrorMessage } from "@/lib/utils";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface ResourceActionsProps {
   resourceId: string;
@@ -28,6 +29,7 @@ export default function ResourceActions({
   const [likes, setLikes] = useState(initialLikes);
   const [hasLiked, setHasLiked] = useState(hasLikedInitially);
   const [isLiking, setIsLiking] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
@@ -83,7 +85,6 @@ export default function ResourceActions({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this resource? This action cannot be undone.")) return;
     setIsDeleting(true);
     try {
       await deleteResource(resourceId);
@@ -93,6 +94,7 @@ export default function ResourceActions({
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to delete resource"));
       setIsDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -109,10 +111,20 @@ export default function ResourceActions({
         <Share2 size={20} strokeWidth={2} /> Share
       </button>
       {currentUserId && currentUserId === uploaderId && (
-        <button onClick={handleDelete} disabled={isDeleting} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border-2 border-red-500 text-red-500 px-6 py-3 rounded-full font-bold tracking-wider text-sm hover:bg-red-50 transition-colors disabled:opacity-50">
+        <button onClick={() => setConfirmDelete(true)} disabled={isDeleting} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border-2 border-red-500 text-red-500 px-6 py-3 rounded-full font-bold tracking-wider text-sm hover:bg-red-50 transition-colors disabled:opacity-50">
           <Trash2 size={20} strokeWidth={2} /> {isDeleting ? "Deleting..." : "Delete"}
         </button>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete this resource?"
+        message="This will permanently remove the resource and its file. This action cannot be undone."
+        busy={isDeleting}
+        busyLabel="Deleting…"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
       <button onClick={() => router.push("/report?resourceId=" + resourceId)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border-2 border-red-500 text-red-500 px-6 py-3 rounded-full font-bold tracking-wider text-sm hover:bg-red-50 transition-all">
         <AlertTriangle size={20} strokeWidth={2} /> Report Issue
       </button>

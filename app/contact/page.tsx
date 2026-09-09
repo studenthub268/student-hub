@@ -146,7 +146,7 @@ export default function ContactPage() {
                 Send a Message
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} noValidate className="space-y-6">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-black tracking-wider">Your Name <span className="text-red-500">*</span></label>
                   <input

@@ -113,6 +113,10 @@ export function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password) {
+      toast.error("Enter your email and password");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -148,7 +152,7 @@ export function LoginForm() {
             <p className="text-sm sm:text-base text-black/60 font-medium tracking-wider mt-2">Sign in to your account</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} noValidate className="space-y-6">
             <div>
               <label className="mb-2 block text-sm font-bold text-black tracking-widest">Email</label>
               <input

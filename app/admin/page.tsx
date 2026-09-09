@@ -42,6 +42,7 @@ import { isPermanentAdmin } from "@/lib/constants";
 import type { BlockedIp, AdminEmail, Message } from "@/lib/db/schema";
 import type { LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type Tab = "security" | "resources" | "reports" | "messages" | "users" | "admins" | "email";
 
@@ -155,6 +156,16 @@ export default function AdminPanel() {
   const [autoBlocks, setAutoBlocks] = useState<AutoBlock[]>(initialCache?.data.autoBlocks ?? []);
   const [usersList, setUsersList] = useState<AdminUser[]>(initialCache?.data.users ?? []);
 
+  // Themed delete confirmation (replaces native confirm())
+  const [confirmState, setConfirmState] = useState<null | {
+    type: "resource" | "reported" | "user";
+    id: string;
+    title: string;
+    email?: string;
+    reportId?: string;
+  }>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
   const loadData = useCallback(async (opts?: { background?: boolean }) => {
     try {
       const data = await getAdminPanelData();
@@ -212,15 +223,8 @@ export default function AdminPanel() {
   };
 
   // ---- Resource Management ----
-  const handleDeleteResource = async (id: string, title: string) => {
-    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    try {
-      await adminDeleteResource(id);
-      toast.success("Resource deleted");
-      loadData();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
+  const handleDeleteResource = (id: string, title: string) => {
+    setConfirmState({ type: "resource", id, title });
   };
 
   const startEdit = (resource: AdminResource) => {
@@ -268,15 +272,8 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteReportedResource = async (reportId: string, resourceId: string, title: string) => {
-    if (!confirm(`Delete reported resource "${title}"? This will also dismiss all reports for it.`)) return;
-    try {
-      await dismissReportAndDeleteResource(reportId, resourceId);
-      toast.success("Resource deleted and report dismissed");
-      loadData();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
+  const handleDeleteReportedResource = (reportId: string, resourceId: string, title: string) => {
+    setConfirmState({ type: "reported", id: resourceId, title, reportId });
   };
 
   // ---- Admin Management ----
@@ -324,14 +321,30 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteUser = async (id: string, email: string) => {
-    if (!confirm(`Delete the account ${email}? Their uploaded resources and data are permanently removed. This cannot be undone.`)) return;
+  const handleDeleteUser = (id: string, email: string) => {
+    setConfirmState({ type: "user", id, title: email, email });
+  };
+
+  const executeConfirmedDelete = async () => {
+    if (!confirmState) return;
+    setIsConfirming(true);
     try {
-      await adminDeleteUser(id);
-      toast.success(`Deleted account ${email}`);
+      if (confirmState.type === "resource") {
+        await adminDeleteResource(confirmState.id);
+        toast.success("Resource deleted");
+      } else if (confirmState.type === "reported" && confirmState.reportId) {
+        await dismissReportAndDeleteResource(confirmState.reportId, confirmState.id);
+        toast.success("Resource deleted and report dismissed");
+      } else if (confirmState.type === "user") {
+        await adminDeleteUser(confirmState.id);
+        toast.success(`Deleted account ${confirmState.email}`);
+      }
+      setConfirmState(null);
       loadData();
     } catch (error) {
       toast.error(getErrorMessage(error));
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -431,7 +444,7 @@ export default function AdminPanel() {
             </div>
           )}
 
-          <form onSubmit={handleBlockIp} className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
+          <form onSubmit={handleBlockIp} noValidate className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
             <h3 className="font-bold text-lg mb-4">Block an IP address</h3>
             <div className="flex flex-col sm:flex-row gap-3">
               <input type="text" value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="IP address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
@@ -710,7 +723,7 @@ export default function AdminPanel() {
       {/* ===== ADMINS TAB ===== */}
       {activeTab === "admins" && (
         <div className="space-y-6">
-          <form onSubmit={handleAddAdmin} className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
+          <form onSubmit={handleAddAdmin} noValidate className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
             <h3 className="font-bold text-lg mb-4">Add admin</h3>
             <div className="flex flex-col sm:flex-row gap-3">
               <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="Email address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
@@ -841,6 +854,28 @@ export default function AdminPanel() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState !== null}
+        title={
+          confirmState?.type === "user"
+            ? "Delete this account?"
+            : confirmState?.type === "reported"
+              ? "Delete reported resource?"
+              : "Delete this resource?"
+        }
+        message={
+          confirmState?.type === "user"
+            ? `The account ${confirmState?.email} and everything it uploaded will be permanently removed. This cannot be undone.`
+            : confirmState?.type === "reported"
+              ? `"${confirmState?.title}" will be deleted and all reports against it dismissed. This cannot be undone.`
+              : `"${confirmState?.title}" will be permanently deleted. This cannot be undone.`
+        }
+        busy={isConfirming}
+        busyLabel="Deleting…"
+        onConfirm={executeConfirmedDelete}
+        onCancel={() => !isConfirming && setConfirmState(null)}
+      />
     </div>
   );
 }

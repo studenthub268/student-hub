@@ -174,7 +174,7 @@ function ReportContent() {
 
       {/* Right side: Form */}
       <div className="lg:col-span-7">
-        <form onSubmit={handleSubmit} className="p-8 sm:p-10 bg-white border-4 border-black rounded-[3rem] shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] space-y-8">
+        <form onSubmit={handleSubmit} noValidate className="p-8 sm:p-10 bg-white border-4 border-black rounded-[3rem] shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] space-y-8">
           <h2 className="text-3xl font-black tracking-tighter mb-4 flex items-center gap-3">
             <div className="h-10 w-10 bg-black text-[#0D9488] rounded-full flex items-center justify-center text-xl">2</div>
             Report Details
