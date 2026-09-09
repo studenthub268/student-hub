@@ -99,7 +99,8 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
 
   const handleSelectSuggestion = (suggestion: Suggestion) => {
     if (suggestion.type === "Subject") {
-      go(`/browse?subject=${encodeURIComponent(suggestion.text)}`);
+      // from=search tells /browse to show results only — no filter chips.
+      go(`/browse?subject=${encodeURIComponent(suggestion.text)}&from=search`);
     } else {
       go(`/resource/${suggestion.id}`);
     }
@@ -115,7 +116,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Search Student Hub"
-        className="relative w-full max-w-xl rounded-[2rem] border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden fade-up"
+        className="relative w-full max-w-xl rounded-[2rem] border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden scale-in"
       >
         {/* Input row */}
         <form onSubmit={handleSubmit} className="relative flex items-center border-b-2 border-black">

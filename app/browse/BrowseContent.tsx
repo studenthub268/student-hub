@@ -67,6 +67,11 @@ export default function BrowseContent({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
+  // Arrivals from a search suggestion show results only — no filter wall.
+  // Opening /browse directly keeps the full filter experience.
+  const fromSearch = searchParams.get("from") === "search";
+  const searchContext = searchParams.get("subject") || searchParams.get("type");
+
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "all");
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get("subject") || "all");
   const [showAllSubjects, setShowAllSubjects] = useState(false);
@@ -115,8 +120,11 @@ export default function BrowseContent({
         </div>
       </div>
 
-      {/* Filters — server-computed counts; type counts ignore the subject
-          facet and vice versa so pills only advertise reachable results. */}
+      {/* Filters — hidden for search arrivals (results only); shown when
+          /browse is opened directly. Server-computed counts; type counts
+          ignore the subject facet and vice versa so pills only advertise
+          reachable results. */}
+      {!fromSearch && (
       <div className="space-y-6 mb-10 fade-up">
         {/* Type Filter */}
         <div>
@@ -202,11 +210,28 @@ export default function BrowseContent({
           </div>
         </div>
       </div>
+      )}
 
       {/* Results */}
       <div>
         <div className="mb-6 text-base text-black/60 font-medium">
-          Showing {resources.length} resource{resources.length !== 1 && "s"}
+          {fromSearch ? (
+            <>
+              Showing {resources.length} result{resources.length !== 1 && "s"}
+              {searchContext && (
+                <> for <span className="font-bold text-black">“{searchContext}”</span></>
+              )}
+              <span className="text-black/30"> · </span>
+              <button
+                onClick={() => startTransition(() => router.push("/browse"))}
+                className="underline underline-offset-2 hover:text-black transition-colors"
+              >
+                Browse with filters
+              </button>
+            </>
+          ) : (
+            <>Showing {resources.length} resource{resources.length !== 1 && "s"}</>
+          )}
         </div>
 
         {resources.length > 0 ? (

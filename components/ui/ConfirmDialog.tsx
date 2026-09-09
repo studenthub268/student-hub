@@ -59,7 +59,7 @@ export default function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-[2rem] border-2 border-black bg-white p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+        className="relative w-full max-w-md rounded-[2rem] border-2 border-black bg-white p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] scale-in"
       >
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-black bg-red-500 text-white">
           <AlertTriangle className="h-6 w-6" strokeWidth={2} />

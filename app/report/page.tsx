@@ -251,7 +251,7 @@ export default function ReportPage() {
           <p className="text-xl font-bold tracking-tight text-black/40">Help us maintain the integrity of Student-Hub.</p>
         </div>
 
-        <Suspense fallback={<div className="py-20 text-center font-black tracking-widest animate-pulse">Loading Report Center...</div>}>
+        <Suspense fallback={<div className="py-20 text-center font-black tracking-widest text-black/30">Loading Report Center…</div>}>
           <ReportContent />
         </Suspense>
 

@@ -15,14 +15,14 @@ export function ResourceCard({ resource }: ResourceCardProps) {
 
   return (
     <Link href={`/resource/${resource.id}`} className="block h-full group">
-      <div className="flex flex-col h-full bg-white rounded-[2rem] border-2 border-[#111] shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-all duration-300 group-hover:shadow-[8px_8px_0px_0px_rgba(17,17,17,1)] group-hover:-translate-y-1 overflow-hidden relative">
+      <div className="flex flex-col h-full bg-white rounded-[2rem] border-2 border-[#111] shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-all duration-300 ease-out group-hover:shadow-[8px_8px_0px_0px_rgba(17,17,17,1)] group-hover:-translate-y-1.5 active:scale-[0.98] overflow-hidden relative">
 
         <div className="p-6 sm:p-8 flex flex-col flex-grow">
           <div className="flex items-start justify-between mb-8">
             <div className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold tracking-wider">
               {resource.type.replace('-', ' ')}
             </div>
-            <div className="p-2 rounded-full border border-black group-hover:bg-[#0D9488] transition-colors">
+            <div className="p-2 rounded-full border border-black group-hover:bg-[#0D9488] group-hover:rotate-45 transition-all duration-300">
               <ArrowUpRight className="h-5 w-5" strokeWidth={1.5} />
             </div>
           </div>

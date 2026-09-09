@@ -139,7 +139,7 @@ export default async function Home() {
 
       {/* Final CTA - Only show if not logged in */}
       {!session && (
-        <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full">
+        <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full below-fold">
           <div className="bg-[#111] text-white rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 text-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-neutral-800/20 to-transparent opacity-50"></div>
             <div className="relative z-10">

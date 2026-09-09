@@ -22,7 +22,7 @@ export function Navbar() {
   const pathname = usePathname();
 
 return (
-    <nav className="sticky top-0 z-50 w-full bg-white px-4 sm:px-6 lg:px-8 py-4">
+    <nav className="sticky top-0 z-50 w-full bg-white/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/75 px-4 sm:px-6 lg:px-8 py-4 border-b border-black/5">
       <div className="mx-auto max-w-7xl flex h-14 items-center justify-between">
 
         {/* Logo + Mobile Back Button */}
@@ -30,7 +30,7 @@ return (
           {pathname !== "/" && (
             <button
               onClick={() => router.back()}
-              className="md:hidden p-2 rounded-xl border-2 border-black bg-white hover:bg-[#0D9488] transition-all"
+              className="md:hidden p-2 rounded-xl border-2 border-black bg-white hover:bg-[#0D9488] transition-all press"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -60,7 +60,7 @@ return (
           {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden flex items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-colors"
+            className="md:hidden flex items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-colors press"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -71,7 +71,7 @@ return (
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden mt-4 mx-auto max-w-7xl">
-          <div className="rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto">
+          <div className="rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto scale-in origin-top">
             
             {/* Mobile Search */}
             {pathname !== "/find" && (

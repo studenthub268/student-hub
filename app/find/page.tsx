@@ -111,7 +111,8 @@ function FindContent() {
                   key={`subject-${subject}`}
                   onClick={() => {
                     setShowSuggestions(false);
-                    router.push(`/browse?subject=${encodeURIComponent(subject)}`);
+                    // from=search tells /browse to show results only — no filter chips.
+                    router.push(`/browse?subject=${encodeURIComponent(subject)}&from=search`);
                   }
                   }
                   className="w-full group cursor-pointer px-5 sm:px-8 py-4 border-b border-black/5 flex items-center justify-between gap-3 transition-colors hover:bg-[#0D9488] text-left"

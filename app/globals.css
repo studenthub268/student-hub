@@ -19,6 +19,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ---- Premium base ---- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Keyboard focus that matches the brand (accessibility = premium) */
+:focus-visible {
+  outline: 2px solid #0D9488;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Below-the-fold sections: skip rendering work until scrolled near.
+   Big win for long pages on slow devices. */
+.below-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
+
 /* ---- Themed toasts (react-hot-toast) — neo-brutalist to match the site.
      Classes are attached via <Toaster toastOptions>. ---- */
 .sh-toast {
@@ -44,6 +63,8 @@ body {
 
 /* ---- Motion system: subtle, GPU-composited, zero JS ----
    fade-up: entrance used on page sections and cards.
+   scale-in: dialogs and popovers (search popup, confirm dialog).
+   shimmer: skeleton loading state.
    Respect users who prefer reduced motion. */
 @keyframes fade-up {
   from {
@@ -56,8 +77,52 @@ body {
   }
 }
 
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
 .fade-up {
   animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.scale-in {
+  animation: scale-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Premium skeleton: soft sweeping sheen instead of a flat pulse */
+.shimmer {
+  background: linear-gradient(
+    100deg,
+    rgba(0, 0, 0, 0.04) 40%,
+    rgba(0, 0, 0, 0.09) 50%,
+    rgba(0, 0, 0, 0.04) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* Tactile press feedback for buttons and cards */
+.press {
+  transition: transform 0.12s ease;
+}
+.press:active {
+  transform: scale(0.97);
 }
 
 /* Staggered children: add .fade-up-stagger to a grid/container and each
@@ -76,7 +141,9 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .fade-up,
-  .fade-up-stagger > * {
+  .fade-up-stagger > *,
+  .scale-in,
+  .shimmer {
     animation: none;
   }
   *,
