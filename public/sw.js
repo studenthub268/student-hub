@@ -6,6 +6,10 @@ const DYNAMIC_CACHE = "student-hub-dynamic-v7";
 const STATUS_CACHE = "student-hub-status-v5";
 const STATUS_PATHS = ["/api/check-verified", "/api/check-admin"];
 
+// Deploy-version beacon must ALWAYS hit the real network — the whole point
+// is to notice when the deployed build changes.
+const NEVER_CACHE_PATHS = ["/api/ping", "/api/version"];
+
 // Dev servers reuse deterministic chunk URLs with changing contents; the
 // service worker must never serve them cache-first or code changes will
 // appear to never apply. Production builds content-hash their chunks, so
@@ -105,13 +109,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Never intercept file downloads (R2), auth callbacks, or the
-  // connectivity probe — these must always hit the real network.
+  // Never intercept file downloads (R2), auth callbacks, the connectivity
+  // probe, or the deploy-version beacon — these must always hit the network.
   if (
     url.hostname.includes("r2.") ||
     url.hostname.includes("vercel-storage") ||
     url.pathname.startsWith("/api/download") ||
-    url.pathname === "/api/ping"
+    NEVER_CACHE_PATHS.includes(url.pathname)
   ) {
     return;
   }

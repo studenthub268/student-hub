@@ -7,6 +7,7 @@ import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import Footer from "@/components/layout/Footer";
 import { Toaster } from "react-hot-toast";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { DeployWatcher } from "@/components/DeployWatcher";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,6 +92,7 @@ export default function RootLayout({
           }}
         />
         <ServiceWorkerRegister />
+        <DeployWatcher />
       </body>
     </html>
   );
