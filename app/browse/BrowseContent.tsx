@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Filter, X, ChevronDown } from "lucide-react";
+import { Search, Filter, ChevronDown } from "lucide-react";
 import { SUBJECTS, RESOURCE_TYPES } from "@/lib/constants";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import type { Resource } from "@/lib/db/schema";
@@ -54,8 +54,6 @@ function FilterPill({ label, active, count, disabled, pending, onClick }: Filter
   );
 }
 
-const SEARCH_DEBOUNCE_MS = 300;
-
 // On phones, only the first few subject chips show until "Show more" is tapped.
 const MOBILE_SUBJECT_LIMIT = 6;
 
@@ -69,12 +67,10 @@ export default function BrowseContent({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "all");
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get("subject") || "all");
   const [showAllSubjects, setShowAllSubjects] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track viewport width so the subject list collapses only on phones.
   useEffect(() => {
@@ -87,15 +83,13 @@ export default function BrowseContent({
 
   // Navigate with the new params — the server (single source of truth)
   // re-queries and streams back results + fresh facet counts.
-  const applyParams = (overrides: { q?: string; type?: string; subject?: string }) => {
+  const applyParams = (overrides: { type?: string; subject?: string }) => {
     const next = {
-      q: searchQuery,
       type: selectedType,
       subject: selectedSubject,
       ...overrides,
     };
     const params = new URLSearchParams();
-    if (next.q) params.set("q", next.q);
     if (next.type && next.type !== "all") params.set("type", next.type);
     if (next.subject && next.subject !== "all") params.set("subject", next.subject);
     const qs = params.toString();
@@ -104,21 +98,7 @@ export default function BrowseContent({
     });
   };
 
-  const onSearchChange = (value: string) => {
-    setSearchQuery(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => applyParams({ q: value }), SEARCH_DEBOUNCE_MS);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
   const clearAll = () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setSearchQuery("");
     setSelectedType("all");
     setSelectedSubject("all");
     startTransition(() => {
@@ -132,32 +112,6 @@ export default function BrowseContent({
         <div>
           <h1 className="text-4xl sm:text-5xl font-medium tracking-tight text-black">Browse Resources</h1>
           <p className="mt-4 text-lg text-black/60 font-medium">Find exactly what you need to ace your next exam.</p>
-        </div>
-
-        <div className="w-full md:w-[400px]">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <Search className="h-5 w-5 text-black/50" strokeWidth={1.5} />
-            </div>
-            <input
-              type="text"
-              placeholder="Search title or description..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full h-14 pl-12 pr-12 rounded-full border-2 border-black bg-white text-base font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  applyParams({ q: "" });
-                }}
-                className="absolute inset-y-0 right-0 flex items-center pr-4 text-black/50 hover:text-black transition-colors"
-              >
-                <X className="h-5 w-5" strokeWidth={1.5} />
-              </button>
-            )}
-          </div>
         </div>
       </div>
 

@@ -10,13 +10,24 @@ type Suggestion =
   | { type: "Subject"; text: string; id: string }
   | { type: "Resource"; text: string; id: string; subject: string };
 
-export default function NavbarSearch() {
+export default function NavbarSearch({ onNavigate }: { onNavigate?: () => void }) {
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [resourceSuggestions, setResourceSuggestions] = useState<{id: string; title: string; subject: string}[]>([]);
+  const [isDesktop, setIsDesktop] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // On phones, tapping search opens the dedicated /find page (big box,
+  // keyboard-friendly). The inline typeahead is a desktop (≥lg) feature.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   // On /find the dedicated full-width search page takes over.
   const isFindPage = pathname === "/find";
@@ -79,7 +90,8 @@ export default function NavbarSearch() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      go(`/browse?q=${encodeURIComponent(query)}`);
+      // Searches get their own dedicated page — /find — not the browse page.
+      go(`/find?q=${encodeURIComponent(query)}`);
     }
   };
 
@@ -103,6 +115,33 @@ export default function NavbarSearch() {
             className="h-10 w-full md:w-56 rounded-full border border-gray-300 pl-9 pr-8 text-sm outline-none cursor-pointer"
             tabIndex={-1}
             aria-hidden
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile / tablet: tapping the pill jumps to the dedicated /find page.
+  if (!isDesktop) {
+    return (
+      <div className="relative">
+        <div
+          role="search"
+          aria-label="Search — opens the search page"
+          onClick={() => {
+            onNavigate?.();
+            router.push("/find");
+          }}
+          className="relative flex items-center cursor-pointer"
+        >
+          <Search className="absolute left-3 h-4 w-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            readOnly
+            value=""
+            placeholder="Search resources, subjects…"
+            className="h-10 w-full rounded-full border border-gray-300 pl-9 pr-4 text-sm outline-none cursor-pointer bg-white placeholder:text-gray-400"
+            tabIndex={-1}
           />
         </div>
       </div>

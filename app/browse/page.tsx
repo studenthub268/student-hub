@@ -1,5 +1,6 @@
 import BrowseContent from "./BrowseContent";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { resources, users } from "@/lib/db/schema";
 import { desc, eq, and, or, ilike, sql } from "drizzle-orm";
@@ -119,6 +120,10 @@ export default async function BrowsePage({
   searchParams: Promise<{ q?: string; type?: string; subject?: string }>;
 }) {
   const { q, type, subject } = await searchParams;
+
+  // Search lives on its own page now — route keyword searches there.
+  if (q?.trim()) redirect(`/find?q=${encodeURIComponent(q.trim())}`);
+
   const [data, facets] = await Promise.all([getResources(q, type, subject), getFacetCounts(q)]);
 
   return (
