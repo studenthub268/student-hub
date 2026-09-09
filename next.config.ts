@@ -105,9 +105,19 @@ export default {
         ],
       },
       {
-        // MUST come after the extension rule below: with multiple matches the
-        // later rule wins, and sw.js must always revalidate — an immutable
-        // cached sw.js freezes the updater that delivers every future fix.
+        source: "/(.*)\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // MUST come after the extension rule above: with multiple matching
+        // rules the later one wins, and sw.js must always revalidate — an
+        // immutable cached sw.js freezes the updater that delivers every
+        // future fix to visitors.
         source: "/sw.js",
         headers: [
           {
@@ -117,15 +127,6 @@ export default {
           {
             key: "Service-Worker-Allowed",
             value: "/",
-          },
-        ],
-      },
-      {
-        source: "/(.*)\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
           },
         ],
       },
