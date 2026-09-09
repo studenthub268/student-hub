@@ -100,11 +100,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Never intercept file downloads (R2) or auth callbacks
+  // Never intercept file downloads (R2), auth callbacks, or the
+  // connectivity probe — these must always hit the real network.
   if (
     url.hostname.includes("r2.") ||
     url.hostname.includes("vercel-storage") ||
-    url.pathname.startsWith("/api/download")
+    url.pathname.startsWith("/api/download") ||
+    url.pathname === "/api/ping"
   ) {
     return;
   }
