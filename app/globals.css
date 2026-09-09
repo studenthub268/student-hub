@@ -9,7 +9,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans), sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 body {
@@ -40,4 +40,50 @@ body {
 .sh-toast-error {
   border-color: #ef4444 !important;
   background: #fef2f2 !important;
+}
+
+/* ---- Motion system: subtle, GPU-composited, zero JS ----
+   fade-up: entrance used on page sections and cards.
+   Respect users who prefer reduced motion. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Staggered children: add .fade-up-stagger to a grid/container and each
+   direct child enters 60ms after the previous one. */
+.fade-up-stagger > * {
+  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.fade-up-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.fade-up-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.fade-up-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.fade-up-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.fade-up-stagger > *:nth-child(6) { animation-delay: 300ms; }
+.fade-up-stagger > *:nth-child(7) { animation-delay: 360ms; }
+.fade-up-stagger > *:nth-child(8) { animation-delay: 420ms; }
+.fade-up-stagger > *:nth-child(9) { animation-delay: 480ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .fade-up-stagger > * {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

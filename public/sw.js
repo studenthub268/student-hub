@@ -1,5 +1,5 @@
-const STATIC_CACHE = "student-hub-static-v3";
-const DYNAMIC_CACHE = "student-hub-dynamic-v3";
+const STATIC_CACHE = "student-hub-static-v4";
+const DYNAMIC_CACHE = "student-hub-dynamic-v4";
 
 // Dev servers reuse deterministic chunk URLs with changing contents; the
 // service worker must never serve them cache-first or code changes will

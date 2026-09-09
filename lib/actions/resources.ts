@@ -5,7 +5,7 @@ import { resources, users } from "@/lib/db/schema";
 
 import { auth } from "@/lib/auth";
 import { z } from "zod";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { eq, desc, ilike, and, or, isNull, sql } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
 import { escapeLike } from "@/lib/utils";
@@ -156,52 +156,4 @@ export async function checkDuplicateResources(
     console.error("Failed to check duplicates:", error);
     return [];
   }
-}
-
-const fetchRecentResources = unstable_cache(
-  async () => {
-    try {
-      const rows = await db
-        .select({
-          id: resources.id,
-          title: resources.title,
-          description: resources.description,
-          type: resources.type,
-          subject: resources.subject,
-          fileUrl: resources.fileUrl,
-          fileKey: resources.fileKey,
-          fileType: resources.fileType,
-          fileSize: resources.fileSize,
-          uploaderId: resources.uploaderId,
-          professor: resources.professor,
-          department: resources.department,
-          downloads: resources.downloads,
-          likes: resources.likes,
-          createdAt: resources.createdAt,
-          uploader: {
-            id: users.id,
-            name: users.name,
-            email: users.email,
-          },
-        })
-        .from(resources)
-        .leftJoin(users, eq(resources.uploaderId, users.id))
-        .orderBy(desc(resources.createdAt))
-        .limit(6);
-
-      return rows.map((row) => ({
-        ...row,
-        uploader: row.uploader?.id ? row.uploader : null,
-      }));
-    } catch (error) {
-      console.error("Failed to fetch recent resources:", error);
-      return [];
-    }
-  },
-  ["recent-resources"],
-  { revalidate: 60, tags: ["recent-resources"] }
-);
-
-export async function getRecentResources() {
-  return fetchRecentResources();
 }

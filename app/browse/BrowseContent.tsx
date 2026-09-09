@@ -117,7 +117,7 @@ export default function BrowseContent({
 
       {/* Filters — server-computed counts; type counts ignore the subject
           facet and vice versa so pills only advertise reachable results. */}
-      <div className="space-y-6 mb-10">
+      <div className="space-y-6 mb-10 fade-up">
         {/* Type Filter */}
         <div>
           <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-black tracking-wider">
@@ -210,7 +210,7 @@ export default function BrowseContent({
         </div>
 
         {resources.length > 0 ? (
-          <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity ${isPending ? "opacity-60" : ""}`}>
+          <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity ${isPending ? "opacity-60" : ""} fade-up-stagger`}>
             {resources.map((resource) => (
               <div key={resource.id} className="h-full">
                 <ResourceCard resource={resource} />

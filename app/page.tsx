@@ -1,22 +1,57 @@
 import Link from "next/link";
 import { ArrowUpRight, MoveUpRight, Search } from "lucide-react";
-import { RecentResources } from "@/components/resources/RecentResources";
+import { ResourceCard } from "@/components/resources/ResourceCard";
 import { LiveStats } from "@/components/ui/LiveStats";
 import { QuoteCard } from "@/components/ui/QuoteCard";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { resources, users } from "@/lib/db/schema";
+import { desc, eq } from "drizzle-orm";
 
 // Cache at CDN/edge for 60s, serve stale for up to 5min while revalidating
 export const revalidate = 60;
 
+/** Recent uploads — rendered ON the server with the page (no client fetch
+    waterfall). The page's `revalidate = 60` caches the whole result. */
+async function getRecentResources() {
+  try {
+    return await db
+      .select({
+        id: resources.id,
+        title: resources.title,
+        description: resources.description,
+        type: resources.type,
+        subject: resources.subject,
+        fileUrl: resources.fileUrl,
+        fileKey: resources.fileKey,
+        fileType: resources.fileType,
+        fileSize: resources.fileSize,
+        uploaderId: resources.uploaderId,
+        professor: resources.professor,
+        department: resources.department,
+        downloads: resources.downloads,
+        likes: resources.likes,
+        createdAt: resources.createdAt,
+        uploader: { name: users.name },
+      })
+      .from(resources)
+      .leftJoin(users, eq(resources.uploaderId, users.id))
+      .orderBy(desc(resources.createdAt))
+      .limit(3);
+  } catch {
+    return [];
+  }
+}
+
 export default async function Home() {
-  const session = await auth();
+  const [session, recentResources] = await Promise.all([auth(), getRecentResources()]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-[#111] font-sans selection:bg-[#0D9488] selection:text-black">
 
       {/* Brutalist Bento Hero Section */}
       <section className="px-6 sm:px-6 lg:px-8 py-8 sm:py-10 max-w-[1400px] mx-auto w-full overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 fade-up-stagger">
 
           {/* Top Left: Massive Headline */}
           <div className="lg:col-span-8 flex flex-col justify-center pb-6 lg:pb-0 relative">
@@ -75,8 +110,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Recent Resources (Client Side for Stability) */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full border-t border-gray-200 mt-6">
+      {/* Recent Resources — server-rendered with the page */}
+      <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full border-t border-gray-200 mt-6 fade-up">
         <div className="flex justify-between items-end mb-12">
           <div className="space-y-2">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight">Recent Uploads</h2>
@@ -87,7 +122,19 @@ export default async function Home() {
           </Link>
         </div>
 
-        <RecentResources />
+        {recentResources.length === 0 ? (
+          <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-black/10">
+            <p className="text-black/40 font-medium text-sm">No resources found yet</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 fade-up-stagger">
+            {recentResources.map((resource) => (
+              <div key={resource.id} className="h-full">
+                <ResourceCard resource={resource} />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Final CTA - Only show if not logged in */}

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { VerificationBanner } from "@/components/layout/VerificationBanner";
@@ -12,20 +12,19 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://student-hub-uet.vercel.app"),
   icons: {
+    // ?v=2 cache-buster: the artwork changed (white background), and both the
+    // service worker and browsers cache icons by URL — a new URL is the only
+    // reliable way for returning visitors to get the new art.
     icon: [
-      { url: "/favicon.png", type: "image/png", sizes: "any" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.png?v=2", type: "image/png", sizes: "any" },
+      { url: "/icon-192.png?v=2", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png?v=2", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/icon-192.png" }],
+    apple: [{ url: "/icon-192.png?v=2" }],
   },
   title: "Student Hub — Study Smarter. Share More.",
   description: "Notes, past papers and study resources uploaded by students, for students. Free, accessible, peer-powered.",
@@ -74,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
         <VerificationBanner />
