@@ -98,7 +98,10 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/check-") ||
     // Connectivity probe for the offline banner — must always answer,
     // never redirect (a 307 would look like a "server error" to fetch).
-    pathname === "/api/ping";
+    pathname === "/api/ping" ||
+    // Deploy-version beacon for the auto-refresh watcher — guests included,
+    // and it must never waste a login round trip (it fires every minute).
+    pathname === "/api/version";
 
   if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();
