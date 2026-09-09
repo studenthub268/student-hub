@@ -1,5 +1,5 @@
-const STATIC_CACHE = "student-hub-static-v5";
-const DYNAMIC_CACHE = "student-hub-dynamic-v5";
+const STATIC_CACHE = "student-hub-static-v6";
+const DYNAMIC_CACHE = "student-hub-dynamic-v6";
 
 // Status endpoints (verification banner, admin flag) — cached so signed-in
 // pages render correctly offline and instantly, refreshed in background.
@@ -43,7 +43,15 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate — clean up old caches
+// Message hook: the app can ask the old worker to skip waiting so the new
+// one takes over immediately after a deploy.
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
+});
+
+// Activate — clean up old caches. The dynamic (page) cache is dropped on
+// every SW update so a deploy is picked up on the FIRST visit instead of
+// serving a stale page once — the "why do I still see the old site" trap.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
