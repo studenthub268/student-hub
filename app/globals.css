@@ -24,11 +24,13 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Keyboard focus that matches the brand (accessibility = premium) */
+/* Keyboard focus that matches the brand (accessibility = premium).
+   NOTE: no border-radius here — it would override the element's own radius
+   (capsule search pill snapped to a 4px box on focus). The outline itself
+   follows the element's corners automatically. */
 :focus-visible {
   outline: 2px solid #0D9488;
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* Below-the-fold sections: skip rendering work until scrolled near.

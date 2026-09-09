@@ -53,9 +53,9 @@ export default function NavbarSearch({
         readOnly
         value=""
         placeholder={fullWidth ? "Search resources, subjects…" : "Search…"}
-        className={`h-10 ${fullWidth ? "w-full" : "w-40 md:w-56"} rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-gray-500 transition-all group-hover:bg-white`}
         tabIndex={-1}
         aria-hidden
+        className={`h-10 ${fullWidth ? "w-full" : "w-40 md:w-56"} rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-gray-500 transition-colors group-hover:bg-white`}
       />
     </div>
   );
