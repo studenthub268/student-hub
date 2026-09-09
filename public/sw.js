@@ -1,5 +1,5 @@
-const STATIC_CACHE = "student-hub-static-v6";
-const DYNAMIC_CACHE = "student-hub-dynamic-v6";
+const STATIC_CACHE = "student-hub-static-v7";
+const DYNAMIC_CACHE = "student-hub-dynamic-v7";
 
 // Status endpoints (verification banner, admin flag) — cached so signed-in
 // pages render correctly offline and instantly, refreshed in background.
@@ -13,14 +13,11 @@ const STATUS_PATHS = ["/api/check-verified", "/api/check-admin"];
 const IS_DEV =
   self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1";
 
+// Precache ONLY tiny immutable assets plus the offline fallback.
+// Real pages (/, /browse, …) are NOT precached: a precached page is a frozen
+// snapshot that no longer updates when a new deploy ships (offline caching
+// below keeps visited pages available without that trap).
 const PRECACHE_URLS = [
-  "/",
-  "/browse",
-  "/find",
-  "/contact",
-  "/login",
-  "/signup",
-  "/terms",
   "/offline", // must be precached: it is the offline fallback for any uncached page
   "/logo.png",
   "/favicon.png",
@@ -162,17 +159,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages — STALE-WHILE-REVALIDATE: serve the cached page instantly (works
-  // offline), then refresh the cache in the background. First-ever visits
-  // still come from the network. Cached pages expire after 24h offline.
+  // Pages — NETWORK-FIRST with cache fallback: the latest deploy always wins
+  // when online (no "why am I still seeing the old site" after deploys),
+  // while the cached copy keeps previously visited pages available offline.
+  // Navigations get a short network budget; past it the cached page answers
+  // instantly and the in-flight refresh updates the cache for next time.
   event.respondWith(
     caches.open(DYNAMIC_CACHE).then((cache) =>
       cache.match(request).then((cached) => {
-        const isStale = !cached ||
-          (cached.headers.get("sw-cached-at") &&
-            Date.now() - new Date(cached.headers.get("sw-cached-at")).getTime() > 86_400_000);
-
-        const fetchAndCache = fetch(request)
+        const network = fetch(request)
           .then((response) => {
             if (response.ok && response.type === "basic") {
               const clone = response.clone();
@@ -192,17 +187,20 @@ self.addEventListener("fetch", (event) => {
           })
           .catch(() => undefined);
 
-        // Stale (or offline): answer from cache immediately while the
-        // network refresh happens in the background.
-        if (cached && !isStale) {
-          void fetchAndCache; // background refresh; result ignored
-          return cached;
-        }
-        return fetchAndCache.then((response) => {
-          if (response) return response;
-          // Offline fallback for navigations
-          if (request.mode === "navigate") return caches.match("/offline");
-          return cached || new Response("Offline", { status: 503 });
+        // Fresh wins if the network answers (6s budget on slow links);
+        // otherwise serve the cached page at once — offline or not.
+        return Promise.race([
+          network,
+          new Promise((resolve) => setTimeout(() => resolve(undefined), 6000)),
+        ]).then((fresh) => {
+          if (fresh) return fresh;
+          if (cached) return cached;
+          return network.then((response) => {
+            if (response) return response;
+            // Offline fallback for navigations
+            if (request.mode === "navigate") return caches.match("/offline");
+            return new Response("Offline", { status: 503 });
+          });
         });
       })
     )

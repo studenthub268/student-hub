@@ -7,8 +7,19 @@ import { usePathname } from "next/navigation";
  * Navbar search pill — a pure trigger. The popup itself is owned by the
  * Navbar (outside the mobile menu subtree) so closing the menu can never
  * unmount the open popup.
+ *
+ * Two shapes:
+ *  - default (desktop pill, ≥lg only): compact chip with a short placeholder
+ *    that can never truncate,
+ *  - fullWidth (inside the mobile menu): a full-width search bar.
  */
-export default function NavbarSearch({ onOpenSearch }: { onOpenSearch?: () => void }) {
+export default function NavbarSearch({
+  onOpenSearch,
+  fullWidth,
+}: {
+  onOpenSearch?: () => void;
+  fullWidth?: boolean;
+}) {
   const pathname = usePathname();
 
   // On /find the dedicated full-width search page takes over.
@@ -41,8 +52,8 @@ export default function NavbarSearch({ onOpenSearch }: { onOpenSearch?: () => vo
         type="text"
         readOnly
         value=""
-        placeholder="Search resources, subjects…"
-        className="h-10 w-40 md:w-56 rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-gray-500 transition-all group-hover:bg-white"
+        placeholder={fullWidth ? "Search resources, subjects…" : "Search…"}
+        className={`h-10 ${fullWidth ? "w-full" : "w-40 md:w-56"} rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-gray-500 transition-all group-hover:bg-white`}
         tabIndex={-1}
         aria-hidden
       />

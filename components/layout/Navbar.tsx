@@ -88,7 +88,7 @@ return (
             {/* Mobile Search */}
             {pathname !== "/find" && (
               <div className="p-4 border-b border-black/10">
-                <NavbarSearch onOpenSearch={openSearch} />
+                <NavbarSearch fullWidth onOpenSearch={openSearch} />
               </div>
             )}
 
