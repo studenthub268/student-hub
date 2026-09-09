@@ -90,20 +90,29 @@ self.addEventListener("fetch", (event) => {
   // Skip API calls and server actions
   if (url.pathname.startsWith("/auth/")) return;
 
-  // Status endpoints — stale-while-revalidate so the verification/admin
-  // banner works offline and never delays a page render.
+  // Status endpoints — NETWORK-FIRST, same policy as pages: when online the
+  // live server always answers (never a cached banner), and the cache only
+  // steps in when the network is unreachable (offline).
   if (STATUS_PATHS.includes(url.pathname)) {
     event.respondWith(
       caches.open(STATUS_CACHE).then((cache) =>
-        cache.match(request).then((cached) => {
-          const network = fetch(request)
-            .then((response) => {
-              if (response.ok) cache.put(request, response.clone());
-              return response;
-            })
-            .catch(() => cached);
-          return cached || network;
-        })
+        fetch(request)
+          .then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          })
+          .catch(() =>
+            cache
+              .match(request)
+              .then(
+                (cached) =>
+                  cached ||
+                  new Response(JSON.stringify({ offline: true }), {
+                    status: 503,
+                    headers: { "Content-Type": "application/json" },
+                  })
+              )
+          )
       )
     );
     return;
