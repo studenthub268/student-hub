@@ -62,15 +62,15 @@ return (
           <AdminLink />
         </div>
 
-        {/* Right: Search + Admin + Auth (desktop) + Hamburger (mobile) */}
+        {/* Right: Search + Admin + Auth (desktop) + Search + Hamburger (mobile) */}
         <div className="flex items-center space-x-3">
           <div className="hidden lg:block"><NavbarSearch onOpenSearch={openSearch} /></div>
-          {/* md–lg dead zone: nav links show but neither the desktop pill (≥lg)
-              nor the hamburger (<md) exists — a compact icon search fills it. */}
+          {/* Below lg (mobile + the md–lg dead zone): a compact icon search in
+              the navbar itself instead of a bar inside the hamburger menu. */}
           <button
             onClick={openSearch}
             aria-label="Search"
-            className="hidden md:flex lg:hidden items-center justify-center h-10 w-10 rounded-full border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-full border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           >
             <Search className="h-5 w-5" />
           </button>
@@ -94,11 +94,6 @@ return (
         <div className="md:hidden mt-3">
           <div className="rounded-2xl border-2 border-black bg-white/90 backdrop-blur-xl shadow-[4px_4px_0px_0px_#111] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto scale-in origin-top">
             
-            {/* Mobile Search — popup trigger */}
-              <div className="p-4 border-b border-black/10">
-                <NavbarSearch fullWidth onOpenSearch={openSearch} />
-              </div>
-
             {/* Nav Links */}
             {NAV_LINKS.map((link, index) => (
               <Link

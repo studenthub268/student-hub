@@ -1,6 +1,6 @@
 // Bump whenever the Terms/Privacy policy changes materially. Signup and
 // first OAuth sign-in record this version alongside the consent timestamp.
-export const POLICY_VERSION = "0.1.2";
+export const POLICY_VERSION = "0.1.3";
 
 // Owner/creator accounts that are PERMANENT admins: the server refuses to
 // remove them from the admin list or delete the account, and the admin panel

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { POLICY_VERSION } from "@/lib/constants";
 
 export const metadata = {
   title: "Terms & Privacy — Student Hub",
@@ -6,8 +7,9 @@ export const metadata = {
     "Terms of Service and Privacy Policy for Student Hub: accounts, acceptable use, copyright, data collection, cookies, retention, and your rights.",
 };
 
-const LAST_UPDATED = "September 7, 2026";
-const POLICY_VERSION = "0.1.2";
+// Single source of truth for the version lives in lib/constants.ts — it is the
+// same value recorded with each user's terms acceptance at signup.
+const LAST_UPDATED = "September 10, 2026";
 
 function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (

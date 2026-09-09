@@ -7,17 +7,13 @@ import { Search } from "lucide-react";
  * Navbar (outside the mobile menu subtree) so closing the menu can never
  * unmount the open popup.
  *
- * Two shapes:
- *  - default (desktop pill, ≥lg only): compact chip with a short placeholder
- *    that can never truncate,
- *  - fullWidth (inside the mobile menu): a full-width search bar.
+ * One shape: the compact desktop pill (≥lg). On smaller screens the navbar
+ * shows a round Search icon button instead (see Navbar.tsx).
  */
 export default function NavbarSearch({
   onOpenSearch,
-  fullWidth,
 }: {
   onOpenSearch?: () => void;
-  fullWidth?: boolean;
 }) {
 
   // The old /find page is gone — this component only renders as a trigger
@@ -34,10 +30,10 @@ export default function NavbarSearch({
         type="text"
         readOnly
         value=""
-        placeholder={fullWidth ? "Search resources, subjects…" : "Search…"}
+        placeholder="Search…"
         tabIndex={-1}
         aria-hidden
-        className={`h-10 ${fullWidth ? "w-full" : "w-40 md:w-56"} rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-black/60 transition-colors group-hover:bg-white`}
+        className="h-10 w-40 md:w-56 rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-black/60 transition-colors group-hover:bg-white"
       />
     </div>
   );

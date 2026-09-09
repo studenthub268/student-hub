@@ -1,5 +1,8 @@
-const STATIC_CACHE = "student-hub-static-v7";
-const DYNAMIC_CACHE = "student-hub-dynamic-v7";
+// v8: bumped to force every visitor's old cached pages/assets to be deleted
+// on SW update (activate drops non-matching caches) and rebuilt from the
+// network, so content like the terms/privacy version is picked up at once.
+const STATIC_CACHE = "student-hub-static-v8";
+const DYNAMIC_CACHE = "student-hub-dynamic-v8";
 
 // Status endpoints (verification banner, admin flag) — cached so signed-in
 // pages render correctly offline and instantly, refreshed in background.
