@@ -13,6 +13,12 @@ interface NavbarAuthProps {
 
 interface SessionUser { id: string; name?: string | null; email?: string | null; image?: string | null }
 
+/** First name only — "Abubakar", never "Abubakar Tanveer…" truncated. */
+function firstName(name?: string | null): string {
+  if (!name) return "";
+  return name.trim().split(/\s+/)[0] ?? name;
+}
+
 // Module-level session cache shared by every NavbarAuth instance (desktop +
 // mobile menu). Without it, opening the hamburger re-fetches the session and
 // briefly renders the guest "Get Started" view before the profile appears.
@@ -82,7 +88,7 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
         <Link href="/profile" onClick={onClose} className="group flex items-center gap-3 px-6 py-4 bg-[#0D9488] border-b border-black/10 hover:bg-[#0D9488]/80 transition-colors">
           <Avatar image={user.image} name={user.name} email={user.email} size={36} />
           <div className="overflow-hidden flex-1">
-            <p className="text-sm font-bold text-black truncate">{user.name || "Student"}</p>
+            <p className="text-sm font-bold text-black truncate">{firstName(user.name) || "Student"}</p>
             <p className="text-xs text-black/60 truncate">{user.email}</p>
           </div>
           <ChevronRight className="h-4 w-4 text-black/50 transition-transform group-hover:translate-x-0.5" />
@@ -98,14 +104,14 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
     <div ref={dropdownRef} className="relative">
       <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-2 rounded-full border-2 border-black bg-[#0D9488] px-3 py-1.5 text-sm font-bold text-black transition-all hover:shadow-[2px_2px_0px_0px_#111] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none">
         <Avatar image={user.image} name={user.name} email={user.email} size={28} />
-        <span className="hidden sm:inline-block max-w-[120px] truncate align-middle">{user.name || user.email}</span>
+        <span className="hidden sm:inline-block max-w-[120px] truncate align-middle">{firstName(user.name) || user.email}</span>
       </button>
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden z-[9999]">
           <div className="flex items-center gap-3 px-5 py-4 border-b-2 border-black bg-gray-50">
             <Avatar image={user.image} name={user.name} email={user.email} size={40} />
             <div className="overflow-hidden">
-              <p className="text-sm font-bold text-black truncate">{user.name || "Student"}</p>
+              <p className="text-sm font-bold text-black truncate">{firstName(user.name) || "Student"}</p>
               <p className="text-xs text-black/50 truncate mt-0.5">{user.email}</p>
             </div>
           </div>
