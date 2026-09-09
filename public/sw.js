@@ -185,7 +185,7 @@ self.addEventListener("fetch", (event) => {
         // Stale (or offline): answer from cache immediately while the
         // network refresh happens in the background.
         if (cached && !isStale) {
-          fetchAndCache;
+          void fetchAndCache; // background refresh; result ignored
           return cached;
         }
         return fetchAndCache.then((response) => {
