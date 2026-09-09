@@ -31,8 +31,9 @@ export function Navbar() {
   };
 
 return (
-    <nav className="sticky top-0 z-50 w-full bg-white/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/75 px-4 sm:px-6 lg:px-8 py-4 border-b border-black/5">
-      <div className="mx-auto max-w-7xl flex h-14 items-center justify-between">
+    <nav className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 pb-4">
+      <div className="mx-auto max-w-7xl">
+      <div className="flex h-14 items-center justify-between rounded-2xl border border-black/10 bg-white/70 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] px-4 sm:px-6">
 
         {/* Logo + Mobile Back Button */}
         <div className="flex items-center gap-2">
@@ -77,9 +78,11 @@ return (
         </div>
       </div>
 
+      </div>
+
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden mt-4 mx-auto max-w-7xl">
+        <div className="md:hidden mt-3">
           <div className="rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto scale-in origin-top">
             
             {/* Mobile Search */}
