@@ -95,7 +95,10 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/webhooks/") ||
     // UI-hint status endpoints: they answer guests themselves (200 JSON),
     // so the login redirect here would only waste a round trip.
-    pathname.startsWith("/api/check-");
+    pathname.startsWith("/api/check-") ||
+    // Connectivity probe for the offline banner — must always answer,
+    // never redirect (a 307 would look like a "server error" to fetch).
+    pathname === "/api/ping";
 
   if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();
