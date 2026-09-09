@@ -520,7 +520,7 @@ export default function AdminPanel() {
                   </div>
                 ) : (
                   /* View mode */
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between w-full">
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-sm truncate">{res.title}</p>
                       <p className="text-xs text-black/50 font-medium mt-0.5">
