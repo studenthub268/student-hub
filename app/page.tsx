@@ -63,7 +63,7 @@ export default async function Home() {
 
           {/* Top Right: Welcome Block (Button) */}
           <Link
-            href="/find"
+            href="/browse"
             className="lg:col-span-4 bg-[#111] rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between text-white shadow-xl relative overflow-hidden group min-h-[280px] hover:scale-[1.02] transition-all hover:shadow-2xl border-2 border-transparent hover:border-[#0D9488]"
           >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-800/40 via-[#111] to-[#111] opacity-50"></div>
