@@ -105,6 +105,9 @@ export default {
         ],
       },
       {
+        // MUST come after the extension rule below: with multiple matches the
+        // later rule wins, and sw.js must always revalidate — an immutable
+        // cached sw.js freezes the updater that delivers every future fix.
         source: "/sw.js",
         headers: [
           {

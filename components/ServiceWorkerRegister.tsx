@@ -14,7 +14,10 @@ export function ServiceWorkerRegister() {
 
     const register = async () => {
       try {
-        const reg = await navigator.serviceWorker.register("/sw.js");
+        // ?swv cache-buster: browsers that already pinned a year-long immutable
+        // copy of /sw.js (the old header bug) would never re-fetch it — the
+        // buster forces this one fetch of the fixed, no-cache worker.
+        const reg = await navigator.serviceWorker.register("/sw.js?swv=7");
 
         // If a new worker is already waiting, activate it now
         if (reg.waiting) {
