@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, ArrowLeft } from "lucide-react";
+import { Menu, X, ArrowLeft, Search } from "lucide-react";
 import NavbarSearch from "./NavbarSearch";
 import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
@@ -53,7 +53,7 @@ return (
         </div>
 
         {/* Desktop Nav Links */}
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden md:flex items-center md:space-x-5 lg:space-x-8">
           {NAV_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className="text-sm font-medium text-black hover:text-gray-500 transition-colors">
               {link.label}
@@ -65,6 +65,15 @@ return (
         {/* Right: Search + Admin + Auth (desktop) + Hamburger (mobile) */}
         <div className="flex items-center space-x-3">
           <div className="hidden lg:block"><NavbarSearch onOpenSearch={openSearch} /></div>
+          {/* md–lg dead zone: nav links show but neither the desktop pill (≥lg)
+              nor the hamburger (<md) exists — a compact icon search fills it. */}
+          <button
+            onClick={openSearch}
+            aria-label="Search"
+            className="hidden md:flex lg:hidden items-center justify-center h-10 w-10 rounded-full border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <Search className="h-5 w-5" />
+          </button>
           <div className="hidden md:block"><NavbarAuth /></div>
 
           {/* Hamburger */}
