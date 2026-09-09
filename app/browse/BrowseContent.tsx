@@ -70,7 +70,8 @@ export default function BrowseContent({
   // Arrivals from a search suggestion show results only — no filter wall.
   // Opening /browse directly keeps the full filter experience.
   const fromSearch = searchParams.get("from") === "search";
-  const searchContext = searchParams.get("subject") || searchParams.get("type");
+  const searchContext =
+    searchParams.get("q") || searchParams.get("subject") || searchParams.get("type");
 
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "all");
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get("subject") || "all");
@@ -223,7 +224,13 @@ export default function BrowseContent({
               )}
               <span className="text-black/30"> · </span>
               <button
-                onClick={() => startTransition(() => router.push("/browse"))}
+                onClick={() =>
+                  startTransition(() => {
+                    setSelectedType("all");
+                    setSelectedSubject("all");
+                    router.push("/browse");
+                  })
+                }
                 className="underline underline-offset-2 hover:text-black transition-colors"
               >
                 Browse with filters

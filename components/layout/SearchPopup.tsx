@@ -107,7 +107,8 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) go(`/find?q=${encodeURIComponent(query.trim())}`);
+    // from=search renders the clean results-only Browse (no filter chips).
+    if (query.trim()) go(`/browse?q=${encodeURIComponent(query.trim())}&from=search`);
   };
 
   const handleSelectSuggestion = (suggestion: Suggestion) => {

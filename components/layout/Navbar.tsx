@@ -94,12 +94,10 @@ return (
         <div className="md:hidden mt-3">
           <div className="rounded-2xl border-2 border-black bg-white/90 backdrop-blur-xl shadow-[4px_4px_0px_0px_#111] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto scale-in origin-top">
             
-            {/* Mobile Search */}
-            {pathname !== "/find" && (
+            {/* Mobile Search — popup trigger */}
               <div className="p-4 border-b border-black/10">
                 <NavbarSearch fullWidth onOpenSearch={openSearch} />
               </div>
-            )}
 
             {/* Nav Links */}
             {NAV_LINKS.map((link, index) => (

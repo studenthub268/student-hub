@@ -1,6 +1,5 @@
 import BrowseContent from "./BrowseContent";
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { resources, users } from "@/lib/db/schema";
 import { desc, eq, and, or, ilike, sql } from "drizzle-orm";
@@ -121,9 +120,8 @@ export default async function BrowsePage({
 }) {
   const { q, type, subject } = await searchParams;
 
-  // Search lives on its own page now — route keyword searches there.
-  if (q?.trim()) redirect(`/find?q=${encodeURIComponent(q.trim())}`);
-
+  // q = keyword search (Enter in the popup): SQL searches title, description,
+  // professor and subject. from=search keeps the chrome minimal on the client.
   const [data, facets] = await Promise.all([getResources(q, type, subject), getFacetCounts(q)]);
 
   return (
