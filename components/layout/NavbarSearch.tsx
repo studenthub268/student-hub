@@ -47,7 +47,7 @@ export default function NavbarSearch({
       onClick={onOpenSearch}
       className="relative flex items-center cursor-pointer group"
     >
-      <Search className="absolute left-3 h-4 w-4 text-black/70 pointer-events-none transition-colors group-hover:text-black" />
+      <Search className="absolute left-3 h-4 w-4 text-black pointer-events-none" strokeWidth={2.25} />
       <input
         type="text"
         readOnly
