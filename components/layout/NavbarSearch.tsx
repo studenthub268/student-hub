@@ -42,7 +42,7 @@ export default function NavbarSearch({ onOpenSearch }: { onOpenSearch?: () => vo
         readOnly
         value=""
         placeholder="Search resources, subjects…"
-        className="h-10 w-full md:w-56 rounded-full border border-gray-300 pl-9 pr-4 text-sm outline-none cursor-pointer bg-white placeholder:text-gray-400 transition-all group-hover:border-black"
+        className="h-10 w-full md:w-56 rounded-full border-2 border-black bg-white/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-gray-500 transition-all group-hover:bg-white"
         tabIndex={-1}
         aria-hidden
       />
