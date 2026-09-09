@@ -6,6 +6,7 @@ import { Menu, X, ArrowLeft } from "lucide-react";
 import NavbarSearch from "./NavbarSearch";
 import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
+import SearchPopup from "./SearchPopup";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -18,8 +19,16 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Popup lives HERE (not inside the mobile menu) so closing the menu —
+  // which unmounts the menu subtree — can never kill an open popup.
+  const [searchOpen, setSearchOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  const openSearch = () => {
+    setMobileOpen(false);
+    setSearchOpen(true);
+  };
 
 return (
     <nav className="sticky top-0 z-50 w-full bg-white/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/75 px-4 sm:px-6 lg:px-8 py-4 border-b border-black/5">
@@ -54,7 +63,7 @@ return (
 
         {/* Right: Search + Admin + Auth (desktop) + Hamburger (mobile) */}
         <div className="flex items-center space-x-3">
-          <div className="hidden lg:block"><NavbarSearch /></div>
+          <div className="hidden lg:block"><NavbarSearch onOpenSearch={openSearch} /></div>
           <div className="hidden md:block"><NavbarAuth /></div>
 
           {/* Hamburger */}
@@ -76,7 +85,7 @@ return (
             {/* Mobile Search */}
             {pathname !== "/find" && (
               <div className="p-4 border-b border-black/10">
-                <NavbarSearch onNavigate={() => setMobileOpen(false)} />
+                <NavbarSearch onOpenSearch={openSearch} />
               </div>
             )}
 
@@ -103,6 +112,9 @@ return (
           </div>
         </div>
       )}
+
+      {/* Search popup — mounted at the Navbar level, outside the menu */}
+      <SearchPopup open={searchOpen} onClose={() => setSearchOpen(false)} />
     </nav>
   );
 }
