@@ -144,6 +144,26 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
 
         {/* Results */}
         <div className="max-h-[50vh] overflow-y-auto">
+          {/* Empty state — nothing typed: suggest a few subjects */}
+          {trimmed.length === 0 && (
+            <div className="px-5 py-4">
+              <p className="text-[10px] font-bold tracking-widest text-black/30 uppercase mb-3">Try a subject</p>
+              <div className="flex flex-wrap gap-2">
+                {SUBJECTS.filter((s) =>
+                  ["Programming Fundamentals", "Circuit Analysis and Design", "Electricity and Magnetism"].includes(s)
+                ).map((subject) => (
+                  <button
+                    key={subject}
+                    onClick={() => go(`/browse?subject=${encodeURIComponent(subject)}&from=search`)}
+                    className="px-4 py-2 bg-white border-2 border-black rounded-full text-sm font-medium text-black transition-all hover:bg-[#0D9488] press"
+                  >
+                    {subject}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {trimmed.length >= 2 && suggestions.length === 0 && (
             <div className="px-6 py-8 text-center">
               <p className="text-sm font-bold tracking-wider text-black/40">No matches for “{query.trim()}”</p>
