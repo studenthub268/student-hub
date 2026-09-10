@@ -17,6 +17,10 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
+// Shared shape for the two square icon buttons (search + hamburger).
+const ICON_BTN =
+  "flex items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]";
+
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   // Popup lives HERE (not inside the mobile menu) so closing the menu —
@@ -70,7 +74,7 @@ return (
           <button
             onClick={openSearch}
             aria-label="Search"
-            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className={`${ICON_BTN} lg:hidden`}
           >
             <Search className="h-5 w-5" />
           </button>
@@ -79,7 +83,7 @@ return (
           {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden flex items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className={`${ICON_BTN} md:hidden`}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

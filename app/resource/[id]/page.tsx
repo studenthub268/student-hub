@@ -7,7 +7,6 @@ import { eq, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { unstable_cache } from "next/cache";
 import { ArrowLeft, User, Calendar, FileText, FileImage, File } from "lucide-react";
-import { format } from "date-fns";
 import { getTypeConfig } from "@/lib/constants";
 import { formatFileSize } from "@/lib/utils";
 import ResourceActions from "./ResourceActions";
@@ -119,7 +118,7 @@ export default async function ResourceDetailPage({
               </div>
               <div className="flex items-center gap-3">
                 <div className="p-2 border border-black rounded-full bg-gray-50"><Calendar size={16} strokeWidth={2} /></div>
-                <span>{format(new Date(resource.createdAt), "MMMM d, yyyy")}</span>
+                <span>{new Date(resource.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
               </div>
               {resource.professor && (
                 <div className="flex items-center gap-3">
