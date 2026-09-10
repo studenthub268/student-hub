@@ -32,6 +32,26 @@ function fetchSession(): Promise<SessionUser | null> {
   return sessionPromise;
 }
 
+// Shared hook: session state for any client component (undefined = not yet
+// known, null = guest). Deduped through the module cache above.
+export function useSessionUser(): SessionUser | null | undefined {
+  const [user, setUser] = useState<SessionUser | null | undefined>(cachedUser);
+  useEffect(() => {
+    if (cachedUser) {
+      setUser(cachedUser);
+      return;
+    }
+    let mounted = true;
+    fetchSession().then((u) => {
+      if (mounted) setUser(u);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return user;
+}
+
 export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
   const [user, setUser] = useState<SessionUser | null>(cachedUser);
   const [showDropdown, setShowDropdown] = useState(false);

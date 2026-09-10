@@ -3,13 +3,13 @@ import { ArrowUpRight, MoveUpRight, Search } from "lucide-react";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import { LiveStats } from "@/components/ui/LiveStats";
 import { QuoteCard } from "@/components/ui/QuoteCard";
+import { ContributeCta } from "@/components/ui/ContributeCta";
 import { db } from "@/lib/db";
 import { resources, users } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
 
 // Cache at CDN/edge for 60s, serve stale for up to 5min while revalidating
 export const revalidate = 60;
-
 /** Recent uploads — rendered ON the server with the page (no client fetch
     waterfall). The page's `revalidate = 60` caches the whole result. */
 async function getRecentResources() {
@@ -46,8 +46,8 @@ export default async function Home() {
   // No auth() here: it forced dynamic rendering, so every request re-ran the
   // DB query and streamed the whole document late (Lighthouse Speed Index 40
   // on desktop). Static + revalidate=60 serves the page from the CDN edge;
-  // the final CTA renders for everyone — it links to /upload, which signed-in
-  // users can use too.
+  // the final CTA renders for guests in the static HTML — ContributeCta hides
+  // it client-side for signed-in users without making the page dynamic.
   const recentResources = await getRecentResources();
 
   return (
@@ -141,21 +141,8 @@ export default async function Home() {
         )}
       </section>
 
-      {/* Final CTA */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full below-fold">
-          <div className="bg-[#111] text-white rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 text-center relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-neutral-800/20 to-transparent opacity-50"></div>
-            <div className="relative z-10">
-              <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter mb-6 italic uppercase">Ready to contribute?</h2>
-              <p className="text-xl text-white/60 font-medium mb-10 max-w-2xl mx-auto italic">
-                Join the thousands of students already sharing their knowledge.
-              </p>
-              <Link href="/upload" className="inline-flex items-center gap-2 sm:gap-3 bg-[#0D9488] text-black border-2 border-black px-6 sm:px-12 py-4 sm:py-5 rounded-full font-bold text-xs sm:text-sm tracking-wider hover:-translate-y-1 transition-all whitespace-nowrap">
-                Upload a Resource <ArrowUpRight />
-              </Link>
-            </div>
-          </div>
-      </section>
+      {/* Final CTA — hidden client-side for signed-in users (keeps the page static) */}
+      <ContributeCta />
     </div>
   );
 }
