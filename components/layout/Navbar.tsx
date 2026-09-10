@@ -70,7 +70,7 @@ return (
           <button
             onClick={openSearch}
             aria-label="Search"
-            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-full border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           >
             <Search className="h-5 w-5" />
           </button>

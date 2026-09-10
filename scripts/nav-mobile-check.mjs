@@ -43,7 +43,20 @@ for (const [w, h, label] of [[390, 844, "mobile-390"], [915, 412, "md-lg-915"], 
     await page.click("nav button[aria-label='Toggle menu']");
   }
 
-  results.push({ label, ...state, menu: menuResult });
+  // Search icon must be the same SHAPE as the hamburger: rounded-xl square,
+  // same size, same border width.
+  let shapesMatch = null;
+  if (state.icon && state.burger) {
+    shapesMatch = await page.evaluate(() => {
+      const q = (label) => [...document.querySelectorAll("nav button")].find(b => b.getAttribute("aria-label") === label);
+      const s = getComputedStyle(q("Search")), b = getComputedStyle(q("Toggle menu"));
+      return s.borderRadius === b.borderRadius && s.borderWidth === b.borderWidth
+        && Math.abs(parseFloat(s.width) - parseFloat(b.width)) < 0.5
+        && Math.abs(parseFloat(s.height) - parseFloat(b.height)) < 0.5;
+    });
+  }
+
+  results.push({ label, ...state, menu: menuResult, shapesMatch });
   await page.close();
 }
 
@@ -53,8 +66,9 @@ for (const r of results) {
   const expect = r.label === "lg-1280"
     ? { icon: false, pill: true, burger: false }
     : { icon: true, pill: false, burger: r.label === "mobile-390" };
-  const pass = r.icon === expect.icon && r.pill === expect.pill && (r.menu?.menuHasSearchBar === false || r.menu === null);
+  const pass = r.icon === expect.icon && r.pill === expect.pill && (r.menu?.menuHasSearchBar === false || r.menu === null)
+    && (r.shapesMatch === null || r.shapesMatch === true);
   if (!pass) ok = false;
-  console.log(`${pass ? "PASS" : "FAIL"} ${r.label}: icon=${r.icon} pill=${r.pill} burger=${r.burger} menu=${JSON.stringify(r.menu)}`);
+  console.log(`${pass ? "PASS" : "FAIL"} ${r.label}: icon=${r.icon} pill=${r.pill} burger=${r.burger} menu=${JSON.stringify(r.menu)} shapesMatch=${r.shapesMatch}`);
 }
 process.exit(ok ? 0 : 1);
