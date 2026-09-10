@@ -50,9 +50,9 @@ return (
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <Link href="/" prefetch className="flex items-center gap-2 group">
+          <Link href="/" prefetch className="flex items-center gap-2 group shrink-0">
             <Image src="/logo.png" alt="Student Hub Logo" width={64} height={64} className="w-8 h-8 rounded-full object-contain" priority />
-            <span className="text-xl font-bold tracking-tighter text-black ml-1 group-hover:opacity-80">Student Hub</span>
+            <span className="text-xl font-bold tracking-tighter text-black ml-1 group-hover:opacity-80 whitespace-nowrap">Student Hub</span>
           </Link>
         </div>
 

@@ -98,7 +98,9 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
     <div ref={dropdownRef} className="relative">
       <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-2 rounded-full border-2 border-black bg-[#0D9488] px-3 py-1.5 text-sm font-bold text-black transition-all hover:shadow-[2px_2px_0px_0px_#111] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none">
         <Avatar image={user.image} name={user.name} email={user.email} size={28} />
-        <span className="hidden sm:inline-block max-w-[160px] truncate align-middle">{user.name || user.email}</span>
+        {/* Name only from xl up — at lg (1024) the pill + chip + links over-fill
+            the row and squeeze the wordmark onto two lines. */}
+        <span className="hidden xl:inline-block max-w-[160px] truncate align-middle">{user.name || user.email}</span>
       </button>
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden z-[9999]">
