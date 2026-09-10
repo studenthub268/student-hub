@@ -6,7 +6,7 @@ export const ALLOWED_FILE_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 
-export const ALLOWED_FILE_EXTENSIONS = new Set(["pdf", "png", "jpg", "jpeg", "docx"]);
+const ALLOWED_FILE_EXTENSIONS = new Set(["pdf", "png", "jpg", "jpeg", "docx"]);
 
 export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 

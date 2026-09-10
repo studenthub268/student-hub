@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { resources } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import ProfileContent from "./ProfileContent";
-import DeleteAccount from "./DeleteAccount";
+import { DeleteAccount } from "./DeleteAccount";
 
 export const dynamic = "force-dynamic";
 

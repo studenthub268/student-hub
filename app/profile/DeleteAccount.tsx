@@ -154,5 +154,3 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
     </>
   );
 }
-
-export default DeleteAccount;

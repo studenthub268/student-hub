@@ -1,4 +1,4 @@
-export const PASSWORD_RULES = {
+const PASSWORD_RULES = {
   minLength: 8,
   uppercase: true,
   lowercase: true,

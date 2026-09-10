@@ -264,21 +264,6 @@ export async function deleteMyAccount(password?: string) {
   }
 }
 
-export async function isEmailVerified(
-  email: string
-): Promise<{ verified: boolean; exists: boolean }> {
-  try {
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.email, email),
-    });
-
-    if (!user) return { verified: false, exists: false };
-    return { verified: !!user.emailVerified, exists: true };
-  } catch {
-    return { verified: false, exists: false };
-  }
-}
-
 /**
  * Re-send the verification email for the SIGNED-IN user's address. The
  * session (not a client-supplied email) identifies the target, so there is

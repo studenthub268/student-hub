@@ -167,53 +167,6 @@ export async function unblockIp(ip: string) {
   return { success: true };
 }
 
-/**
- * Recent system auto-blocks (last 7 days) — surfaced in the admin Security tab
- * as a banner so silent lockouts (attack-pattern detections) become visible.
- */
-export async function getRecentAutoBlocks() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-  const admin = await isAdmin(session.user.email);
-  if (!admin) throw new Error("Only admins can view auto-blocks");
-
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  return db
-    .select({
-      id: blockedIps.id,
-      ip: blockedIps.ip,
-      reason: blockedIps.reason,
-      type: blockedIps.type,
-      blockedAt: blockedIps.blockedAt,
-    })
-    .from(blockedIps)
-    .where(sql`${blockedIps.blockedBy} = 'system' and ${blockedIps.blockedAt} >= ${weekAgo}`)
-    .orderBy(desc(blockedIps.blockedAt))
-    .limit(20);
-}
-
-export async function getBlockedIps() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-
-  const admin = await isAdmin(session.user.email);
-  if (!admin) throw new Error("Only admins can view blocked IPs");
-
-  return await db.query.blockedIps.findMany({
-    orderBy: [desc(blockedIps.blockedAt)],
-  });
-}
-
-export async function getAdminEmails() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-
-  const admin = await isAdmin(session.user.email);
-  if (!admin) throw new Error("Only admins can view admin list");
-
-  return await db.query.adminEmails.findMany();
-}
-
 export async function removeAdminEmail(email: string) {
   const session = await auth();
   if (!session?.user?.email) throw new Error("Not authenticated");
@@ -232,31 +185,6 @@ export async function removeAdminEmail(email: string) {
 }
 
 // ============ RESOURCES ============
-
-export async function getAllResources() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-  const admin = await isAdmin(session.user.email);
-  if (!admin) throw new Error("Admin only");
-
-  return await db
-    .select({
-      id: resources.id,
-      title: resources.title,
-      description: resources.description,
-      type: resources.type,
-      subject: resources.subject,
-      department: resources.department,
-      professor: resources.professor,
-      downloads: resources.downloads,
-      likes: resources.likes,
-      createdAt: resources.createdAt,
-      uploader: { name: users.name, email: users.email },
-    })
-    .from(resources)
-    .leftJoin(users, eq(resources.uploaderId, users.id))
-    .orderBy(desc(resources.createdAt));
-}
 
 export async function adminDeleteResource(resourceId: string) {
   const session = await auth();
@@ -298,17 +226,6 @@ export async function adminUpdateResource(
 
 // ============ MESSAGES ============
 
-export async function getAllMessages() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-  const admin = await isAdmin(session.user.email);
-  if (!admin) throw new Error("Admin only");
-
-  return await db.query.messages.findMany({
-    orderBy: [desc(messages.createdAt)],
-  });
-}
-
 export async function deleteMessage(messageId: string) {
   const session = await auth();
   if (!session?.user?.email) throw new Error("Not authenticated");
@@ -320,27 +237,6 @@ export async function deleteMessage(messageId: string) {
 }
 
 // ============ REPORTS ============
-
-export async function getAllReports() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-  const admin = await isAdmin(session.user.email);
-  if (!admin) throw new Error("Admin only");
-
-  return await db
-    .select({
-      id: reports.id,
-      reason: reports.reason,
-      description: reports.description,
-      createdAt: reports.createdAt,
-      resource: { id: resources.id, title: resources.title },
-      reporter: { name: users.name, email: users.email },
-    })
-    .from(reports)
-    .leftJoin(resources, eq(reports.resourceId, resources.id))
-    .leftJoin(users, eq(reports.reporterId, users.id))
-    .orderBy(desc(reports.createdAt));
-}
 
 export async function deleteReport(reportId: string) {
   const session = await auth();
@@ -489,12 +385,4 @@ async function getEmailHealthStatsInternal() {
     suppressedCount: suppressedCount[0]?.count || 0,
     recentSuppressions,
   };
-}
-
-/** Public wrapper kept for any standalone email-stats use. */
-export async function getEmailHealthStats() {
-  const session = await auth();
-  if (!session?.user?.email) throw new Error("Not authenticated");
-  if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
-  return getEmailHealthStatsInternal();
 }

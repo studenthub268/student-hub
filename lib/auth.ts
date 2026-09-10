@@ -255,4 +255,7 @@ const authConfig: NextAuthConfig = {
   },
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(async () => authConfig);
+// signIn is intentionally not exported: server-side sign-in has no caller —
+// login flows use the client helper from next-auth/react. Fewer exports on a
+// "use server"-adjacent module = smaller callable surface.
+export const { handlers, auth, signOut } = NextAuth(async () => authConfig);

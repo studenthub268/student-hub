@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
-export const r2 = new S3Client({
+// Internal client — all R2 access goes through putR2Object/deleteR2Object.
+const r2 = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {

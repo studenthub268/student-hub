@@ -11,7 +11,7 @@ export { POLICY_VERSION };
 // hides the remove/demote buttons. Override via env if the site ever changes
 // hands.
 const OWNER_EMAIL = process.env.OWNER_ADMIN_EMAIL || "abubakartanveer826@gmail.com";
-export const PERMANENT_ADMIN_EMAILS: readonly string[] = [OWNER_EMAIL.toLowerCase()];
+const PERMANENT_ADMIN_EMAILS: readonly string[] = [OWNER_EMAIL.toLowerCase()];
 
 export function isPermanentAdmin(email: string | null | undefined): boolean {
   if (!email) return false;

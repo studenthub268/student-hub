@@ -39,5 +39,3 @@ export function PasswordInput({ size = "lg", className = "", ...props }: Passwor
     </div>
   );
 }
-
-export default PasswordInput;
