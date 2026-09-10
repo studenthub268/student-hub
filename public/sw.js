@@ -1,8 +1,9 @@
-// v9: drops every visitor's v8 caches on SW update (activate deletes
-// non-matching caches) so the 0.2.13 terms page and navbar changes rebuild
-// from the network instead of serving stale copies.
-const STATIC_CACHE = "student-hub-static-v9";
-const DYNAMIC_CACHE = "student-hub-dynamic-v9";
+// Cache names embed the app version so every release invalidates every
+// visitor's caches without a hand edit — one `npm version` bump rewrites the
+// number here and on the terms page at build time
+// (scripts/write-deploy-version.mjs).
+const STATIC_CACHE = "student-hub-static-v0.2.13";
+const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.13";
 
 // Status endpoints (verification banner, admin flag) — cached so signed-in
 // pages render correctly offline and instantly, refreshed in background.

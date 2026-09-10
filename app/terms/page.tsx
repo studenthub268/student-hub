@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { POLICY_VERSION } from "@/lib/constants";
+import { LAST_UPDATED, POLICY_VERSION } from "@/lib/generated/deploy-version";
 
 export const metadata = {
   title: "Terms & Privacy — Student Hub",
@@ -7,10 +7,8 @@ export const metadata = {
     "Terms of Service and Privacy Policy for Student Hub: accounts, acceptable use, copyright, data collection, cookies, retention, and your rights.",
 };
 
-// Single source of truth for the version lives in lib/constants.ts — it is the
-// same value recorded with each user's terms acceptance at signup.
-const LAST_UPDATED = "September 10, 2026";
-
+// LAST_UPDATED and POLICY_VERSION are generated from package.json + its last
+// commit date at build time — a release is one `npm version` bump.
 function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
     <h2

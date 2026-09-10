@@ -1,10 +1,10 @@
-import pkg from "../package.json";
+import { POLICY_VERSION } from "./generated/deploy-version";
 
-// Bump whenever the Terms/Privacy policy changes materially. Signup and
-// first OAuth sign-in record this version alongside the consent timestamp.
-// It tracks the app version (package.json) so there is one number to bump —
-// the terms page displays the same value it records.
-export const POLICY_VERSION: string = pkg.version;
+// The terms/privacy version IS the app version (see
+// scripts/write-deploy-version.mjs): it is displayed on the terms page and
+// recorded alongside the consent timestamp at signup and first OAuth sign-in.
+// A release is one `npm version` bump — no separate number to maintain.
+export { POLICY_VERSION };
 
 // Owner/creator accounts that are PERMANENT admins: the server refuses to
 // remove them from the admin list or delete the account, and the admin panel
