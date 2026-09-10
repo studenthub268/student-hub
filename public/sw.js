@@ -1,8 +1,8 @@
-// v8: bumped to force every visitor's old cached pages/assets to be deleted
-// on SW update (activate drops non-matching caches) and rebuilt from the
-// network, so content like the terms/privacy version is picked up at once.
-const STATIC_CACHE = "student-hub-static-v8";
-const DYNAMIC_CACHE = "student-hub-dynamic-v8";
+// v9: drops every visitor's v8 caches on SW update (activate deletes
+// non-matching caches) so the 0.2.13 terms page and navbar changes rebuild
+// from the network instead of serving stale copies.
+const STATIC_CACHE = "student-hub-static-v9";
+const DYNAMIC_CACHE = "student-hub-dynamic-v9";
 
 // Status endpoints (verification banner, admin flag) — cached so signed-in
 // pages render correctly offline and instantly, refreshed in background.
