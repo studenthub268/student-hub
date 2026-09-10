@@ -37,10 +37,7 @@ function fetchSession(): Promise<SessionUser | null> {
 export function useSessionUser(): SessionUser | null | undefined {
   const [user, setUser] = useState<SessionUser | null | undefined>(cachedUser);
   useEffect(() => {
-    if (cachedUser) {
-      setUser(cachedUser);
-      return;
-    }
+    if (cachedUser) return; // state initialized with it; session never changes after resolve
     let mounted = true;
     fetchSession().then((u) => {
       if (mounted) setUser(u);

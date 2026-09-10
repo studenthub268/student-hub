@@ -6,7 +6,7 @@ const BASE = process.argv[2] || "https://student-hub-uet.vercel.app";
 let pass = 0, fail = 0;
 const ok = (name, cond, detail = "") => {
   console.log(`${cond ? "PASS" : "FAIL"} ${name}${detail ? " — " + detail : ""}`);
-  cond ? pass++ : fail++;
+  if (cond) pass++; else fail++;
 };
 
 const res = {};
