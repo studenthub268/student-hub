@@ -45,3 +45,6 @@ next-env.d.ts
 cursor*
 .freebuff*
 .claude*
+
+# screenshot artifacts from verification scripts
+scripts/*.png
