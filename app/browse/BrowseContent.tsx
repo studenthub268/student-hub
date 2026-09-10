@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, ChevronDown } from "lucide-react";
 import { SUBJECTS, RESOURCE_TYPES } from "@/lib/constants";
@@ -24,15 +24,16 @@ interface FilterPillProps {
   count?: number;
   disabled?: boolean;
   pending?: boolean;
+  className?: string;
   onClick: () => void;
 }
 
-function FilterPill({ label, active, count, disabled, pending, onClick }: FilterPillProps) {
+function FilterPill({ label, active, count, disabled, pending, className, onClick }: FilterPillProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border-2 border-black transition-all text-left ${
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border-2 border-black transition-all text-left ${className || ""} ${
         active
           ? "bg-[#0D9488] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           : "bg-white hover:bg-gray-50"
@@ -76,16 +77,11 @@ export default function BrowseContent({
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "all");
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get("subject") || "all");
   const [showAllSubjects, setShowAllSubjects] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Track viewport width so the subject list collapses only on phones.
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const update = () => setIsMobile(!mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
+  // Show more/less toggle for the subject list. Visible only on phones via
+  // CSS (md:flex) so there is NO isMobile state: a JS-measured breakpoint
+  // starts false, flips after hydration, and collapses 30 chips into 6 —
+  // shifting the whole results grid (Lighthouse CLS 0.16 on /browse).
 
   // Navigate with the new params — the server (single source of truth)
   // re-queries and streams back results + fresh facet counts.
@@ -172,17 +168,7 @@ export default function BrowseContent({
                 applyParams({ subject: "all" });
               }}
             />
-            {(isMobile && !showAllSubjects
-              ? [
-                  ...SUBJECTS.slice(0, MOBILE_SUBJECT_LIMIT),
-                  // Keep an active chip visible even if it sits past the cut-off
-                  ...(selectedSubject !== "all" &&
-                  !SUBJECTS.slice(0, MOBILE_SUBJECT_LIMIT).includes(selectedSubject)
-                    ? [selectedSubject]
-                    : []),
-                ]
-              : SUBJECTS
-            ).map((subject) => (
+            {SUBJECTS.map((subject, i) => (
               <FilterPill
                 key={subject}
                 label={subject}
@@ -190,24 +176,36 @@ export default function BrowseContent({
                 count={subjectCounts[subject] || 0}
                 disabled={!subjectCounts[subject]}
                 pending={isPending}
+                // ponytail: CSS-driven mobile collapse instead of measured
+                // JS state — zero layout shift, 20 lines smaller. If chips
+                // must differ per breakpoint beyond hiding, revisit.
+                className={i >= MOBILE_SUBJECT_LIMIT ? "max-md:hidden" : ""}
                 onClick={() => {
                   setSelectedSubject(subject);
                   applyParams({ subject });
                 }}
               />
             ))}
-            {isMobile && SUBJECTS.length > MOBILE_SUBJECT_LIMIT && (
-              <button
-                onClick={() => setShowAllSubjects((v) => !v)}
-                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-black/30 text-black/60 transition-colors hover:border-black hover:text-black"
-              >
-                {showAllSubjects ? "Show less" : `Show more (${SUBJECTS.length - MOBILE_SUBJECT_LIMIT})`}
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${showAllSubjects ? "rotate-180" : ""}`}
-                  strokeWidth={2}
-                />
-              </button>
-            )}
+            {/* Show more/less — phone-only (CSS), flips the chip hiding above.
+                When open, the toggle hides itself instead of the overflow chips. */}
+            <button
+              onClick={() => setShowAllSubjects((v) => !v)}
+              className={`items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-black/30 text-black/60 transition-colors hover:border-black hover:text-black md:hidden ${
+                showAllSubjects ? "hidden" : "inline-flex"
+              }`}
+            >
+              Show more ({SUBJECTS.length - MOBILE_SUBJECT_LIMIT})
+              <ChevronDown className="h-4 w-4" strokeWidth={2} />
+            </button>
+            <button
+              onClick={() => setShowAllSubjects(false)}
+              className={`items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-black text-black transition-colors hover:bg-gray-50 md:hidden ${
+                showAllSubjects ? "inline-flex" : "hidden"
+              }`}
+            >
+              Show less
+              <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={2} />
+            </button>
           </div>
         </div>
       </div>
