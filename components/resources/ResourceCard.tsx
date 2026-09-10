@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Heart, ArrowUpRight } from "lucide-react";
 import { Resource } from "@/lib/db/schema";
 import { formatFileSize } from "@/lib/utils";
@@ -11,8 +10,6 @@ interface ResourceCardProps {
 }
 
 export function ResourceCard({ resource }: ResourceCardProps) {
-  const router = useRouter();
-
   return (
     <Link href={`/resource/${resource.id}`} className="block h-full group">
       <div className="flex flex-col h-full bg-white rounded-[2rem] border-2 border-[#111] shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-all duration-300 ease-out group-hover:shadow-[8px_8px_0px_0px_rgba(17,17,17,1)] group-hover:-translate-y-1.5 active:scale-[0.98] overflow-hidden relative">
@@ -44,16 +41,6 @@ export function ResourceCard({ resource }: ResourceCardProps) {
                 <Heart className="h-5 w-5 group-hover/stat:fill-red-600" strokeWidth={1.5} />
                 <span>{resource.likes}</span>
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/report?resourceId=${resource.id}`);
-                }}
-                className="flex items-center gap-1.5 text-black/40 hover:text-red-600 transition-colors ml-2"
-              >
-                <span className="text-[10px] font-bold tracking-widest">Report</span>
-              </button>
             </div>
 
             <div className="flex items-center gap-2 bg-[#111] text-white px-3 py-1.5 rounded-full text-xs tracking-wider">
