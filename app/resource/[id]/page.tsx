@@ -38,12 +38,30 @@ async function queryResource(id: string) {
   return queryResourceCached(id)();
 }
 
+// 404s must be decided before the response streams: the loading.tsx boundary
+// flushes a 200 shell as soon as the page awaits, so a notFound() after the
+// DB query can only render a soft-404 page with status 200. generateMetadata
+// resolves before that first flush, so its notFound() sets a real 404.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  if (!UUID_RE.test(id)) notFound();
+  const rows = await queryResource(id);
+  if (!rows[0]) notFound();
+  return { title: rows[0].title };
+}
+
 export default async function ResourceDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // Reject malformed ids before hitting Postgres (a non-uuid comparison
+  // throws, which used to land in the catch below as log noise).
+  if (!UUID_RE.test(id)) notFound();
 
   let resource: Awaited<ReturnType<typeof queryResource>>[number] | null = null;
   let hasLikedInitially = false;
