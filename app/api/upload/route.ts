@@ -9,6 +9,22 @@ import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
+    // CSRF defense-in-depth: Route Handlers don't get the automatic Origin
+    // check that Server Actions do. SameSite=Lax cookies already block most
+    // cross-site POSTs; this rejects the rest (Lax-bypassing browsers, old
+    // clients, subdomain involvement) before any session work happens.
+    const origin = request.headers.get("origin");
+    if (origin) {
+      const host = request.headers.get("host");
+      let originHost: string | null = null;
+      try {
+        originHost = new URL(origin).host;
+      } catch {}
+      if (!host || originHost !== host) {
+        return NextResponse.json({ error: "Cross-origin request rejected" }, { status: 403 });
+      }
+    }
+
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

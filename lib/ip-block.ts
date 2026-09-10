@@ -30,13 +30,13 @@ const ATTACK_PATTERNS = [
   /\.\.\\/,
   /%2e%2e/i,
 
-  // Command injection
+  // Command injection — keep these shapes UNAMBIGUOUS: every pattern here
+  // permanently auto-blocks the visitor's IP, and "normal" text like a
+  // backtick or "| cat" in a search/paper title must never match.
+  // (Removed as false-positive traps: /`.*`/, /;\s*ls/, /|\s*cat/.)
   /;\s*cat\s/i,
-  /;\s*ls/i,
   /;\s*wget/i,
   /;\s*curl/i,
-  /\|\s*cat/i,
-  /`.*`/,
 
   // Common scanners/bots
   /sqlmap/i,
@@ -79,12 +79,18 @@ export function cleanupRateLimitMap(): void {
 }
 
 export function getIpAddress(request: Request): string {
+  // Security best practice: the LEFTMOST x-forwarded-for entry is chosen by
+  // the CLIENT and trivially spoofable ("X-Forwarded-For: 1.2.3.4" in any
+  // request). Trusting it let attackers rotate fake IPs to evade the rate
+  // limiter/blocklist — or worse, FRAME a victim IP into a permanent ban.
+  // The RIGHTMOST entry is the one appended by our own trusted edge (Vercel),
+  // so that is the client's real address.
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    return forwarded.split(",")[0].trim();
+    return forwarded.split(",").pop()!.trim();
   }
   const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp;
+  if (realIp) return realIp.trim();
   return "127.0.0.1";
 }
 

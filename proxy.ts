@@ -99,6 +99,10 @@ export async function proxy(request: NextRequest) {
     // Connectivity probe for the offline banner — must always answer,
     // never redirect (a 307 would look like a "server error" to fetch).
     pathname === "/api/ping" ||
+    // Upload endpoint: the handler itself enforces same-origin (403 on
+    // mismatch), so guests get a clean JSON error instead of a login
+    // redirect that would confuse a CSRF probe.
+    pathname === "/api/upload" ||
     // Deploy-version beacon for the auto-refresh watcher — guests included,
     // and it must never waste a login round trip (it fires every minute).
     pathname === "/api/version";
@@ -138,7 +142,6 @@ export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set(
     "Permissions-Policy",

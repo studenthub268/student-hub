@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
@@ -15,6 +16,14 @@ async function isAdmin(email: string): Promise<boolean> {
   });
   return !!admin;
 }
+
+// Security best practice: admin actions feed the IP blocklist (checked on
+// EVERY request) and the admin-email table (checked on EVERY admin action),
+// so inputs are validated at the trust boundary — a malformed value here
+// silently degrades both controls.
+const adminEmailSchema = z.string().trim().toLowerCase().email().max(254);
+// zod v4: IP formats moved to top-level schemas; accept v4 and v6.
+const ipAddressSchema = z.union([z.ipv4(), z.ipv6()]);
 
 /**
  * One-shot loader for the admin panel: a single auth check and all panel
@@ -119,7 +128,10 @@ export async function addAdminEmail(email: string) {
   const superAdmin = await isAdmin(session.user.email);
   if (!superAdmin) throw new Error("Only admins can add other admins");
 
-  await db.insert(adminEmails).values({ email });
+  const parsed = adminEmailSchema.safeParse(email);
+  if (!parsed.success) throw new Error("Invalid email address");
+
+  await db.insert(adminEmails).values({ email: parsed.data });
   return { success: true };
 }
 
@@ -130,8 +142,11 @@ export async function blockIp(ip: string, reason: string) {
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Only admins can block IPs");
 
+  const parsed = ipAddressSchema.safeParse(ip);
+  if (!parsed.success) throw new Error("Invalid IP address");
+
   await db.insert(blockedIps).values({
-    ip,
+    ip: parsed.data,
     reason,
     blockedBy: session.user.email,
   });
