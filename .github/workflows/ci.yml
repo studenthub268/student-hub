@@ -71,3 +71,14 @@ jobs:
 
       - name: Smoke suite (3 phases, against the live DB)
         run: node scripts/smoke-browse.mjs
+
+      # Same production server, one step: the four layout/security gates.
+      # The layout audits mock the client session/admin APIs themselves, and
+      # the probe's assertions are environment-agnostic (HTTP headers are set
+      # by next.config regardless of scheme), so they run against 127.0.0.1.
+      - name: Layout + security audits
+        run: |
+          node scripts/nav-mobile-check.mjs http://127.0.0.1:3000
+          node scripts/ipad-signedin-check.mjs http://127.0.0.1:3000
+          node scripts/signedin-audit.mjs http://127.0.0.1:3000
+          node scripts/blackbox-probe.mjs http://127.0.0.1:3000
