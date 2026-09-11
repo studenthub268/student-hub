@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, MoveUpRight, Search } from "lucide-react";
 import { ResourceCard } from "@/components/resources/ResourceCard";
@@ -10,6 +11,13 @@ import { desc, eq } from "drizzle-orm";
 
 // Cache at CDN/edge for 60s, serve stale for up to 5min while revalidating
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "Student Hub — Free Study Notes & Past Papers by Students",
+  description:
+    "Download free university notes, past papers and study resources shared by students. Peer-powered, always free, searchable by subject and type — built for UET students.",
+  alternates: { canonical: "/" },
+};
 /** Recent uploads — rendered ON the server with the page (no client fetch
     waterfall). The page's `revalidate = 60` caches the whole result. */
 async function getRecentResources() {
@@ -50,8 +58,27 @@ export default async function Home() {
   // it client-side for signed-in users without making the page dynamic.
   const recentResources = await getRecentResources();
 
+  // JSON-LD: WebSite + SearchAction lets Google show a search box directly in
+  // sitelinks for the brand query.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Student Hub",
+    url: process.env.APP_URL || "https://student-hub-uet.vercel.app",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${process.env.APP_URL || "https://student-hub-uet.vercel.app"}/browse?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
-    <div className="flex flex-col min-h-screen bg-white text-[#111] font-sans selection:bg-[#0D9488] selection:text-black">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <div className="flex flex-col min-h-screen bg-white text-[#111] font-sans selection:bg-[#0D9488] selection:text-black">
 
       {/* Brutalist Bento Hero Section */}
       <section className="px-6 sm:px-6 lg:px-8 py-8 sm:py-10 max-w-[1400px] mx-auto w-full overflow-hidden">
@@ -143,6 +170,7 @@ export default async function Home() {
 
       {/* Final CTA — hidden client-side for signed-in users (keeps the page static) */}
       <ContributeCta />
-    </div>
+      </div>
+    </>
   );
 }

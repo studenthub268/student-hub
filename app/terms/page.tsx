@@ -5,6 +5,7 @@ export const metadata = {
   title: "Terms & Privacy — Student Hub",
   description:
     "Terms of Service and Privacy Policy for Student Hub: accounts, acceptable use, copyright, data collection, cookies, retention, and your rights.",
+  alternates: { canonical: "/terms" },
 };
 
 // LAST_UPDATED and POLICY_VERSION are generated from package.json + its last

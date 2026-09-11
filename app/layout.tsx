@@ -36,10 +36,10 @@ export const metadata: Metadata = {
     apple: [{ url: "/icon-192.png?v=2" }],
   },
   title: "Student Hub — Study Smarter. Share More.",
-  description: "Notes, past papers and study resources uploaded by students, for students. Free, accessible, peer-powered.",
+  description: "Free university notes, past papers and study resources shared by students. Peer-powered and always free — built for UET students.",
   openGraph: {
     title: "Student Hub — Study Smarter. Share More.",
-    description: "Notes, past papers and study resources uploaded by students, for students.",
+    description: "Free university notes, past papers and study resources shared by students. Peer-powered and always free — built for UET students.",
     url: "/",
     siteName: "Student Hub",
     images: [
@@ -62,6 +62,7 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  alternates: { canonical: "/" },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

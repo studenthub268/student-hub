@@ -49,7 +49,21 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!UUID_RE.test(id)) notFound();
   const rows = await queryResource(id);
   if (!rows[0]) notFound();
-  return { title: rows[0].title };
+  const r = rows[0];
+  const desc =
+    r.description?.slice(0, 155) ||
+    `Free ${r.subject} ${String(r.type).toLowerCase()} shared by students on Student Hub — download instantly, no account needed.`;
+  return {
+    title: r.title,
+    description: desc,
+    alternates: { canonical: `/resource/${id}` },
+    openGraph: {
+      title: r.title,
+      description: desc,
+      url: `/resource/${id}`,
+      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: r.title }],
+    },
+  };
 }
 
 export default async function ResourceDetailPage({

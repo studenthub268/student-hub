@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import BrowseContent from "./BrowseContent";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
@@ -9,6 +10,13 @@ import { escapeLike } from "@/lib/utils";
 // query variant its own cache entry. Mutations (upload/delete/admin) call
 // revalidatePath("/browse") so new data appears within seconds.
 export const revalidate = 120;
+
+export const metadata: Metadata = {
+  title: "Browse Study Resources — Notes & Past Papers",
+  description:
+    "Search every uploaded note, past paper and study resource by keyword, subject and type. Free to download, no account needed.",
+  alternates: { canonical: "/browse" },
+};
 
 const CARD_COLUMNS = {
   id: resources.id,
