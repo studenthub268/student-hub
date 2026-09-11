@@ -20,9 +20,11 @@ body {
 }
 
 /* ---- Premium base ---- */
-html {
-  scroll-behavior: smooth;
-}
+/* NOTE: deliberately NO `scroll-behavior: smooth` on html. Next.js resets
+   scroll to top on every navigation; with smooth enabled that reset becomes
+   an animation that the re-render cancels mid-flight — pages opened mid-
+   scroll. Instant jumps also keep native back/forward position restoration
+   working, which the reduced-motion block below assumed anyway. */
 
 /* Keyboard focus that matches the brand (accessibility = premium).
    NOTE: no border-radius here — it would override the element's own radius

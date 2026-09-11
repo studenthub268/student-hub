@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import { Toaster } from "react-hot-toast";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { DeployWatcher } from "@/components/DeployWatcher";
+import ScrollRestoration from "@/components/ScrollRestoration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -99,6 +100,7 @@ export default function RootLayout({
         />
         <ServiceWorkerRegister />
         <DeployWatcher />
+        <ScrollRestoration />
       </body>
     </html>
   );
