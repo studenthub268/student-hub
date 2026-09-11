@@ -18,6 +18,10 @@ export function isPermanentAdmin(email: string | null | undefined): boolean {
   return PERMANENT_ADMIN_EMAILS.includes(email.trim().toLowerCase());
 }
 
+// sessionStorage key shared by VerificationBanner (writer) and the
+// verify-email page (invalidator on success) — one name, no drift.
+export const VERIFIED_STATUS_CACHE_KEY = "verified-status-cache-v1";
+
 export const DEPARTMENTS = [
   "Computer Science",
   "Software Engineering",

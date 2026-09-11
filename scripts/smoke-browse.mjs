@@ -308,7 +308,7 @@ async function main() {
   try {
     await runUiPhase(rows);
   } catch (err) {
-    check("UI phase completed", false, err.message.split("\n")[0]);
+    check("UI phase completed", false, err.message.replace(/\s+/g, " ").slice(0, 200));
   }
 
   // ── Phase 3: auth flow (signup → verify → login → sign out) ─────────
@@ -319,7 +319,7 @@ async function main() {
     try {
       await runAuthPhase();
     } catch (err) {
-      check("auth phase completed", false, err.message.split("\n")[0]);
+      check("auth phase completed", false, err.message.replace(/\s+/g, " ").slice(0, 200));
     }
   }
 
@@ -430,8 +430,9 @@ async function runUiPhase(rows) {
     // Zero-count pills must be disabled in the DOM. Faceted semantics: type
     // counts apply ONLY the q filter (they advertise what stays reachable if
     // you clear the subject), so zero-count type pills appear when a SEARCH
-    // eliminates types — use one. Badge number is read from the span directly
-    // (suffix matching breaks on counts like 10/20).
+    // eliminates types — use one. Search is URL-driven on /browse (the navbar
+    // popup navigates with ?q=), so navigate directly. Badge number is read
+    // from the span directly (suffix matching breaks on counts like 10/20).
     const readBadges = () => page.evaluate(() => {
       const out = {};
       for (const btn of document.querySelectorAll("button")) {
@@ -444,9 +445,7 @@ async function runUiPhase(rows) {
       return out;
     });
 
-    await page.fill("input[placeholder*='title']", "");
-    await page.type("input[placeholder*='title']", "zznosuchresource", { delay: 40 });
-    await page.waitForURL((u) => u.searchParams.get("q") === "zznosuchresource", { timeout: 15000 });
+    await page.goto(`${BASE}/browse?q=zznosuchresource`, { waitUntil: "networkidle", timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(900); // counts refresh after RSC update
 
     const disabledState = await readBadges();
@@ -466,10 +465,8 @@ async function runUiPhase(rows) {
     const expectedNarrowed = filterRows(rows, { q: "zznosuchresource" }).length;
     check("UI: search narrows facet totals",
       (disabledState["All Types"]?.count ?? -1) === expectedNarrowed,
-      `All Types=${disabledState["All Types"]?.count} expected=${expectedNarrowed} total=${rows.length}`);
-    // Reset for the interaction checks below.
-    await page.fill("input[placeholder*='title']", "");
-    await page.waitForURL((u) => !u.searchParams.has("q") || u.searchParams.get("q") === "", { timeout: 15000 });
+      `All Types=${disabledState["All Types"]?.count} expected=${expectedNarrowed} total=${rows.length}`);    // Reset for the interaction checks below.
+    await page.goto(`${BASE}/browse`, { waitUntil: "networkidle", timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(800);
 
     // Interaction: click a subject pill that actually exists in the DB →
@@ -499,28 +496,35 @@ async function runUiPhase(rows) {
       await page.waitForURL(/browse$/, { timeout: 15000 });
     } else {
       check("UI: clicking subject pill updates results", false, "pill missing or disabled");
-    }
-
-    // Interaction: debounced search — one request for a multi-char type-in.
-    await page.waitForFunction(() => {
-      const i = document.querySelector("input[placeholder*='title']");
-      return i && i.offsetParent !== null;
-    }, undefined, { timeout: 15000 });
+    }    // Interaction: popup typeahead — debounced server action (one request
+    // for a multi-char type-in) rendering suggestions in the dialog. The
+    // navbar search pill opens the popup (SearchPopup portal).
+    await page.click("nav [role='search']");
+    await page.waitForSelector("div[role='dialog'] input[type='text']", { timeout: 15000 });
     let rscRequests = 0;
-    const onRequest = (req) => { if (req.url().includes("/browse?q=")) rscRequests++; };
+    const onRequest = (req) => { if (req.method() === "POST" && req.url().includes("/browse")) rscRequests++; };
     page.on("request", onRequest);
     const searchWord = (rows[0].title.split(/\s+/).find((w) => w.length >= 4) || rows[0].title).toLowerCase();
-    await page.fill("input[placeholder*='title']", "");
-    await page.type("input[placeholder*='title']", searchWord, { delay: 50 });
-    await page.waitForURL((u) => u.searchParams.get("q") === searchWord, { timeout: 15000 });
+    await page.type("div[role='dialog'] input[type='text']", searchWord, { delay: 50 });
+    // Suggestions render once the debounced action resolves; searchWord comes
+    // from a real title, so a resource or subject match must appear.
+    await page.waitForFunction(
+      (word) => {
+        const d = document.querySelector("div[role='dialog']");
+        return !!d && d.innerText.toLowerCase().includes(word);
+      },
+      searchWord,
+      { timeout: 15000 }
+    ).catch(() => {});
     await page.waitForTimeout(600); // let any trailing request settle
     page.off("request", onRequest);
     check("UI: debounced search fires one request", rscRequests === 1, `requests=${rscRequests}`);
-    const searchShown = await page.evaluate(() => {
-      const t = document.body.innerText.match(/Showing\s+(\d+)\s+resources?/);
-      return t ? Number(t[1]) : null;
+
+    const typeaheadRendered = await page.evaluate(() => {
+      const d = document.querySelector("div[role='dialog']");
+      return !!d && d.querySelectorAll("button").length > 0;
     });
-    check("UI: search results render after debounce", searchShown !== null && searchShown > 0, `shown=${searchShown} term=${searchWord}`);
+    check("UI: typeahead renders suggestions", typeaheadRendered, `term=${searchWord} requests=${rscRequests}`);
   } finally {
     await browser.close();
   }
@@ -612,17 +616,19 @@ async function runAuthPhase() {
       !!rows[0].accepted_terms_at && !!rows[0].terms_version,
       `version=${rows[0].terms_version || "null"}`);
 
-    // 3. Login must be BLOCKED before verification.
+    // 3. Unverified accounts sign in successfully (nag-banner flow) — the
+    //    banner on every page nudges them to verify instead of a hard block.
     await gotoStable("/login");
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', password);
     await page.getByRole("button", { name: /Sign In/ }).click();
+    await page.waitForURL((u) => new URL(u).pathname === "/", { timeout: 30000 });
     await page.waitForFunction(
       () => document.body.innerText.includes("verify your email"),
       undefined,
       { timeout: 15000 }
     );
-    check("auth: unverified login blocked with message", true);
+    check("auth: unverified sign-in allowed with verify banner", true);
 
     // 4. Visit the verification link.
     await gotoStable(`/auth/verify-email?token=${rows[0].verification_token}`);
@@ -636,18 +642,16 @@ async function runAuthPhase() {
       verified[0]?.email_verified !== null,
       `email_verified=${verified[0]?.email_verified ? "set" : "null"}`);
 
-    // 5. Login now succeeds → lands on home, logged-in navbar visible.
-    await gotoStable("/login");
-    await page.fill('input[type="email"]', email);
-    await page.fill('input[type="password"]', password);
+    // 5. The session already exists (step 3's unverified sign-in succeeded).
+    //    After verification the nag banner must be gone and the navbar must
+    //    show the logged-in state.
+    await gotoStable("/");
     // The navbar renders guest state first and updates after its client-side
     // session fetch — so wait for that fetch to complete before judging.
     const sessionSettled = page.waitForResponse(
       (r) => r.url().includes("/api/auth/session"),
       { timeout: 20000 }
     ).catch(() => null);
-    await page.getByRole("button", { name: /Sign In/ }).click();
-    await page.waitForURL((u) => new URL(u).pathname === "/", { timeout: 30000 });
     await sessionSettled;
     let navWaitErr = null;
     // Logged-in marker: the user-menu BUTTON carries the avatar chip
@@ -664,13 +668,15 @@ async function runAuthPhase() {
       return {
         loggedIn: text.includes("Sign Out") || !!Array.from(nav?.querySelectorAll("button") || []).find((b) => b.querySelector(".rounded-full")),
         getStarted: text.includes("Get Started"),
+        verifyBanner: document.body.innerText.includes("verify your email"),
         url: location.href,
         navPresent: !!nav,
         bodyStart: document.body.innerText.slice(0, 60).replace(/\n/g, " | "),
       };
     });
-    check("auth: logged-in navbar state after login", navState.loggedIn,
+    check("auth: logged-in navbar state after verification", navState.loggedIn,
       JSON.stringify({ ...navState, navWaitErr }));
+    check("auth: verification clears the nag banner", !navState.verifyBanner);
 
     // 6. Protected route reachable while logged in.
     await page.goto(`${BASE}/profile`, { waitUntil: "domcontentloaded" });

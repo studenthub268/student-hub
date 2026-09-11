@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { verifyEmail } from "@/lib/actions/auth";
+import { VERIFIED_STATUS_CACHE_KEY } from "@/lib/constants";
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -33,6 +34,9 @@ export default function VerifyEmailPage() {
       } else {
         setStatus("success");
         toast.success("Email verified! You can now log in.");
+        // Drop the VerificationBanner's cached "unverified" so the next page
+        // shows no banner (it otherwise serves the stale value for 60s).
+        try { sessionStorage.removeItem(VERIFIED_STATUS_CACHE_KEY); } catch {}
       }
     });
   }, [token]);
