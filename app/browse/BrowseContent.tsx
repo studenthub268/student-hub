@@ -179,15 +179,14 @@ export default function BrowseContent({
                 // ponytail: CSS-driven mobile collapse instead of measured
                 // JS state — zero layout shift, 20 lines smaller. If chips
                 // must differ per breakpoint beyond hiding, revisit.
-                className={i >= MOBILE_SUBJECT_LIMIT ? "max-md:hidden" : ""}
+                className={i >= MOBILE_SUBJECT_LIMIT && !showAllSubjects ? "max-md:hidden" : ""}
                 onClick={() => {
                   setSelectedSubject(subject);
                   applyParams({ subject });
                 }}
               />
             ))}
-            {/* Show more/less — phone-only (CSS), flips the chip hiding above.
-                When open, the toggle hides itself instead of the overflow chips. */}
+            {/* Show more/less — phone-only (CSS), flips the chip hiding above. */}
             <button
               onClick={() => setShowAllSubjects((v) => !v)}
               className={`items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-black/30 text-black/60 transition-colors hover:border-black hover:text-black md:hidden ${
