@@ -1,4 +1,5 @@
 import { auth } from "./lib/auth";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap, invalidateBlockedIpsCache } from "./lib/ip-block";
 import { cleanupOldEmailEvents } from "./lib/cleanup";
@@ -18,7 +19,15 @@ function escapeHtml(input: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export async function proxy(request: NextRequest) {
+// Clerk migration phase 1: NextAuth remains the session of record. When
+// Clerk keys are configured, clerkMiddleware wraps the existing pipeline so
+// Clerk's handshake routes (__clerk) and components are live; without keys
+// the middleware is byte-identical to the pre-Clerk behavior.
+const clerkEnabled = !!(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+);
+
+async function handle(request: NextRequest) {
   // Run periodic cleanup of in-memory maps
   cleanupRateLimitMap();
 
@@ -87,6 +96,12 @@ export async function proxy(request: NextRequest) {
     pathname === "/login" ||
     pathname.startsWith("/login/") || // e.g. /login/forgot-password
     pathname === "/signup" ||
+    // Clerk-hosted auth pages (phase 1: live only when keys are configured)
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
+    // Clerk Frontend API handshake — intercepted by clerkMiddleware when
+    // enabled; listed here so a no-key deploy never login-gates the path.
+    pathname.startsWith("/__clerk") ||
     pathname === "/contact" ||
     pathname === "/terms" ||
     pathname === "/find" ||
@@ -158,8 +173,20 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// Dual-run: with Clerk keys, clerkMiddleware runs first (its __clerk
+// handshake routes + component context), then delegates to the pipeline
+// above — which still owns route gating via NextAuth until phase 3 cutover.
+// Without keys, the pipeline runs alone and behavior is unchanged.
+export default clerkEnabled
+  ? clerkMiddleware(async (auth, req) => handle(req))
+  : async function proxy(request: NextRequest) {
+      return handle(request);
+    };
+
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|offline$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Clerk Frontend API handshake routes (no-op unless keys configured)
+    "/__clerk/(.*)",
   ],
 };

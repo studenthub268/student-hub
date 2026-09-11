@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
@@ -80,28 +81,38 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Everything inside <body> — wrapped in ClerkProvider only when keys are
+  // configured, so the no-key path (local dev, CI today) is untouched.
+  const body = (
+    <>
+      <OfflineBanner />
+      <VerificationBanner />
+      <Navbar />
+      <main className="flex-1">{children}</main>
+      <Footer />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          className: "sh-toast sh-toast-default",
+          success: { className: "sh-toast sh-toast-success" },
+          error: { className: "sh-toast sh-toast-error" },
+        }}
+      />
+      <ServiceWorkerRegister />
+      <DeployWatcher />
+      <ScrollRestoration />
+    </>
+  );
+
+  const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
-        <OfflineBanner />
-        <VerificationBanner />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            className: "sh-toast sh-toast-default",
-            success: { className: "sh-toast sh-toast-success" },
-            error: { className: "sh-toast sh-toast-error" },
-          }}
-        />
-        <ServiceWorkerRegister />
-        <DeployWatcher />
-        <ScrollRestoration />
+        {clerkEnabled ? <ClerkProvider>{body}</ClerkProvider> : body}
       </body>
     </html>
   );
