@@ -255,7 +255,62 @@ const authConfig: NextAuthConfig = {
   },
 };
 
-// signIn is intentionally not exported: server-side sign-in has no caller —
-// login flows use the client helper from next-auth/react. Fewer exports on a
-// "use server"-adjacent module = smaller callable surface.
-export const { handlers, auth, signOut } = NextAuth(async () => authConfig);
+// signIn is intentionally not exported from NextAuth: server-side sign-in has
+// no caller — login flows use the client helper from next-auth/react. Fewer
+// exports on a "use server"-adjacent module = smaller callable surface.
+const nextAuth = NextAuth(async () => authConfig);
+
+// ── Clerk migration phase 2 ─────────────────────────────────────────
+// Session-source-agnostic auth(): the ONE function all 11 server files
+// call, keeping the exact NextAuth shape ({ session: { user: { id, email,
+// name, image } } } | null) so call sites stay untouched. With Clerk keys
+// configured it reads the Clerk session instead; without keys it is a
+// pass-through to NextAuth. The Postgres `users` row remains the source of
+// truth for email/name during the migration (Clerk identity → DB lookup by
+// email; phase 3 adds a users.clerkId column for the durable mapping).
+const clerkEnabled = !!(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+);
+
+type AppUser = {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+};
+
+async function clerkAuth(): Promise<AppUser | null> {
+  const { auth: clerkAuthFn } = await import("@clerk/nextjs/server");
+  const { userId, sessionClaims } = await clerkAuthFn();
+  if (!userId) return null;
+  const claimEmail = sessionClaims?.emailAddress;
+  const email = typeof claimEmail === "string" ? claimEmail : null;
+  if (!email) return null;
+  // Map the Clerk identity to the Postgres user row (email join during
+  // phase 2; becomes a clerkId lookup in phase 3).
+  try {
+    const { db } = await import("@/lib/db");
+    const { users } = await import("@/lib/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const row = await db.query.users.findFirst({ where: eq(users.email, email) });
+    if (!row) return null; // Clerk-signed-in but not yet backfilled → no session
+    return {
+      user: {
+        id: row.id,
+        name: row.name ?? null,
+        email: row.email,
+        image: row.image ?? null,
+      },
+    };
+  } catch (error) {
+    console.error("[auth] Clerk→DB user lookup failed:", error);
+    return null;
+  }
+}
+
+export const auth = clerkEnabled ? clerkAuth : nextAuth.auth;
+// NextAuth's signOut stays exported for the current client flows until
+// cutover (phase 3) deletes it.
+export const { handlers, signOut } = nextAuth;
