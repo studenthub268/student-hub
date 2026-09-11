@@ -58,7 +58,8 @@ const ATTACK_PATTERNS = [
 // only trips for scripts/DoS. Sized so a classroom behind one NAT IP and
 // CI smoke runs don't get false-positive 429s.
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 300; // 300 requests per minute
+const MAX_REQUESTS = 600; // 600 requests per minute — headroom for a
+// classroom behind one NAT IP; still far above any human browsing rate.
 const RATE_LIMIT_MAP = new Map<string, { count: number; resetAt: number }>();
 
 // Lazy cleanup: prune expired entries every 2 minutes to prevent

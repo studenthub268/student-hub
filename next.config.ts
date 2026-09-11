@@ -1,12 +1,14 @@
 import type { NextConfig } from "next";
 
+// script-src keeps 'unsafe-inline' BY DESIGN: Next's per-page inline
+// flight-payload scripts (__next_f.push) are request-unique and cannot be
+// hashed, and the nonce alternative (middleware CSP header) forces every
+// prerendered page to render dynamically — killing the static/ISR caching
+// the site's performance work depends on (verified empirically 2026-09-12:
+// hash-only policy blocks hydration entirely). Revisit only if the site
+// moves to fully dynamic rendering. 'unsafe-eval' remains dev-only.
 const isProd = process.env.NODE_ENV === "production";
-
-// 'unsafe-eval' is required only by React dev tooling — production keeps a
-// tighter script policy. (A full nonce-based CSP is the next hardening step;
-// it forces every prerendered page to render dynamically, so it's a bigger
-// change than it looks.)
-const scriptSrc = `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} https://challenges.cloudflare.com`;
+const scriptSrc = `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`;
 
 const securityHeaders = [
   {
@@ -38,6 +40,10 @@ const securityHeaders = [
     value: "none",
   },
   {
+    key: "Cross-Origin-Opener-Policy",
+    value: "same-origin",
+  },
+  {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
@@ -46,7 +52,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://student-hub-uet.vercel.app https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
       "font-src 'self' https://fonts.gstatic.com",
       "connect-src 'self' https://*.neon.tech https://api.resend.com https://*.r2.dev",
-      "frame-src https://challenges.cloudflare.com https://*.r2.dev",
+      "frame-src 'self'",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

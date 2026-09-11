@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/admin", "/upload", "/profile", "/report", "/offline"],
+        disallow: ["/api/", "/upload", "/profile", "/report", "/offline"],
       },
     ],
     sitemap: `${process.env.APP_URL || "https://student-hub-uet.vercel.app"}/sitemap.xml`,
