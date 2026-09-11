@@ -8,7 +8,7 @@ import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
 import SearchPopup from "./SearchPopup";
 import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -34,9 +34,19 @@ export function Navbar() {
     setSearchOpen(true);
   };
 
-return (
+  // Lock background scroll while the menu popup is open (same contract as
+  // SearchPopup). No Esc handler — touch has no Esc; tap-outside closes.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  return (
     <nav className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 pb-4">
-      <div className="mx-auto max-w-7xl">
+      {/* z-[110] keeps the bar (its X / search buttons) tappable above the
+          menu overlay's click-away catcher below. */}
+      <div className="relative z-[110] mx-auto max-w-7xl">
       <div className="flex h-14 items-center justify-between rounded-2xl border-2 border-black bg-white/70 backdrop-blur-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-4 sm:px-6">
 
         {/* Logo + Mobile Back Button */}
@@ -93,10 +103,13 @@ return (
 
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — fixed popup over the page (not in-flow, so it can't
+          push layout); tapping anywhere outside it closes it. */}
       {mobileOpen && (
-        <div className="md:hidden mt-3">
-          <div className="rounded-2xl border-2 border-black bg-white/90 backdrop-blur-xl shadow-[4px_4px_0px_0px_#111] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto scale-in origin-top">
+        <div className="md:hidden fixed inset-0 z-[100]">
+          {/* Click-away catcher — transparent, sits behind the panel */}
+          <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
+          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-black bg-white/95 backdrop-blur-xl shadow-[8px_8px_0px_0px_#111] scale-in origin-top">
             
             {/* Nav Links */}
             {NAV_LINKS.map((link, index) => (

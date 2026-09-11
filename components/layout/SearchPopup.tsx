@@ -218,7 +218,11 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
           {/* Footer hint */}
           <div className="px-6 py-3 bg-gray-50 border-t border-black/5 flex items-center justify-between">
             <span className="text-[10px] font-bold tracking-widest text-black/30 uppercase">Search</span>
-            <span className="text-[10px] font-medium text-black/30">Enter for full results · Esc to close</span>
+            <span className="text-[10px] font-medium text-black/30">
+              {/* Touch has no Esc — say what actually closes it there. */}
+              <span className="sm:hidden">Tap outside to close</span>
+              <span className="hidden sm:inline">Enter for full results · Esc to close</span>
+            </span>
           </div>
         </div>
       </div>
