@@ -7,6 +7,10 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   name: text('name'),
   email: text('email').notNull().unique(),
+  // Clerk identity (migration phase 3): set by the user.created webhook or
+  // the one-time backfill. Nullable until every user is migrated; unique
+  // because one Clerk user maps to exactly one row.
+  clerkId: text('clerk_id').unique(),
   passwordHash: text('password_hash'),
   image: text('image'),
   emailVerified: timestamp('email_verified'),

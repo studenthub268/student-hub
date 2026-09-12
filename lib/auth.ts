@@ -289,13 +289,23 @@ async function clerkAuth(): Promise<AppUser | null> {
   const claimEmail = sessionClaims?.emailAddress;
   const email = typeof claimEmail === "string" ? claimEmail : null;
   if (!email) return null;
-  // Map the Clerk identity to the Postgres user row (email join during
-  // phase 2; becomes a clerkId lookup in phase 3).
+  // Map the Clerk identity to the Postgres user row: clerkId is the
+  // durable key (set by the user.created webhook / backfill); email is the
+  // phase-2 fallback for pre-backfill users.
   try {
     const { db } = await import("@/lib/db");
     const { users } = await import("@/lib/db/schema");
     const { eq } = await import("drizzle-orm");
-    const row = await db.query.users.findFirst({ where: eq(users.email, email) });
+    let row = await db.query.users.findFirst({ where: eq(users.clerkId, userId) });
+    if (!row) {
+      row = await db.query.users.findFirst({ where: eq(users.email, email) });
+      if (row) {
+        // Self-heal: adopt the Clerk identity so future lookups hit the
+        // clerkId path directly. A unique violation (clerkId already claimed)
+        // lands in the catch below → no session, same as unmapped.
+        await db.update(users).set({ clerkId: userId }).where(eq(users.id, row.id));
+      }
+    }
     if (!row) return null; // Clerk-signed-in but not yet backfilled → no session
     return {
       user: {
