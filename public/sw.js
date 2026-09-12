@@ -2,13 +2,13 @@
 // visitor's caches without a hand edit — one `npm version` bump rewrites the
 // number here and on the terms page at build time
 // (scripts/write-deploy-version.mjs).
-const STATIC_CACHE = "student-hub-static-v0.2.14";
-const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.14";
+const STATIC_CACHE = "student-hub-static-v0.2.15";
+const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.15";
 
-// Status endpoints (verification banner, admin flag) — cached so signed-in
-// pages render correctly offline and instantly, refreshed in background.
+// Status endpoints (admin flag) — cached so signed-in pages render
+// correctly offline and instantly, refreshed in background.
 const STATUS_CACHE = "student-hub-status-v5";
-const STATUS_PATHS = ["/api/check-verified", "/api/check-admin"];
+const STATUS_PATHS = ["/api/check-admin"];
 
 // Deploy-version beacon must ALWAYS hit the real network — the whole point
 // is to notice when the deployed build changes.
@@ -157,21 +157,30 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Next.js static assets (_next/static) — cache first (production only)
+  // Next.js static assets (_next/static) — dev: network only; prod:
+  // NETWORK-FIRST with cache fallback. Chunks change on every deploy, so
+  // cache-first feeds pre-deploy JS to new HTML — hydration crashes and the
+  // tab sits on loading skeletons forever. Network always wins online (Vercel
+  // serves these immutable, so they're CDN/disk-cached anyway); the SW cache
+  // only answers when offline.
   if (IS_DEV && url.pathname.startsWith("/_next/static/")) {
     return; // dev: let the network serve fresh chunks
   }
 
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
-          const clone = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+          }
           return response;
-        });
-      })
+        })
+        .catch(() =>
+          cachesn            .match(request)
+            .then((cached) => cached || new Response("Offline", { status: 503 }))
+        )
     );
     return;
   }
