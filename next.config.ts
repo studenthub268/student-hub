@@ -8,7 +8,9 @@ import type { NextConfig } from "next";
 // hash-only policy blocks hydration entirely). Revisit only if the site
 // moves to fully dynamic rendering. 'unsafe-eval' remains dev-only.
 const isProd = process.env.NODE_ENV === "production";
-const scriptSrc = `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`;
+// https://*.clerk.accounts.dev serves Clerk's component JS (observed live);
+// Clerk's official CSP guidance also allows its known static hosts.
+const scriptSrc = `script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev${isProd ? "" : " 'unsafe-eval'"}`;
 
 const securityHeaders = [
   {
@@ -49,10 +51,11 @@ const securityHeaders = [
       "default-src 'self'",
       scriptSrc,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://student-hub-uet.vercel.app https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
+      "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://student-hub-uet.vercel.app https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://img.clerk.com https://*.clerk.accounts.dev",
       "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://*.neon.tech https://api.resend.com https://*.r2.dev",
+      "connect-src 'self' https://*.neon.tech https://api.resend.com https://*.r2.dev https://*.clerk.accounts.dev https://clerk.com https://api.clerk.com",
       "frame-src 'self'",
+      "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

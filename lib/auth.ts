@@ -279,6 +279,7 @@ type AppUser = {
     email?: string | null;
     image?: string | null;
   };
+  expires: string;
 };
 
 async function clerkAuth(): Promise<AppUser | null> {
@@ -303,6 +304,11 @@ async function clerkAuth(): Promise<AppUser | null> {
         email: row.email,
         image: row.image ?? null,
       },
+      // NextAuth's Session shape requires expires; use the Clerk JWT's real
+      // exp claim (unix seconds) so consumers see a genuine expiry.
+      expires: sessionClaims?.exp
+        ? new Date((sessionClaims.exp as number) * 1000).toISOString()
+        : new Date(Date.now() + 7 * 86400_000).toISOString(),
     };
   } catch (error) {
     console.error("[auth] Clerk→DB user lookup failed:", error);
@@ -310,7 +316,28 @@ async function clerkAuth(): Promise<AppUser | null> {
   }
 }
 
-export const auth = clerkEnabled ? clerkAuth : nextAuth.auth;
+// Dual-read during the migration: a Clerk session wins; otherwise fall
+// back to the NextAuth session. Both sign-in paths stay live until the
+// phase-3 cutover deletes the NextAuth flow — a user signed in through
+// either system gets a session, not just the one that loaded last.
+export const auth = async () => {
+  if (clerkEnabled) {
+    try {
+      const clerkUser = await clerkAuth();
+      if (clerkUser) return clerkUser;
+    } catch (error) {
+      // Any Clerk failure (unmounted provider, token issue) must degrade to
+      // the NextAuth session, never a 500.
+      console.error("[auth] Clerk session read failed; falling back to NextAuth:", error);
+    }
+  }
+  return nextAuth.auth();
+};
+// Explicit NextAuth session read — for proxy.ts's middleware pipeline, which
+// must NOT call Clerk's auth() (it is invalid re-entrant inside
+// clerkMiddleware) and keeps gating on the NextAuth session of record until
+// phase-3 cutover.
+export const nextAuthAuth = nextAuth.auth;
 // NextAuth's signOut stays exported for the current client flows until
 // cutover (phase 3) deletes it.
 export const { handlers, signOut } = nextAuth;

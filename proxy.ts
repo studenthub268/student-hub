@@ -1,4 +1,4 @@
-import { auth } from "./lib/auth";
+import { nextAuthAuth as auth } from "./lib/auth";
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap, invalidateBlockedIpsCache } from "./lib/ip-block";
