@@ -10,6 +10,8 @@ import { eq, desc, ilike, and, or, isNull, sql } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
 import { escapeLike } from "@/lib/utils";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from "@/lib/uploads";
+import { checkRateLimit } from "./rate-limit";
+import { runAsUser } from "@/lib/db/scoped";
 
 const resourceSchema = z.object({
   title: z.string().min(3).max(100),
@@ -57,36 +59,43 @@ export async function uploadResource(formData: {
     );
   }
 
+  // Rate limit uploads per user (10/hour) — storage is the expensive,
+  // abusable resource here.
+  if (!(await checkRateLimit(`upload:${session.user.id}`, 10, 3600))) {
+    throw new Error("Upload limit reached for this hour. Please try again later.");
+  }
+
   const validatedData = resourceSchema.parse(formData);
 
-  const [resource] = await db.insert(resources).values({
-    title: validatedData.title,
-    description: validatedData.description,
-    type: validatedData.type,
-    subject: validatedData.subject,
-    professor: validatedData.professor,
-    department: validatedData.department,
-    fileUrl: validatedData.file_url,
-    fileKey: validatedData.file_key,
-    fileType: validatedData.file_type,
-    fileSize: validatedData.file_size,
-    uploaderId: session.user.id,
-  }).returning();
+  // RLS-scoped insert: the database itself rejects a row whose uploader_id
+  // isn't the verified session user, even if the code path regresses.
+  const results = await runAsUser(session.user.id, (sql) => [
+    sql`insert into resources (title, description, type, subject, professor, department, file_url, file_key, file_type, file_size, uploader_id)
+        values (${validatedData.title}, ${validatedData.description ?? null}, ${validatedData.type}, ${validatedData.subject},
+                ${validatedData.professor ?? null}, ${validatedData.department ?? null}, ${validatedData.file_url},
+                ${validatedData.file_key}, ${validatedData.file_type}, ${validatedData.file_size}, ${session.user.id})
+        returning id`,
+  ]);
+  // Batch results: [role-switch rows, identity rows, insert rows].
+  const created = (results[2] as { id: string }[] | undefined)?.[0];
 
   revalidatePath("/");
   revalidatePath("/browse");
   revalidateTag("recent-resources", "default");
-  return resource;
+  return { id: created?.id };
 }
 
 export async function deleteResource(resourceId: string) {
+  const parsed = z.string().uuid().safeParse(resourceId);
+  if (!parsed.success) throw new Error("Invalid resource id");
+
   const session = await auth();
   if (!session?.user) {
     throw new Error("Authentication required");
   }
 
   const resource = await db.query.resources.findFirst({
-    where: eq(resources.id, resourceId),
+    where: eq(resources.id, parsed.data),
   });
 
   if (!resource) {
@@ -103,7 +112,7 @@ export async function deleteResource(resourceId: string) {
   }
 
   // Delete from DB
-  await db.delete(resources).where(eq(resources.id, resourceId));
+  await db.delete(resources).where(eq(resources.id, parsed.data));
 
   revalidatePath("/");
   revalidatePath("/browse");
@@ -116,6 +125,12 @@ export async function checkDuplicateResources(
   department?: string
 ) {
   try {
+    // Guest-reachable and fired on every title keystroke debounce — rate
+    // limit per user (or IP for the pre-login flow) to blunt scraping.
+    const session = await auth();
+    const key = session?.user?.id ?? "guest";
+    if (!(await checkRateLimit(`dupcheck:${key}`, 30, 60))) return [];
+
     // A same-title resource only counts as a duplicate when it belongs to the
     // SAME department (compared case-insensitively). A different department
     // means it is that department's own material — a genuinely new resource.

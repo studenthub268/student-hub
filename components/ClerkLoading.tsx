@@ -13,6 +13,14 @@ export function ClerkLoading() {
       <div className="shimmer mt-8 h-12 w-full rounded-xl" />
       <div className="shimmer mt-4 h-12 w-full rounded-xl" />
       <div className="shimmer mt-8 h-14 w-full rounded-full" />
+      {/* Escape hatch if hydration never completes (stale tab mid-deploy):
+          pure-CSS delayed reveal, so it works even with no JS at all. */}
+      <p className="slow-hint mt-6 text-center text-sm text-gray-500">
+        Taking a while?{" "}
+        <a href="" className="font-semibold text-[#0D9488] hover:underline">
+          Reload the page
+        </a>
+      </p>
     </div>
   );
 }

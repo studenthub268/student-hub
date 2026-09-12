@@ -82,6 +82,14 @@ jobs:
       - name: Clerk webhook lifecycle check
         run: node scripts/clerk-webhook-check.mjs http://127.0.0.1:3000
 
+      # RLS: apply the repo's policy set (idempotent) to the live DB, then
+      # prove the enforcement guarantees still hold (scoped role cannot forge
+      # identity, touch other users' rows, or write unidentified).
+      - name: RLS policy sync + enforcement check
+        run: |
+          node scripts/setup-rls.mjs
+          node scripts/rls-enforcement-check.mjs
+
       # Same production server, one step: the four layout/security gates.
       # The layout audits mock the client session/admin APIs themselves, and
       # the probe's assertions are environment-agnostic (HTTP headers are set

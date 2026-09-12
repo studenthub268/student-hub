@@ -24,6 +24,20 @@ async function isAdmin(email: string): Promise<boolean> {
 const adminEmailSchema = z.string().trim().toLowerCase().email().max(254);
 // zod v4: IP formats moved to top-level schemas; accept v4 and v6.
 const ipAddressSchema = z.union([z.ipv4(), z.ipv6()]);
+// Mass-assignment guard: only these fields are ever writable via the admin
+// resource editor, and each gets its own bound. (The upload path uses
+// resources.ts's stricter create schema.)
+const adminResourceUpdateSchema = z
+  .object({
+    title: z.string().min(3).max(100),
+    description: z.string().max(500),
+    subject: z.string().min(2).max(50),
+    type: z.enum(["assignment", "quiz", "past-paper", "notes", "other"]),
+    professor: z.string().max(50),
+    department: z.string().max(50),
+  })
+  .partial()
+  .refine((d) => Object.keys(d).length > 0, { message: "No fields to update" });
 
 /**
  * One-shot loader for the admin panel: a single auth check and all panel
@@ -216,7 +230,10 @@ export async function adminUpdateResource(
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Admin only");
 
-  await db.update(resources).set(data).where(eq(resources.id, resourceId));
+  if (!z.string().uuid().safeParse(resourceId).success) throw new Error("Invalid resource id");
+  const validated = adminResourceUpdateSchema.parse(data); // strips unknown keys, bounds every value
+
+  await db.update(resources).set(validated).where(eq(resources.id, resourceId));
 
   revalidatePath("/");
   revalidatePath("/browse");

@@ -6,6 +6,7 @@ import { validateFile } from "@/lib/uploads";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { checkRateLimit } from "@/lib/actions/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +29,13 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Same shared budget as uploadResource's action-side limit (10/hour per
+    // user): the file PUT and the resource row are one logical upload, so
+    // both paths draw from the same bucket — storage is the abusable resource.
+    if (!(await checkRateLimit(`upload:${session.user.id}`, 10, 3600))) {
+      return NextResponse.json({ error: "Upload limit reached for this hour. Please try again later." }, { status: 429 });
     }
 
     // Verified email required to push files to storage — matches the

@@ -244,6 +244,19 @@ body {
   animation: shimmer 1.6s linear infinite;
 }
 
+/* Escape hatch on loading skeletons: reveal only if loading drags on
+   (~6s), so a normally-fast mount never flashes the hint. Pure CSS, so it
+   shows even when hydration never runs. */
+.slow-hint {
+  opacity: 0;
+  animation: slow-hint-in 0.4s ease 6s forwards;
+}
+@keyframes slow-hint-in {
+  to {
+    opacity: 1;
+  }
+}
+
 /* Tactile press feedback for buttons and cards */
 .press {
   transition: transform 0.12s ease;
