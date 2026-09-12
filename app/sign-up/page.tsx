@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SignUp } from "@clerk/nextjs";
 import { CLERK_APPEARANCE } from "@/lib/clerk-theme";
+import { ClerkLoading } from "@/components/ClerkLoading";
 
 export const metadata: Metadata = {
   title: "Sign up — Student Hub",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 export default function SignUpPage() {
   return (
     <div className="clerk-brutalist flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4">
-      <SignUp appearance={CLERK_APPEARANCE} />
+      <SignUp fallback={<ClerkLoading />} appearance={CLERK_APPEARANCE} />
     </div>
   );
 }
