@@ -1,14 +1,19 @@
 // Runnable check for the Clerk webhook lifecycle (CI/local): signs genuine
 // svix requests like Clerk's dashboard would and asserts the Postgres rows
 // appear, attach, update, and disappear. Run against a booted server:
-//   node scripts/clerk-webhook-check.mjs http://localhost:3190
+//   node scripts/clerk-webhook-check.mjs http://localhost:3000
+// The server must run with the same CLERK_WEBHOOK_SECRET this script signs
+// with (that is how CI wires it). Skips gracefully when unset.
 import { config } from "dotenv";
 import { Webhook } from "svix";
 
 config({ path: ".env.local" });
 const BASE = process.argv[2] || "http://localhost:3000";
-// Test-only signing secret, passed to the server via the same env name.
-const WHSEC = process.env.TEST_WEBHOOK_SECRET || "whsec_" + Buffer.from("test-secret-0123456789abcdef").toString("base64");
+const WHSEC = process.env.CLERK_WEBHOOK_SECRET || process.env.TEST_WEBHOOK_SECRET;
+if (!WHSEC) {
+  console.log("ℹ  skipping clerk-webhook-check — CLERK_WEBHOOK_SECRET not set");
+  process.exit(0);
+}
 
 const { neon } = await import("@neondatabase/serverless");
 const sql = neon(process.env.DATABASE_URL);
