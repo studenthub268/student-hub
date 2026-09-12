@@ -1,33 +1,50 @@
-import { nextAuthAuth as auth } from "./lib/auth";
-import { clerkMiddleware } from "@clerk/nextjs/server";
-import { NextResponse, type NextRequest } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap, invalidateBlockedIpsCache } from "./lib/ip-block";
 import { cleanupOldEmailEvents } from "./lib/cleanup";
-import { checkBounceRateAlert } from "./lib/alerts";
-import { notifyAutoBlock } from "./lib/alerts";
-// NOTE: VPN/proxy use alone is never a blockable offense. Visitors are only
-// auto-blocked for concrete attack behavior (see detectAttack) or manually by
-// an admin. Policy: privacy tools are not suspicious behavior.
+import { checkBounceRateAlert, notifyAutoBlock } from "./lib/alerts";
 
-/** Escape HTML special characters to prevent XSS in error response bodies */
-function escapeHtml(input: string): string {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+// ── Clerk session gating (cutover) ───────────────────────────────────
+// Identity lives in Clerk; this middleware owns protection (IP block,
+// attack detection, rate limit) AND route gating via the Clerk session.
+// With Clerk keys absent (CI / fresh checkouts) auth() reads as
+// signed-out and protected routes redirect to /sign-in.
+
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/browse(.*)",
+  "/resource/(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  // Legacy NextAuth paths — pure redirects to the Clerk pages (bookmarks)
+  "/login",
+  "/signup",
+  // Clerk email-link / E2E token consumer (verifies itself via Clerk)
+  "/accept-token",
+  "/contact",
+  "/terms",
+  "/find",
+  "/api/webhooks/(.*)",
+  // UI-hint status endpoints: they answer guests themselves (200 JSON),
+  // so the login redirect here would only waste a round trip.
+  "/api/check-(.*)",
+  // Connectivity probe for the offline banner — must always answer,
+  // never redirect (a 307 would look like a "server error" to fetch).
+  "/api/ping",
+  // Upload endpoint: the handler itself enforces same-origin (403 on
+  // mismatch), so guests get a clean JSON error instead of a login
+  // redirect that would confuse a CSRF probe.
+  "/api/upload",
+  // Deploy-version beacon for the auto-refresh watcher — guests included,
+  // and it must never waste a login round trip (it fires every minute).
+  "/api/version",
+]);
+
+function escapeHtml(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Clerk migration phase 1: NextAuth remains the session of record. When
-// Clerk keys are configured, clerkMiddleware wraps the existing pipeline so
-// Clerk's handshake routes (__clerk) and components are live; without keys
-// the middleware is byte-identical to the pre-Clerk behavior.
-const clerkEnabled = !!(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
-);
-
-async function handle(request: NextRequest) {
+export default clerkMiddleware(async (auth, request) => {
   // Run periodic cleanup of in-memory maps
   cleanupRateLimitMap();
 
@@ -85,65 +102,43 @@ async function handle(request: NextRequest) {
     });
   }
 
-  // 4. Auth and routing
-  const session = await auth();
-  const user = session?.user;
+  // 4. Route gating via the Clerk session
+  if (isPublicRoute(request)) {
+    const response = NextResponse.next();
+    response.headers.set("X-Content-Type-Options", "nosniff");
+    response.headers.set("X-Frame-Options", "DENY");
+    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    response.headers.set(
+      "Permissions-Policy",
+      "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    );
+    return response;
+  }
 
-  const isPublicRoute =
-    pathname === "/" ||
-    pathname.startsWith("/browse") ||
-    pathname.startsWith("/resource/") ||
-    pathname === "/login" ||
-    pathname.startsWith("/login/") || // e.g. /login/forgot-password
-    pathname === "/signup" ||
-    // Clerk-hosted auth pages (phase 1: live only when keys are configured)
-    pathname === "/sign-in" ||
-    pathname === "/sign-up" ||
-    // Clerk Frontend API handshake — intercepted by clerkMiddleware when
-    // enabled; listed here so a no-key deploy never login-gates the path.
-    pathname.startsWith("/__clerk") ||
-    pathname === "/contact" ||
-    pathname === "/terms" ||
-    pathname === "/find" ||
-    pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/api/webhooks/") ||
-    // UI-hint status endpoints: they answer guests themselves (200 JSON),
-    // so the login redirect here would only waste a round trip.
-    pathname.startsWith("/api/check-") ||
-    // Connectivity probe for the offline banner — must always answer,
-    // never redirect (a 307 would look like a "server error" to fetch).
-    pathname === "/api/ping" ||
-    // Upload endpoint: the handler itself enforces same-origin (403 on
-    // mismatch), so guests get a clean JSON error instead of a login
-    // redirect that would confuse a CSRF probe.
-    pathname === "/api/upload" ||
-    // Deploy-version beacon for the auto-refresh watcher — guests included,
-    // and it must never waste a login round trip (it fires every minute).
-    pathname === "/api/version";
-
-  if (!user && !isPublicRoute) {
+  const { userId } = await auth();
+  if (!userId) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
+    redirectUrl.pathname = "/sign-in";
     redirectUrl.searchParams.set("redirectedFrom", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && (pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  // Protect admin panel
+  // Protect admin panel (DB role check, same as before)
   if (pathname.startsWith("/admin")) {
-    if (!user?.email) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
     try {
       const { db } = await import("./lib/db");
-      const { adminEmails } = await import("./lib/db/schema");
+      const { users, adminEmails } = await import("./lib/db/schema");
       const { eq } = await import("drizzle-orm");
+      const row = await db.query.users.findFirst({
+        where: eq(users.clerkId, userId),
+        columns: { email: true },
+      });
+      const email = row?.email;
+      if (!email) {
+        return new NextResponse("Forbidden — Admin access only", { status: 403 });
+      }
       const admin = await db.query.adminEmails.findFirst({
-        where: eq(adminEmails.email, user.email),
+        where: eq(adminEmails.email, email),
       });
       if (!admin) {
         return new NextResponse("Forbidden — Admin access only", { status: 403 });
@@ -162,31 +157,14 @@ async function handle(request: NextRequest) {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=(), interest-cohort=()"
   );
-
-  if (user) {
-    response.headers.set(
-      "Cache-Control",
-      "private, no-cache, no-store, must-revalidate"
-    );
-  }
-
+  response.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
   return response;
-}
-
-// Dual-run: with Clerk keys, clerkMiddleware runs first (its __clerk
-// handshake routes + component context), then delegates to the pipeline
-// above — which still owns route gating via NextAuth until phase 3 cutover.
-// Without keys, the pipeline runs alone and behavior is unchanged.
-export default clerkEnabled
-  ? clerkMiddleware(async (auth, req) => handle(req))
-  : async function proxy(request: NextRequest) {
-      return handle(request);
-    };
+});
 
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|offline$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-    // Clerk Frontend API handshake routes (no-op unless keys configured)
+    // Clerk Frontend API handshake routes
     "/__clerk/(.*)",
   ],
 };

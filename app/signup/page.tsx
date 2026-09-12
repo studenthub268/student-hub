@@ -1,10 +1,7 @@
-import { SignupForm } from "@/components/auth/SignupForm";
+import { redirect } from "next/navigation";
 
+// NextAuth signup was removed in the Clerk cutover — keep old bookmarks
+// working by sending them to the Clerk sign-up page.
 export default function SignupPage() {
-  return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <SignupForm />
-    </div>
-  );
+  redirect("/sign-up");
 }
-

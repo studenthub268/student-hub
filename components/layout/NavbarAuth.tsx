@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 import { User, LogOut, Upload, BookOpen, ChevronRight } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
@@ -13,9 +12,9 @@ interface NavbarAuthProps {
 
 interface SessionUser { id: string; name?: string | null; email?: string | null; image?: string | null }
 
-// Module-level session cache shared by every NavbarAuth instance (desktop +
-// mobile menu). Without it, opening the hamburger re-fetches the session and
-// briefly renders the guest "Get Started" view before the profile appears.
+// Module-level session cache shared by every consumer of useSessionUser
+// (ContributeCta, profile client) — one /api/auth/session request per page
+// load, not per component mount.
 let cachedUser: SessionUser | null = null;
 let sessionPromise: Promise<SessionUser | null> | null = null;
 
@@ -50,6 +49,9 @@ export function useSessionUser(): SessionUser | null | undefined {
 }
 
 export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
+  // Identity comes from the app-owned /api/auth/session (the server maps the
+  // Clerk session onto the Postgres row) — DB-accurate name/image and the
+  // same deduped module cache as before, with no fetch flash.
   const [user, setUser] = useState<SessionUser | null>(cachedUser);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -74,16 +76,25 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
     };
   }, [mobile]);
 
-  const handleSignOut = async () => {
-    // Client-side signOut POSTs with CSRF and redirects home; a plain
-    // navigation to /api/auth/signout would land on NextAuth's standalone
-    // confirmation page instead.
-    await signOut({ redirectTo: "/" });
+  const handleSignOut = () => {
+    onClose?.();
+    // Clerk owns the session — its client signOut clears the cookie and
+    // revokes remotely. Navigate ourselves afterwards: Clerk's redirect
+    // option is unreliable across versions, and the hard navigation is what
+    // guarantees the cached client state resets to guest.
+    const clerk = (window as { Clerk?: { signOut?: () => Promise<unknown> } }).Clerk;
+    if (clerk?.signOut) {
+      void Promise.resolve(clerk.signOut()).finally(() => {
+        window.location.href = "/";
+      });
+    } else {
+      window.location.href = "/";
+    }
   };
 
   if (!user) {
     return (
-      <Link href="/login" onClick={onClose}
+      <Link href="/sign-in" onClick={onClose}
         className={mobile ? "flex items-center justify-center px-6 py-4 text-base font-bold text-white bg-[#0D9488] hover:bg-[#0D9488]/80 transition-colors rounded-b-2xl" : "rounded-full bg-[#111] px-6 py-2.5 text-sm font-medium text-white transition-transform hover:bg-black hover:scale-105 active:scale-95"}>
         Get Started
       </Link>

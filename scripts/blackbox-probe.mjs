@@ -56,12 +56,12 @@ const bad2 = await get("/resource/00000000-0000-0000-0000-000000000000");
 ok("bad resource id no 500/leak", bad1.status !== 500 && !/node_modules|\.tsx?:(\d+)/.test(await bad1.text()), String(bad1.status));
 ok("random uuid no 500/leak", bad2.status !== 500, String(bad2.status));
 
-// 5. Secrets & sensitive files must never be served — a redirect to login
-// (proxy catch-all) or a 404 is fine; 200 with content is not.
+// 5. Secrets & sensitive files must never be served — a redirect to a sign-in
+// page (proxy catch-all) or a 404 is fine; 200 with content is not.
 for (const p of ["/.env", "/.env.local", "/package.json", "/.git/config", "/next.config.ts"]) {
   const r = res[p] || (await get(p));
   const loc = r.headers.get("location") || "";
-  const safe = r.status === 404 || (r.status >= 300 && r.status < 400 && loc.includes("/login"));
+  const safe = r.status === 404 || (r.status >= 300 && r.status < 400 && (loc.includes("/login") || loc.includes("/sign-in")));
   ok(`${p} not served`, safe, `${r.status}${loc ? " -> " + loc.slice(0, 60) : ""}`);
 }
 

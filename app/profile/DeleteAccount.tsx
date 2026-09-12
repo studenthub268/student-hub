@@ -5,26 +5,24 @@ import { toast } from "react-hot-toast";
 import { Trash2, AlertTriangle, X } from "lucide-react";
 import { deleteMyAccount } from "@/lib/actions/auth";
 import { getErrorMessage } from "@/lib/utils";
-import { PasswordInput } from "@/components/ui/PasswordInput";
 
 /**
  * Danger zone — account deletion (privacy-policy "right to erasure").
- * Two-step guard: explicit modal + typed confirmation ("DELETE MY ACCOUNT"),
- * then server-side password re-auth for credentials accounts.
+ * Two-step guard: explicit modal + typed confirmation ("DELETE MY ACCOUNT").
+ * Clerk owns the credential; deletion revokes the Clerk session too.
  */
-export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
+export function DeleteAccount() {
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const armed = confirmText.trim().toUpperCase() === "DELETE MY ACCOUNT" && (!hasPassword || password.length > 0);
+  const armed = confirmText.trim().toUpperCase() === "DELETE MY ACCOUNT";
 
   const handleDelete = async () => {
     if (!armed || loading) return;
     setLoading(true);
     try {
-      const result = await deleteMyAccount(hasPassword ? password : undefined);
+      const result = await deleteMyAccount();
       if (result?.error) {
         toast.error(result.error);
         return;
@@ -110,22 +108,6 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
                   className="w-full h-12 px-4 rounded-xl border-2 border-black bg-white text-sm font-bold text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/30"
                 />
               </div>
-
-              {hasPassword && (
-                <div>
-                  <label htmlFor="delete-password" className="mb-2 block text-xs font-bold tracking-widest text-black">
-                    YOUR PASSWORD
-                  </label>
-                  <PasswordInput
-                    id="delete-password"
-                    size="md"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                  />
-                </div>
-              )}
             </div>
 
             {/* Stacked full-width on mobile (side-by-side pills overflow a
