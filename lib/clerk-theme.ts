@@ -1,7 +1,7 @@
 // Shared Clerk appearance — brand variables. Clerk v7's runtime stylesheet
 // uses hashed selectors with [data-variant] rules that outrank element-level
 // CSSObjects, so structural overrides (borders, shadows, pills) live in
-// globals.css under `.clerk-brutalist`, which reliably wins the cascade.
+// globals.css under `.clerk-form-side`, which reliably wins the cascade.
 // Both pages pass this as `appearance` to <SignIn/>/<SignUp/>.
 export const CLERK_APPEARANCE = {
   // Isolate Clerk's runtime stylesheet inside a @layer so the unlayered

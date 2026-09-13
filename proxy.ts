@@ -16,6 +16,8 @@ const isPublicRoute = createRouteMatcher([
   "/resource/(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // OAuth round-trip for the custom sign-in/sign-up buttons
+  "/sso-callback(.*)",
   // Legacy NextAuth paths — pure redirects to the Clerk pages (bookmarks)
   "/login",
   "/signup",

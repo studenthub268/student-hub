@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone plain-JS service worker: never imported by the app, and the
+    // Next/TS parser can't handle its file layout (parsing error at 182:0).
+    "public/sw.js",
   ]),
 ]);
 

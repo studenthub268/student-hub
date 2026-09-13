@@ -103,64 +103,58 @@ body {
   background: #fef2f2 !important;
 }
 
-/* ---- Clerk sign-in/sign-up — neo-brutalist skin ----
-   Clerk v7 styles its components with hashed classes plus [data-variant]
-   attribute selectors that outrank `appearance` element CSSObjects, so the
-   reliable override point is semantic cl-* classes (stable across deploys)
-   at higher specificity here. Color variables come from lib/clerk-theme.ts;
-   this block owns structure: black 2px borders, hard offset shadows, pill
-   buttons — the same recipes the rest of the site uses. */
-.clerk-brutalist .cl-card.cl-card {
-  border: 2px solid #111;
-  border-radius: 1.5rem;
+/* ---- Clerk sign-in/sign-up — skin inside the split-panel auth card ----
+   The form side is teal (components/auth/AuthShell.tsx); the Clerk card
+   goes see-through so its fields sit on teal exactly like the pre-Clerk
+   forms did. Clerk v7 styles its components with hashed classes plus
+   [data-variant] rules that outrank `appearance` CSSObjects, so the reliable
+   override point is semantic cl-* classes (stable across deploys) at higher
+   specificity here. Colors come from lib/clerk-theme.ts; this block owns
+   structure: black 2px borders, hard offset shadows, pill buttons. */
+.clerk-form-side .cl-card.cl-card {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.clerk-brutalist .cl-cardBox.cl-cardBox {
-  box-shadow: 8px 8px 0px 0px #111;
+/* Our own "Welcome back / Create an account" heading replaces Clerk's. */
+.clerk-form-side .cl-header.cl-header {
+  display: none;
 }
 
-.clerk-brutalist .cl-headerTitle.cl-headerTitle {
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: -0.025em;
-  color: #0a0a0a;
+/* OAuth buttons live in the black brand panel (AuthShell) — never in-card. */
+.clerk-form-side .cl-socialButtonsBlock.cl-socialButtonsBlock,
+.clerk-form-side .cl-dividerLine.cl-dividerLine,
+.clerk-form-side .cl-dividerLabel.cl-dividerLabel {
+  display: none;
 }
 
-.clerk-brutalist .cl-headerSubtitle.cl-headerSubtitle {
-  color: rgba(0, 0, 0, 0.55);
-}
-
-.clerk-brutalist .cl-socialButtonsBlockButton.cl-socialButtonsBlockButton,
-.clerk-brutalist .cl-alternativeMethodsBlockButton.cl-alternativeMethodsBlockButton {
-  border: 2px solid #111;
-  border-radius: 9999px;
-  background-color: #fff;
-  color: #111;
-  font-weight: 700;
-}
-
-.clerk-brutalist .cl-socialButtonsBlockButton.cl-socialButtonsBlockButton:hover {
-  background-color: #0D9488;
+.clerk-form-side .cl-formFieldLabel.cl-formFieldLabel {
   color: #000;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.8125rem;
 }
 
-.clerk-brutalist .cl-formFieldInput.cl-formFieldInput {
+.clerk-form-side .cl-formFieldInput.cl-formFieldInput {
   height: 3.5rem;
   max-height: none;
   border: 2px solid #111;
   border-radius: 0.75rem;
   background-color: #fff;
+  color: #000;
   box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
 }
 
-.clerk-brutalist .cl-formFieldInput.cl-formFieldInput:focus {
+.clerk-form-side .cl-formFieldInput.cl-formFieldInput:focus {
   box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
 /* Primary + alternative-method buttons: the site's pill CTA recipe. The
    doubled class beats Clerk's [data-variant] attribute rules on specificity. */
-.clerk-brutalist .cl-formButtonPrimary.cl-formButtonPrimary,
-.clerk-brutalist .cl-alternativeMethodsBlockButton.cl-alternativeMethodsBlockButton {
+.clerk-form-side .cl-formButtonPrimary.cl-formButtonPrimary,
+.clerk-form-side .cl-alternativeMethodsBlockButton.cl-alternativeMethodsBlockButton {
   height: 3.5rem;
   border: 2px solid #111;
   border-radius: 9999px;
@@ -171,21 +165,23 @@ body {
   box-shadow: none;
 }
 
-.clerk-brutalist .cl-formButtonPrimary:hover,
-.clerk-brutalist .cl-alternativeMethodsBlockButton:hover {
+.clerk-form-side .cl-formButtonPrimary:hover,
+.clerk-form-side .cl-alternativeMethodsBlockButton:hover {
   background-color: #000;
   box-shadow: 4px 4px 0px 0px #0D9488;
 }
 
-.clerk-brutalist .cl-footerActionLink.cl-footerActionLink,
-.clerk-brutalist .cl-footerPagesLink.cl-footerPagesLink,
-.clerk-brutalist .cl-backLink.cl-backLink {
-  color: #0D9488;
+.clerk-form-side .cl-footerActionLink.cl-footerActionLink,
+.clerk-form-side .cl-footerPagesLink.cl-footerPagesLink,
+.clerk-form-side .cl-backLink.cl-backLink {
+  color: #000;
   font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.clerk-brutalist .cl-footerActionLink.cl-footerActionLink:hover {
-  color: #0f766e;
+.clerk-form-side .cl-footerActionLink.cl-footerActionLink:hover {
+  color: #073b36;
 }
 
 /* ---- Motion system: subtle, GPU-composited, zero JS ----
