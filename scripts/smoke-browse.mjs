@@ -135,19 +135,19 @@ async function main() {
   {
     const res = await get("/profile");
     const loc = res.headers.get("location") || "";
-    check("protected /profile redirects to /sign-in when logged out",
-      res.status >= 300 && res.status < 400 && loc.includes("/sign-in"),
+    check("protected /profile redirects to /login when logged out",
+      res.status >= 300 && res.status < 400 && loc.includes("/login"),
       `got ${res.status} → ${loc}`);
   }
 
-  // 2c. Legacy /login + /signup must 307-redirect to the Clerk pages (old
-  // bookmarks), and /accept-token must stay reachable for email links.
-  for (const [p, expect] of [["/login", "/sign-in"], ["/signup", "/sign-up"], ["/accept-token", null]]) {
+  // 2c. Nested auth pages must stay reachable while logged out. Regression:
+  // the public-route list used an exact "/login" match, so the proxy bounced
+  // /login/forgot-password back to /login and the button appeared dead.
+  for (const p of ["/login/forgot-password", "/signup"]) {
     const res = await get(p);
     const loc = res.headers.get("location") || "";
-    const ok = expect ? res.status >= 300 && res.status < 400 && loc.includes(expect) : res.status === 200;
-    check(`legacy auth route: ${p}${expect ? ` → ${expect}` : " reachable"}`,
-      ok,
+    check(`logged-out route reachable: ${p}`,
+      res.status === 200 && !loc.includes("redirectedFrom"),
       `got ${res.status}${loc ? ` → ${loc}` : ""}`);
   }
 
@@ -354,8 +354,8 @@ async function runUiPhase(rows) {
 
   const chromePaths = [
     process.env.CHROME_PATH,
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
-    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
     "/usr/bin/google-chrome",
     "/usr/bin/chromium-browser",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -536,24 +536,14 @@ async function runUiPhase(rows) {
  * self-cleanup afterwards.
  */
 async function runAuthPhase() {
-  // Clerk ticket flow: a single-use sign-in token (Backend API) auto-signs
-  // the test user in via /accept-token. Proves: Clerk sign-in, the Clerk→
-  // Postgres bridge (clerkId self-heal), the app session mapping, and the
-  // Clerk sign-out. Skips (info, not failure) without Clerk keys — CI runs
-  // the identity-storage phase below instead.
-  const SK = process.env.CLERK_SECRET_KEY;
-  if (!SK || !process.env.CLERK_WEBHOOK_SECRET) {
-    console.log("ℹ  skipping auth phase — CLERK_SECRET_KEY / CLERK_WEBHOOK_SECRET not set");
-    return;
-  }
   const { neon } = await import("@neondatabase/serverless");
   const sql = neon(process.env.DATABASE_URL);
   const { chromium } = await import("playwright-core");
 
   const chromePaths = [
     process.env.CHROME_PATH,
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
-    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
     "/usr/bin/google-chrome",
     "/usr/bin/chromium-browser",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -563,116 +553,153 @@ async function runAuthPhase() {
 
   const stamp = Date.now();
   const email = `smoke-${stamp}@example.com`;
-  const password = "SmokeTest-" + stamp.toString(36) + "x9";
-  const api = (path, opts = {}) =>
-    fetch(`https://api.clerk.com/v1${path}`, {
-      ...opts,
-      headers: { Authorization: `Bearer ${SK}`, ...(opts.headers || {}) },
-    });
+  const password = "SmokeTest123";
+  const name = "Smoke Tester";
 
   const browser = await chromium.launch({ executablePath, headless: true });
-  let clerkUserId = null;
+  let userId = null;
+
   try {
-    // 1. Create a verified Clerk user.
-    const form = new URLSearchParams({
-      email_address: email,
-      password,
-      first_name: "Smoke",
-      last_name: "Tester",
-      verify_email: "true",
-    });
-    const cu = await (await api("/users", { method: "POST", body: form })).json();
-    if (!cu.id) throw new Error("Clerk user creation failed: " + JSON.stringify(cu.errors?.[0]?.message || cu).slice(0, 120));
-    clerkUserId = cu.id;
-    check("auth: clerk test user created", true, clerkUserId);
-
-    // 2. Sync the user into Postgres by delivering a signed user.created
-    //    webhook — exactly what Clerk's configured endpoint sends in
-    //    production. Proves the webhook → DB half of the bridge.
-    const { Webhook } = await import("svix");
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-    const msgId = "smoke-" + stamp;
-    const tsSec = Math.floor(Date.now() / 1000);
-    const payload = JSON.stringify({
-      type: "user.created",
-      data: {
-        id: clerkUserId,
-        email_addresses: [{ id: "idn_smoke", email_address: email }],
-        primary_email_address_id: "idn_smoke",
-        first_name: "Smoke",
-        last_name: "Tester",
-        image_url: null,
-        has_image: false,
-      },
-      timestamp: tsSec,
-    });
-    const wr = await fetch(`${BASE}/api/webhooks/clerk`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "svix-id": msgId,
-        "svix-timestamp": String(tsSec),
-        "svix-signature": wh.sign(msgId, new Date(tsSec * 1000), payload),
-      },
-      body: payload,
-    });
-    check("auth: user.created webhook syncs Postgres row", wr.status === 200, `got ${wr.status}`);
-
-    // 3. Mint a single-use sign-in token and consume it in a real browser.
-    const st = await (await api("/sign_in_tokens", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ user_id: clerkUserId, expires_in_seconds: 600 }),
-    })).json();
-    if (!st.token) throw new Error("sign-in token mint failed");
-
     const page = await browser.newPage();
     page.setDefaultTimeout(30000);
-    // The page hard-navigates (window.location.replace) once the session is
-    // live, which can abort Playwright's initial-load tracking — catch that,
-    // then judge by the final URL.
-    await page.goto(`${BASE}/accept-token?token=${st.token}`, { waitUntil: "domcontentloaded" });
-    await page.waitForURL((u) => !new URL(u).pathname.startsWith("/accept-token"), { timeout: 30000 }).catch(() => {});
-    check("auth: ticket sign-in completes", !page.url().includes("/accept-token"), new URL(page.url()).pathname);
 
-    // 3. The navbar session probe must return the mapped DB user.
-    const session = await page.evaluate(async () => {
-      const r = await fetch("/api/auth/session");
-      return r.json();
-    });
-    check("auth: app session maps Clerk → Postgres user",
-      session?.user?.email === email,
-      `email=${session?.user?.email ?? "none"}`);
+    /** Navigate, then wait for hydration so form handlers are attached. */
+    const gotoStable = async (path) => {
+      await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 20000 }).catch(() => {});
+      await page.waitForTimeout(400);
+    };
 
-    // 4. Protected route reachable while logged in.
-    await page.goto(`${BASE}/profile`, { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1500);
-    check("auth: /profile reachable when logged in",
-      !page.url().includes("/sign-in"),
-      `landed on ${new URL(page.url()).pathname}`);
+    // 1. Sign up via the real form.
+    await gotoStable("/signup");
+    await page.fill('input[placeholder="Name"]', name);
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[type="password"]', password); // fills both pw fields via nth
+    const pwFields = page.locator('input[type="password"]');
+    await pwFields.nth(0).fill(password);
+    await pwFields.nth(1).fill(password);
 
-    // 5. DB bridge: self-heal stamped clerk_id + verification onto the row.
-    const rows = await sql`select clerk_id, email_verified from users where email = ${email}`;
-    check("auth: Clerk→Postgres bridge wrote clerk_id + verified",
-      rows.length === 1 && rows[0].clerk_id === clerkUserId && rows[0].email_verified !== null,
-      `rows=${rows.length} clerk_id=${rows[0]?.clerk_id === clerkUserId} verified=${rows[0]?.email_verified !== null}`);
+    // 1b. Passive policy consent — a consent line (links to /terms) must be
+    // present; submitting the form constitutes acceptance.
+    const consentLine = await page.getByText("By signing up, you accept").count();
+    const termsLink = await page.locator('a[href="/terms"]').count();
+    check("auth: passive consent line present with terms links",
+      consentLine >= 1 && termsLink >= 1,
+      `line=${consentLine} links=${termsLink}`);
 
-    // 6. Sign out → back to guest state (Clerk clears the session cookie).
-    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /Sign Up/ }).click();
+    try {
+      await page.waitForFunction(
+        () => document.body.innerText.includes("Check your inbox"),
+        undefined,
+        { timeout: 20000 }
+      );
+    } catch {
+      // Surface what the page actually shows (toast errors render into body)
+      const pageText = await page.evaluate(() =>
+        document.body.innerText.replace(/\s+/g, " ").slice(0, 300)
+      );
+      throw new Error(`signup never showed "Check your inbox" — page says: ${pageText}`);
+    }
+    check("auth: signup accepted, verification prompt shown", true);
+
+    // 2. Grab the verification token straight from the DB (email delivery is
+    //    out of scope — Resend key is real and we don't send test mail).
+    const rows = await sql`select id, verification_token, accepted_terms_at, terms_version from users where email = ${email}`;
+    if (rows.length === 0 || !rows[0].verification_token) {
+      check("auth: user persisted with verification token", false, `rows=${rows.length}`);
+      return;
+    }
+    userId = rows[0].id;
+    check("auth: user persisted with verification token", true);
+    check("auth: policy consent recorded in DB (timestamp + version)",
+      !!rows[0].accepted_terms_at && !!rows[0].terms_version,
+      `version=${rows[0].terms_version || "null"}`);
+
+    // 3. Unverified accounts sign in successfully (nag-banner flow) — the
+    //    banner on every page nudges them to verify instead of a hard block.
+    await gotoStable("/login");
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[type="password"]', password);
+    await page.getByRole("button", { name: /Sign In/ }).click();
+    await page.waitForURL((u) => new URL(u).pathname === "/", { timeout: 30000 });
+    await page.waitForFunction(
+      () => document.body.innerText.includes("verify your email"),
+      undefined,
+      { timeout: 15000 }
+    );
+    check("auth: unverified sign-in allowed with verify banner", true);
+
+    // 4. Visit the verification link.
+    await gotoStable(`/auth/verify-email?token=${rows[0].verification_token}`);
+    await page.waitForFunction(
+      () => document.body.innerText.includes("Email Verified"),
+      undefined,
+      { timeout: 20000 }
+    );
+    const verified = await sql`select email_verified from users where id = ${userId}`;
+    check("auth: verify link sets email_verified in DB",
+      verified[0]?.email_verified !== null,
+      `email_verified=${verified[0]?.email_verified ? "set" : "null"}`);
+
+    // 5. The session already exists (step 3's unverified sign-in succeeded).
+    //    After verification the nag banner must be gone and the navbar must
+    //    show the logged-in state.
+    await gotoStable("/");
     // The navbar renders guest state first and updates after its client-side
-    // session fetch — wait for that fetch before judging the button.
-    await page.waitForResponse(
+    // session fetch — so wait for that fetch to complete before judging.
+    const sessionSettled = page.waitForResponse(
       (r) => r.url().includes("/api/auth/session"),
       { timeout: 20000 }
-    ).catch(() => {});
-    await page.waitForTimeout(600);
+    ).catch(() => null);
+    await sessionSettled;
+    let navWaitErr = null;
+    // Logged-in marker: the user-menu BUTTON carries the avatar chip
+    // (initials fallback or provider picture — both render as .rounded-full;
+    // "Sign Out" text only exists inside the closed dropdown — do not use it).
+    await page.waitForFunction(
+      () => !!document.querySelector("nav button .rounded-full"),
+      undefined,
+      { timeout: 20000 }
+    ).catch((e) => { navWaitErr = String(e.message).split("\n")[0]; });
+    const navState = await page.evaluate(() => {
+      const nav = document.querySelector("nav");
+      const text = nav ? nav.innerText : "";
+      return {
+        loggedIn: text.includes("Sign Out") || !!Array.from(nav?.querySelectorAll("button") || []).find((b) => b.querySelector(".rounded-full")),
+        getStarted: text.includes("Get Started"),
+        verifyBanner: document.body.innerText.includes("verify your email"),
+        url: location.href,
+        navPresent: !!nav,
+        bodyStart: document.body.innerText.slice(0, 60).replace(/\n/g, " | "),
+      };
+    });
+    check("auth: logged-in navbar state after verification", navState.loggedIn,
+      JSON.stringify({ ...navState, navWaitErr }));
+    check("auth: verification clears the nag banner", !navState.verifyBanner);
+
+    // 6. Protected route reachable while logged in.
+    await page.goto(`${BASE}/profile`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1000);
+    check("auth: /profile reachable when logged in",
+      !page.url().includes("/login"),
+      `landed on ${new URL(page.url()).pathname}`);
+
+    // 7. Sign out → back to guest state.
+    await gotoStable("/");
     const menuBtn = page.locator("nav button").filter({ has: page.locator(".rounded-full") }).first();
     if (await menuBtn.count() > 0) {
       await menuBtn.click();
-      await page.waitForTimeout(500);
-      const signOutBtn = page.getByText("Sign Out", { exact: true }).first();
-      await signOutBtn.waitFor({ state: "visible", timeout: 10000 });
-      await signOutBtn.click();
+      await page.waitForTimeout(500); // dropdown animation
+      const signOut = page.getByText("Sign Out", { exact: true }).first();
+      await signOut.waitFor({ state: "visible", timeout: 10000 });
+      await signOut.click();
+      // Signout POSTs, then round-trips a full page load before the guest
+      // navbar renders — wait for the signout response and the guest state.
+      await page.waitForResponse(
+        (r) => r.url().includes("/api/auth/signout"),
+        { timeout: 20000 }
+      ).catch(() => {});
       await page.waitForFunction(
         () => {
           const nav = document.querySelector("nav");
@@ -684,53 +711,114 @@ async function runAuthPhase() {
       const after = await page.evaluate(() => document.querySelector("nav")?.innerText || "");
       check("auth: sign out returns navbar to guest state",
         after.includes("Get Started") && !after.includes("Sign Out"),
-        `nav=${after.split(String.fromCharCode(10)).join(" | ").slice(0, 80)}`);
+        `nav=${after.replace(/\n/g, " | ").slice(0, 80)}`);
     } else {
       check("auth: sign out returns navbar to guest state", false, "user menu button not found");
     }
   } finally {
     await browser.close();
-    if (clerkUserId) {
+    // Self-cleanup: remove the test user (cascades to sessions/accounts).
+    if (userId) {
       try {
-        await api(`/users/${clerkUserId}`, { method: "DELETE" });
-        console.log("ℹ  clerk test user deleted");
-      } catch {}
-    }
-    try {
-      await sql`delete from users where email = ${email}`;
-      console.log("ℹ  auth test row deleted");
-    } catch (e) {
-      console.warn(`⚠  cleanup failed for ${email}: ${e.message}`);
+        await sql`delete from users where id = ${userId}`;
+        console.log("ℹ  auth test user deleted");
+      } catch (e) {
+        console.warn(`⚠  cleanup failed for ${email}: ${e.message}`);
+      }
     }
   }
 }
 
 /**
- * Identity-storage phase — guards the Clerk→Postgres bridge.
- * Checks the users.clerk_id unique column exists and the webhook endpoint
- * rejects unsigned requests (signature verification live).
+ * OAuth phase — guards the "Server error" on Google/GitHub sign-in.
+ *
+ * History: DrizzleAdapter was called without table mappings, so it queried
+ * invented tables ("user"/"account", singular) and every OAuth callback died
+ * with AdapterError (42P01) → masked as "Configuration". The accounts table
+ * also had a non-defaulted "id" PK, though Auth.js never passes one.
+ *
+ * Checks (all self-cleaning):
+ *  1. accounts table shape — composite PK (provider, providerAccountId),
+ *     id column gone, id_token/session_state columns present
+ *  2. the adapter's exact getUserByAccount join runs without error
+ *  3. the adapter's exact linkAccount insert works, and re-signin resolves
+ *     the user through it (probe row deleted afterwards, cascade cleans up)
+ *  4. the CSRF→POST signin handshake redirects to the real providers,
+ *     never to error=Configuration
+ * 5. the custom auth error page (pages.error → /auth/error) renders for a
+ *     signed-out visitor — no proxy gate, no redirect loop
  */
 async function runOAuthPhase() {
+  // 1-3 need the database
   if (process.env.DATABASE_URL) {
     const { neon } = await import("@neondatabase/serverless");
     const sql = neon(process.env.DATABASE_URL);
+
+    // 1. canonical shape
+    const pk = await sql`select pg_get_constraintdef(oid) as def from pg_constraint
+      where conrelid = 'accounts'::regclass and contype = 'p'`;
+    check("OAuth: accounts PK is (provider, providerAccountId)",
+      /provider.*providerAccountId/i.test(pk[0]?.def ?? ""),
+      pk[0]?.def ?? "no PK found");
     const cols = await sql`select column_name from information_schema.columns
-      where table_name = 'users'`;
-    const hasClerkId = cols.some((c) => c.column_name === "clerk_id");
-    check("identity: users.clerk_id column exists", hasClerkId);
-    if (hasClerkId) {
-      const idx = await sql`select indexdef from pg_indexes
-        where tablename = 'users' and indexdef ilike '%clerk_id%'`;
-      check("identity: users.clerk_id is unique-indexed", idx.length > 0,
-        idx.map((r) => r.indexdef).join(";").slice(0, 80));
-    }
+      where table_name = 'accounts'`;
+    const names = cols.map((c) => c.column_name);
+    check("OAuth: accounts has no legacy id column", !names.includes("id"), names.join(","));
+    check("OAuth: accounts has id_token + session_state columns",
+      names.includes("id_token") && names.includes("session_state"));
+
+    // 2 + 3. replay the adapter's exact operations on a probe row
+    const probeId = `smoke-oauth-${Date.now()}`;
+    const testEmail = `${probeId}@example.com`;
+    const lookupSql = `select "users"."id" from "accounts"
+      inner join "users" on "accounts"."userId" = "users"."id"
+      where ("accounts"."provider" = $1 and "accounts"."providerAccountId" = $2)`;
+    const before = await sql.query(lookupSql, ["google", probeId]);
+    check("OAuth: adapter getUserByAccount join runs", Array.isArray(before) && before.length === 0);
+    const created = await sql.query(
+      `insert into "users" ("name", "email", "email_verified") values ($1, $2, $3) returning "id"`,
+      ["Smoke OAuth Probe", testEmail, null]);
+    const userId = created[0].id;
+    await sql.query(
+      `insert into "accounts" ("userId", "type", "provider", "providerAccountId",
+        "id_token", "session_state") values ($1,$2,$3,$4,$5,$6)`,
+      [userId, "oauth", "google", probeId, "probe", null]);
+    const after = await sql.query(lookupSql, ["google", probeId]);
+    check("OAuth: linkAccount insert + user resolve works",
+      after.length === 1 && after[0].id === userId);
+    await sql.query(`delete from "users" where "id" = $1`, [userId]);
+    console.log("ℹ  OAuth probe rows cleaned up");
   } else {
-    console.log("ℹ  skipping identity DB checks — DATABASE_URL unavailable");
+    console.log("ℹ  skipping OAuth DB checks — DATABASE_URL unavailable");
   }
-  const res = await fetch(`${BASE}/api/webhooks/clerk`, { method: "POST", body: "{}" });
-  check("identity: clerk webhook rejects unsigned request",
-    res.status === 401 || res.status === 500,
-    `got ${res.status}`);
+
+  // 4. real handshake: CSRF → POST must 302 to the provider, never Configuration
+  for (const provider of ["google", "github"]) {
+    const csrfRes = await get("/api/auth/csrf");
+    const { csrfToken } = await csrfRes.json();
+    const setCookies = csrfRes.headers.getSetCookie?.() ?? [];
+    const cookie = setCookies.map((c) => c.split(";")[0]).join("; ");
+    const res = await fetch(`${BASE}/api/auth/signin/${provider}`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded", cookie },
+      body: new URLSearchParams({ csrfToken }),
+      redirect: "manual",
+    });
+    const loc = res.headers.get("location") || "";
+    const ok = res.status === 302 && !loc.includes("error=Configuration") &&
+      loc.startsWith("https://");
+    check(`OAuth: signin/${provider} handshake reaches provider`, ok,
+      `got ${res.status} → ${loc.split("?")[0] || "(none)"}`);
+  }
+
+  // 5. custom auth error page: signed-out visitors must reach it directly —
+  // if the proxy ever gates /auth/* or the page loops, users get stuck.
+  {
+    const res = await get("/auth/error?error=Configuration");
+    check("OAuth: custom auth error page renders for signed-out visitor",
+      res.status === 200 && !res.headers.get("location"),
+      `got ${res.status}${res.headers.get("location") ? " + redirect" : ""}`);
+  }
 }
 
 main().catch((err) => {

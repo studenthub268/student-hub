@@ -1,52 +1,24 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { auth } from "./lib/auth";
+import { NextResponse, type NextRequest } from "next/server";
 import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap, invalidateBlockedIpsCache } from "./lib/ip-block";
 import { cleanupOldEmailEvents } from "./lib/cleanup";
-import { checkBounceRateAlert, notifyAutoBlock } from "./lib/alerts";
+import { checkBounceRateAlert } from "./lib/alerts";
+import { notifyAutoBlock } from "./lib/alerts";
+// NOTE: VPN/proxy use alone is never a blockable offense. Visitors are only
+// auto-blocked for concrete attack behavior (see detectAttack) or manually by
+// an admin. Policy: privacy tools are not suspicious behavior.
 
-// ── Clerk session gating (cutover) ───────────────────────────────────
-// Identity lives in Clerk; this middleware owns protection (IP block,
-// attack detection, rate limit) AND route gating via the Clerk session.
-// With Clerk keys absent (CI / fresh checkouts) auth() reads as
-// signed-out and protected routes redirect to /sign-in.
-
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/browse(.*)",
-  "/resource/(.*)",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  // OAuth round-trip for the custom sign-in/sign-up buttons
-  "/sso-callback(.*)",
-  // Legacy NextAuth paths — pure redirects to the Clerk pages (bookmarks)
-  "/login",
-  "/signup",
-  // Clerk email-link / E2E token consumer (verifies itself via Clerk)
-  "/accept-token",
-  "/contact",
-  "/terms",
-  "/find",
-  "/api/webhooks/(.*)",
-  // UI-hint status endpoints: they answer guests themselves (200 JSON),
-  // so the login redirect here would only waste a round trip.
-  "/api/check-(.*)",
-  // Connectivity probe for the offline banner — must always answer,
-  // never redirect (a 307 would look like a "server error" to fetch).
-  "/api/ping",
-  // Upload endpoint: the handler itself enforces same-origin (403 on
-  // mismatch), so guests get a clean JSON error instead of a login
-  // redirect that would confuse a CSRF probe.
-  "/api/upload",
-  // Deploy-version beacon for the auto-refresh watcher — guests included,
-  // and it must never waste a login round trip (it fires every minute).
-  "/api/version",
-]);
-
-function escapeHtml(s: string) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/** Escape HTML special characters to prevent XSS in error response bodies */
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-export default clerkMiddleware(async (auth, request) => {
+export async function proxy(request: NextRequest) {
   // Run periodic cleanup of in-memory maps
   cleanupRateLimitMap();
 
@@ -104,43 +76,59 @@ export default clerkMiddleware(async (auth, request) => {
     });
   }
 
-  // 4. Route gating via the Clerk session
-  if (isPublicRoute(request)) {
-    const response = NextResponse.next();
-    response.headers.set("X-Content-Type-Options", "nosniff");
-    response.headers.set("X-Frame-Options", "DENY");
-    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-    response.headers.set(
-      "Permissions-Policy",
-      "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-    );
-    return response;
-  }
+  // 4. Auth and routing
+  const session = await auth();
+  const user = session?.user;
 
-  const { userId } = await auth();
-  if (!userId) {
+  const isPublicRoute =
+    pathname === "/" ||
+    pathname.startsWith("/browse") ||
+    pathname.startsWith("/resource/") ||
+    pathname === "/login" ||
+    pathname.startsWith("/login/") || // e.g. /login/forgot-password
+    pathname === "/signup" ||
+    pathname === "/contact" ||
+    pathname === "/terms" ||
+    pathname === "/find" ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/webhooks/") ||
+    // UI-hint status endpoints: they answer guests themselves (200 JSON),
+    // so the login redirect here would only waste a round trip.
+    pathname.startsWith("/api/check-") ||
+    // Connectivity probe for the offline banner — must always answer,
+    // never redirect (a 307 would look like a "server error" to fetch).
+    pathname === "/api/ping" ||
+    // Upload endpoint: the handler itself enforces same-origin (403 on
+    // mismatch), so guests get a clean JSON error instead of a login
+    // redirect that would confuse a CSRF probe.
+    pathname === "/api/upload" ||
+    // Deploy-version beacon for the auto-refresh watcher — guests included,
+    // and it must never waste a login round trip (it fires every minute).
+    pathname === "/api/version";
+
+  if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/sign-in";
+    redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("redirectedFrom", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Protect admin panel (DB role check, same as before)
+  if (user && (pathname === "/login" || pathname === "/signup")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Protect admin panel
   if (pathname.startsWith("/admin")) {
+    if (!user?.email) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
     try {
       const { db } = await import("./lib/db");
-      const { users, adminEmails } = await import("./lib/db/schema");
+      const { adminEmails } = await import("./lib/db/schema");
       const { eq } = await import("drizzle-orm");
-      const row = await db.query.users.findFirst({
-        where: eq(users.clerkId, userId),
-        columns: { email: true },
-      });
-      const email = row?.email;
-      if (!email) {
-        return new NextResponse("Forbidden — Admin access only", { status: 403 });
-      }
       const admin = await db.query.adminEmails.findFirst({
-        where: eq(adminEmails.email, email),
+        where: eq(adminEmails.email, user.email),
       });
       if (!admin) {
         return new NextResponse("Forbidden — Admin access only", { status: 403 });
@@ -159,14 +147,19 @@ export default clerkMiddleware(async (auth, request) => {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=(), interest-cohort=()"
   );
-  response.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
+
+  if (user) {
+    response.headers.set(
+      "Cache-Control",
+      "private, no-cache, no-store, must-revalidate"
+    );
+  }
+
   return response;
-});
+}
 
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|offline$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-    // Clerk Frontend API handshake routes
-    "/__clerk/(.*)",
   ],
 };

@@ -1,15 +1,11 @@
 # CI — runs the same gate as `npm run preflight` on every push and PR:
 # ESLint → tsc → production build → `next start` → the 3-phase smoke suite
-# (HTTP/SSR + headless-Chrome UI + Clerk auth E2E) against the live database.
+# (HTTP/SSR + headless-Chrome UI + auth E2E) against the live database.
 #
 # Required repo secrets (Settings → Secrets and variables → Actions):
-#   DATABASE_URL            — Neon pooled connection string (the smoke suite
-#                             reads the real DB and the auth phase creates/
-#                             deletes one Clerk test user)
-#   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY — activates the Clerk provider
-#   CLERK_SECRET_KEY        — Backend API: creates the test user + sign-in token
-#   CLERK_WEBHOOK_SECRET    — signs the webhook lifecycle requests AND the
-#                             server's CLERK_WEBHOOK_SECRET for this run
+#   DATABASE_URL  — Neon pooled connection string (the smoke suite reads the
+#                   real DB and phase 3 creates/deletes one test user)
+#   AUTH_SECRET   — required at import time by lib/auth.ts
 name: CI
 
 on:
@@ -30,12 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-      # One secret, two roles: the app's webhook endpoint verifies against it
-      # and the smoke's auth phase signs user.created with it (exactly what
-      # Clerk's configured endpoint does in production).
-      CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      APP_URL: http://localhost:3000
+      # The app runs on 127.0.0.1 in CI; NextAuth rejects non-HTTPS hosts in
+      # production mode unless explicitly trusted.
+      AUTH_TRUST_HOST: "true"
     steps:
       - uses: actions/checkout@v4
 
@@ -76,11 +71,6 @@ jobs:
 
       - name: Smoke suite (3 phases, against the live DB)
         run: node scripts/smoke-browse.mjs
-
-      # Dedicated lifecycle gate: signed svix user.created (existing-email
-      # attach) → user.updated → user.deleted against the same server.
-      - name: Clerk webhook lifecycle check
-        run: node scripts/clerk-webhook-check.mjs http://127.0.0.1:3000
 
       # RLS: apply the repo's policy set (idempotent) to the live DB, then
       # prove the enforcement guarantees still hold (scoped role cannot forge

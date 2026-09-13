@@ -12,7 +12,7 @@ export default async function ProfilePage() {
   const session = await auth();
 
   if (!session?.user) {
-    redirect("/sign-in?redirectedFrom=/profile");
+    redirect("/login?next=/profile");
   }
 
   let userResources: Awaited<ReturnType<typeof getResources>> = [];
@@ -38,7 +38,7 @@ export default async function ProfilePage() {
       />
       {/* Privacy-policy right-to-erasure (see /terms, Section 14) */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1400px]">
-        <DeleteAccount />
+        <DeleteAccount hasPassword={!!profile?.passwordHash} />
       </div>
     </div>
   );

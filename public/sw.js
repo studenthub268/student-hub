@@ -2,8 +2,8 @@
 // visitor's caches without a hand edit — one `npm version` bump rewrites the
 // number here and on the terms page at build time
 // (scripts/write-deploy-version.mjs).
-const STATIC_CACHE = "student-hub-static-v0.2.15";
-const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.15";
+const STATIC_CACHE = "student-hub-static-v0.2.17";
+const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.17";
 
 // Status endpoints (admin flag) — cached so signed-in pages render
 // correctly offline and instantly, refreshed in background.

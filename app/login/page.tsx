@@ -1,7 +1,10 @@
-import { redirect } from "next/navigation";
+import { LoginForm } from "@/components/auth/LoginForm";
 
-// NextAuth login was removed in the Clerk cutover — keep old bookmarks and
-// smoke probes working by sending them to the Clerk sign-in page.
 export default function LoginPage() {
-  redirect("/sign-in");
+  return (
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <LoginForm />
+    </div>
+  );
 }
+
