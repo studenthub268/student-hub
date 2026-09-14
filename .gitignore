@@ -48,3 +48,6 @@ cursor*
 
 # screenshot artifacts from verification scripts
 scripts/*.png
+
+# local-only DB row backup produced by the clerk_id drop (migration 0006)
+.clerk-id-backup.local.json

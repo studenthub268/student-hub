@@ -1,3 +1,13 @@
+/** Escape HTML special characters (used in error bodies and email HTML). */
+export function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * Escape characters that are wildcards in SQL LIKE patterns (% and _)
  * so they are matched literally. PostgreSQL uses backslash as the default

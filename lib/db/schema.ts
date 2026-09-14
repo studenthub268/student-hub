@@ -7,9 +7,6 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   name: text('name'),
   email: text('email').notNull().unique(),
-  // Legacy Clerk-migration column (phase 3). The Clerk cutover was reverted
-  // before any row used it; left in place so the ORM matches the live DB.
-  clerkId: text('clerk_id').unique(),
   passwordHash: text('password_hash'),
   image: text('image'),
   emailVerified: timestamp('email_verified'),

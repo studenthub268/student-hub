@@ -123,7 +123,7 @@ export default async function Home() {
             <div className="flex flex-wrap gap-2 relative z-10">
               <Link href="/browse?type=notes" className="bg-black text-white px-4 py-1.5 rounded-full text-xs font-medium hover:bg-black/80 transition-colors">Study Materials</Link>
               <Link href="/browse?type=past-paper" className="border border-black px-4 py-1.5 rounded-full text-xs font-medium hover:bg-black hover:text-white transition-colors">Past Papers</Link>
-              <Link href="/browse?type=notes" className="border border-black px-4 py-1.5 rounded-full text-xs font-medium hover:bg-black hover:text-white transition-colors">Notes</Link>
+              <Link href="/browse?type=quiz" className="border border-black px-4 py-1.5 rounded-full text-xs font-medium hover:bg-black hover:text-white transition-colors">Quizzes</Link>
             </div>
             <div className="mt-12 sm:mt-16 relative z-10">
               <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal tracking-tight mb-6">Accessible</h2>

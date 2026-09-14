@@ -25,6 +25,8 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
   const [resourceSuggestions, setResourceSuggestions] = useState<{id: string; title: string; subject: string}[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  // Keyboard selection over the suggestion list; -1 = input (no highlight).
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   // createPortal needs the DOM — flip this in a frame after mount; the
   // parent only mounts us while open, so it's true before users see us.
@@ -42,6 +44,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
     /* eslint-disable react-hooks/set-state-in-effect -- reset-on-open is the point; it runs once per open, not in a loop */
     setQuery("");
     setResourceSuggestions([]);
+    setActiveIndex(-1);
     /* eslint-enable react-hooks/set-state-in-effect */
     // The portal attaches a frame after `open` flips (see `mounted`), so
     // retry briefly until the input exists.
@@ -64,16 +67,31 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
       }
       const data = await searchResourceSuggestions(query);
       if (data) setResourceSuggestions(data);
+      setActiveIndex(-1);
     }
     const timeoutId = setTimeout(fetchSuggestions, 250);
     return () => clearTimeout(timeoutId);
   }, [query, open]);
 
-  // Esc closes; body scroll locked while open
+  // Esc / arrow-key navigation; body scroll locked while open. Arrow keys
+  // move the highlight across the visible suggestion list (Enter opens it);
+  // Escape first drops the highlight, then closes the popup.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (activeIndex >= 0) setActiveIndex(-1);
+        else onClose();
+        return;
+      }
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      const count = document.querySelectorAll("[data-suggestion]").length;
+      if (count === 0) return;
+      e.preventDefault();
+      setActiveIndex((i) => {
+        if (e.key === "ArrowDown") return i + 1 >= count ? 0 : i + 1;
+        return i <= 0 ? count - 1 : i - 1;
+      });
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -81,7 +99,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, activeIndex, onClose]);
 
   if (!mounted || !open) return null;
 
@@ -107,7 +125,15 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // from=search renders the clean results-only Browse (no filter chips).
+    // Enter on a highlighted suggestion opens it; otherwise Enter falls
+    // through to the full results page (from=search = no filter chips).
+    if (activeIndex >= 0) {
+      const selected = suggestions[activeIndex];
+      if (selected) {
+        handleSelectSuggestion(selected);
+        return;
+      }
+    }
     if (query.trim()) go(`/browse?q=${encodeURIComponent(query.trim())}&from=search`);
   };
 
@@ -186,11 +212,14 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
             </div>
           )}
 
-          {suggestions.map((item) => (
+          {suggestions.map((item, index) => (
             <button
               key={`${item.type}-${item.id}`}
+              data-suggestion
               onClick={() => handleSelectSuggestion(item)}
-              className="w-full group cursor-pointer px-5 py-4 border-b border-black/5 last:border-b-0 flex items-center justify-between gap-3 transition-colors hover:bg-[#0D9488] text-left"
+              className={`w-full group cursor-pointer px-5 py-4 border-b border-black/5 last:border-b-0 flex items-center justify-between gap-3 transition-colors text-left ${
+                index === activeIndex ? "bg-[#0D9488]" : "hover:bg-[#0D9488]"
+              }`}
             >
               <span className="flex items-center gap-3 min-w-0">
                 <Search className="h-4 w-4 text-black/30 group-hover:text-black/60 flex-shrink-0" />

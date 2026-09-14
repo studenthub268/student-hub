@@ -1,8 +1,0 @@
-{
-  "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["app/**/*.tsx", "app/**/route.ts", "scripts/*.mjs"],
-  "ignore": [
-    "public/sw.js"
-  ],
-  "ignoreExportsUsedInFile": true
-}

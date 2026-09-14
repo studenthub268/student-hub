@@ -56,7 +56,7 @@ const ATTACK_PATTERNS = [
 // Rate limiting: max requests per time window.
 // 300/min (5/sec sustained) is far above any human browsing pattern — this
 // only trips for scripts/DoS. Sized so a classroom behind one NAT IP and
-// CI smoke runs don't get false-positive 429s.
+// CI runs don't get false-positive 429s.
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 600; // 600 requests per minute — headroom for a
 // classroom behind one NAT IP; still far above any human browsing rate.

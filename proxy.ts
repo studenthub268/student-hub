@@ -1,22 +1,12 @@
 import { auth } from "./lib/auth";
 import { NextResponse, type NextRequest } from "next/server";
 import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap, invalidateBlockedIpsCache } from "./lib/ip-block";
+import { escapeHtml } from "./lib/utils";
 import { cleanupOldEmailEvents } from "./lib/cleanup";
-import { checkBounceRateAlert } from "./lib/alerts";
-import { notifyAutoBlock } from "./lib/alerts";
+import { notifyAutoBlock, checkBounceRateAlert } from "./lib/alerts";
 // NOTE: VPN/proxy use alone is never a blockable offense. Visitors are only
 // auto-blocked for concrete attack behavior (see detectAttack) or manually by
 // an admin. Policy: privacy tools are not suspicious behavior.
-
-/** Escape HTML special characters to prevent XSS in error response bodies */
-function escapeHtml(input: string): string {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 export async function proxy(request: NextRequest) {
   // Run periodic cleanup of in-memory maps
@@ -84,6 +74,10 @@ export async function proxy(request: NextRequest) {
     pathname === "/" ||
     pathname.startsWith("/browse") ||
     pathname.startsWith("/resource/") ||
+    // File download proxy — guests can download; the route itself rate
+    // limits per IP and must answer directly (fetching it through a login
+    // redirect would corrupt the binary stream for <a download> clicks).
+    pathname.startsWith("/api/download/") ||
     pathname === "/login" ||
     pathname.startsWith("/login/") || // e.g. /login/forgot-password
     pathname === "/signup" ||

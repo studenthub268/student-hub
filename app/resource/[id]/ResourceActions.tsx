@@ -3,11 +3,24 @@
 import { useState, useEffect } from "react";
 import { Download, Heart, Share2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { toggleLike, recordDownload } from "@/lib/actions/likes";
+import { toggleLike } from "@/lib/actions/likes";
 import { deleteResource } from "@/lib/actions/resources";
 import { useRouter } from "next/navigation";
 import { getErrorMessage } from "@/lib/utils";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+
+/**
+ * The download filename is the resource title, which has no extension —
+ * derive one from the stored file URL so saved files open correctly.
+ */
+function withExtension(name: string, url: string): string {
+  if (/\.[a-z0-9]{2,5}$/i.test(name)) return name;
+  try {
+    const ext = new URL(url).pathname.match(/\.([a-z0-9]{2,5})$/i)?.[1];
+    if (ext) return `${name}.${ext.toLowerCase()}`;
+  } catch {}
+  return name;
+}
 
 interface ResourceActionsProps {
   resourceId: string;
@@ -59,29 +72,38 @@ export default function ResourceActions({
     }
   };
 
-  const handleDownload = async () => {
-    try {
-      toast.loading("Preparing download...", { id: "download" });
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-      toast.success("Download started!", { id: "download" });
-      await recordDownload(resourceId);
-    } catch {
-      toast.error("Failed to download file", { id: "download" });
-    }
+  const handleDownload = () => {
+    // Same-origin proxy route: streams the file from R2 (whose public bucket
+    // sends no CORS headers, so client-side fetch() can never read it) and
+    // forces a friendly filename. The browser's native download UI handles
+    // progress; the route records the download server-side.
+    const link = document.createElement("a");
+    link.href = `/api/download/${resourceId}`;
+    link.download = withExtension(fileName, fileUrl);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Download started!", { id: "download" });
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Link copied to clipboard!");
+  const handleShare = async () => {
+    const url = window.location.href;
+    // Native share sheet on mobile (and Edge/Safari) — clipboard only where
+    // share isn't available or the user cancels the sheet.
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: fileName, url });
+        return;
+      } catch {
+        /* user dismissed the sheet — fall through to copy */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Couldn't copy the link");
+    }
   };
 
   const handleDelete = async () => {

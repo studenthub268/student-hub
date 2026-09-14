@@ -6,7 +6,7 @@ import { resources, users } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { eq, desc, ilike, and, or, isNull, sql } from "drizzle-orm";
+import { eq, desc, ilike, and, isNull, sql } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
 import { escapeLike } from "@/lib/utils";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from "@/lib/uploads";
@@ -155,10 +155,7 @@ export async function checkDuplicateResources(
       .leftJoin(users, eq(resources.uploaderId, users.id))
       .where(
         and(
-          or(
-            ilike(resources.title, `%${escapeLike(title)}%`),
-            ilike(resources.title, escapeLike(title))
-          ),
+          ilike(resources.title, `%${escapeLike(title)}%`),
           eq(resources.subject, subject),
           departmentFilter
         )

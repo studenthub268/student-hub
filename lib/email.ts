@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/utils";
 import { Resend } from "resend";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
 import { db } from "@/lib/db";
@@ -398,16 +399,6 @@ function signInNotificationText(provider: string, whenUtc: string, appUrl: strin
 /* ------------------------------------------------------------------ */
 /*  Welcome email (first activation / first provider link)              */
 /* ------------------------------------------------------------------ */
-
-/** Minimal HTML escaping for user-controlled values (names) in emails. */
-function escapeHtml(input: string): string {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function welcomeHtml(greetingName: string, appUrl: string): string {
   return `
