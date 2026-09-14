@@ -74,6 +74,10 @@ export async function proxy(request: NextRequest) {
     pathname === "/" ||
     pathname.startsWith("/browse") ||
     pathname.startsWith("/resource/") ||
+    // File download proxy — guests can download; the route itself rate
+    // limits per IP and must answer directly (fetching it through a login
+    // redirect would corrupt the binary stream for <a download> clicks).
+    pathname.startsWith("/api/download/") ||
     pathname === "/login" ||
     pathname.startsWith("/login/") || // e.g. /login/forgot-password
     pathname === "/signup" ||

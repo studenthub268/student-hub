@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Download, Heart, Share2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { toggleLike, recordDownload } from "@/lib/actions/likes";
+import { toggleLike } from "@/lib/actions/likes";
 import { deleteResource } from "@/lib/actions/resources";
 import { useRouter } from "next/navigation";
 import { getErrorMessage } from "@/lib/utils";
@@ -72,24 +72,18 @@ export default function ResourceActions({
     }
   };
 
-  const handleDownload = async () => {
-    try {
-      toast.loading("Preparing download...", { id: "download" });
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = withExtension(fileName, fileUrl);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-      toast.success("Download started!", { id: "download" });
-      await recordDownload(resourceId);
-    } catch {
-      toast.error("Failed to download file", { id: "download" });
-    }
+  const handleDownload = () => {
+    // Same-origin proxy route: streams the file from R2 (whose public bucket
+    // sends no CORS headers, so client-side fetch() can never read it) and
+    // forces a friendly filename. The browser's native download UI handles
+    // progress; the route records the download server-side.
+    const link = document.createElement("a");
+    link.href = `/api/download/${resourceId}`;
+    link.download = withExtension(fileName, fileUrl);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Download started!", { id: "download" });
   };
 
   const handleShare = async () => {
