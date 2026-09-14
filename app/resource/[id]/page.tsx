@@ -202,8 +202,11 @@ export default async function ResourceDetailPage({
               </div>
             </div>
             
-            <div className="flex-1 bg-gray-100 relative p-4 sm:p-8">
-              <div className="w-full h-full border-2 border-black border-dashed rounded-2xl bg-white overflow-hidden relative shadow-inner">
+            <div className="flex-1 min-h-0 bg-gray-100 relative p-4 sm:p-8">
+              {/* Anchored to the card box (not content-sized): a portrait photo
+                  would otherwise inflate h-full beyond the fixed card height and
+                  get cut off by the card's overflow-hidden. */}
+              <div className="absolute inset-4 sm:inset-8 border-2 border-black border-dashed rounded-2xl bg-white overflow-hidden relative shadow-inner">
                 {isPDF ? (
                   <iframe 
                     src={`${resource.fileUrl}#toolbar=0`} 
