@@ -4,10 +4,13 @@
 // policies would be silently skipped for it. User-scoped mutations
 // therefore run through this helper: one neon HTTP batch transaction that
 // (1) switches to the NOBYPASSRLS role `app_rls`, (2) injects the verified
-// server-side user id, (3) performs the writes. Inside the batch, Postgres
-// RLS policies (see scripts/setup-rls.mjs) make it impossible to touch
-// another user's rows or forge an identity — even if action-level checks
-// regress. Proven by scripts/rls-enforcement-check.mjs (ALL PASS).
+// server-side user id, (3) performs the writes. Invariant: every scoped
+// write runs as the NOBYPASSRLS role `app_rls` with the verified user id
+// injected per-transaction, so the policies (see scripts/setup-rls.mjs)
+// make it impossible to touch another user's rows or forge an identity —
+// even if action-level checks regress. The likes counter is NOT writable
+// through this role; lib/actions/likes.ts updates it owner-side only when
+// the user-owned row actually flipped (RETURNING proves the change).
 //
 // NOTE: drizzle's neon-http driver throws on .transaction(), so batches
 // use the raw neon() client. Statements are built with the template tag

@@ -43,6 +43,13 @@
       "when": 1788720144997,
       "tag": "0005_oauth_accounts_shape",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789400000000,
+      "tag": "0006_drop_users_clerk_id",
+      "breakpoints": true
     }
   ]
 }
