@@ -9,6 +9,19 @@ import { useRouter } from "next/navigation";
 import { getErrorMessage } from "@/lib/utils";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
+/**
+ * The download filename is the resource title, which has no extension —
+ * derive one from the stored file URL so saved files open correctly.
+ */
+function withExtension(name: string, url: string): string {
+  if (/\.[a-z0-9]{2,5}$/i.test(name)) return name;
+  try {
+    const ext = new URL(url).pathname.match(/\.([a-z0-9]{2,5})$/i)?.[1];
+    if (ext) return `${name}.${ext.toLowerCase()}`;
+  } catch {}
+  return name;
+}
+
 interface ResourceActionsProps {
   resourceId: string;
   initialLikes: number;
@@ -67,7 +80,7 @@ export default function ResourceActions({
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = fileName;
+      link.download = withExtension(fileName, fileUrl);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -79,9 +92,24 @@ export default function ResourceActions({
     }
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Link copied to clipboard!");
+  const handleShare = async () => {
+    const url = window.location.href;
+    // Native share sheet on mobile (and Edge/Safari) — clipboard only where
+    // share isn't available or the user cancels the sheet.
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: fileName, url });
+        return;
+      } catch {
+        /* user dismissed the sheet — fall through to copy */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Couldn't copy the link");
+    }
   };
 
   const handleDelete = async () => {
