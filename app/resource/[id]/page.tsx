@@ -107,10 +107,10 @@ export default async function ResourceDetailPage({
   const typeConfig = getTypeConfig(resource.type);
 
   const getFileIcon = (fileType: string | null) => {
-    if (!fileType) return <File size={48} className="text-black/40" strokeWidth={1} />;
+    if (!fileType) return <File size={48} className="text-black/60" strokeWidth={1} />;
     if (fileType.includes("pdf")) return <FileText size={48} className="text-black" strokeWidth={1} />;
     if (fileType.includes("image")) return <FileImage size={48} className="text-black" strokeWidth={1} />;
-    return <File size={48} className="text-black/40" strokeWidth={1} />;
+    return <File size={48} className="text-black/60" strokeWidth={1} />;
   };
 
   const isPDF = resource.fileType?.includes("pdf");

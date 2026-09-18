@@ -2,9 +2,9 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails } from "@/lib/db/schema";
+import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails, pageViews } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { deleteR2Object } from "@/lib/r2";
 import { invalidateBlockedIpsCache } from "@/lib/ip-block";
@@ -132,6 +132,73 @@ export async function getAdminPanelData() {
     emailStats: emailData,
     autoBlocks: recentAutoBlocks,
     users: usersWithMeta,
+  };
+}
+
+/**
+ * Aggregated, privacy-safe traffic overview for the admin Traffic tab (see
+ * /api/analytics — the collector). Reads only the page_views aggregate: one
+ * row per (path, day, referrer-host). No IPs, no visitor identifiers exist
+ * in this table, so nothing here can de-anonymize a visitor.
+ */
+export async function getTrafficData() {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
+
+  // `day` is UTC yyyy-mm-dd text — lexicographic compare == date compare.
+  const utcDay = (offset: number) => {
+    const t = new Date();
+    t.setUTCDate(t.getUTCDate() - offset);
+    return t.toISOString().slice(0, 10);
+  };
+  const today = utcDay(0);
+  const d7 = utcDay(6); // inclusive 7-day window ending today
+  const d30 = utcDay(29);
+
+  const [totalsRow, daily, topPaths, topReferrers] = await Promise.all([
+    db
+      .select({
+        today: sql<number>`coalesce(sum(${pageViews.views}) filter (where ${pageViews.day} >= ${today}), 0)::int`,
+        last7: sql<number>`coalesce(sum(${pageViews.views}) filter (where ${pageViews.day} >= ${d7}), 0)::int`,
+        last30: sql<number>`coalesce(sum(${pageViews.views}) filter (where ${pageViews.day} >= ${d30}), 0)::int`,
+        allTime: sql<number>`coalesce(sum(${pageViews.views}), 0)::int`,
+      })
+      .from(pageViews),
+    db
+      .select({
+        day: pageViews.day,
+        views: sql<number>`sum(${pageViews.views})::int`,
+      })
+      .from(pageViews)
+      .where(gte(pageViews.day, d30))
+      .groupBy(pageViews.day)
+      .orderBy(pageViews.day),
+    db
+      .select({
+        path: pageViews.path,
+        views: sql<number>`sum(${pageViews.views})::int`,
+      })
+      .from(pageViews)
+      .groupBy(pageViews.path)
+      .orderBy(desc(sql`sum(${pageViews.views})`))
+      .limit(10),
+    db
+      .select({
+        referrer: pageViews.referrer,
+        views: sql<number>`sum(${pageViews.views})::int`,
+      })
+      .from(pageViews)
+      .groupBy(pageViews.referrer)
+      .orderBy(desc(sql`sum(${pageViews.views})`))
+      .limit(8),
+  ]);
+
+  return {
+    totals: totalsRow[0] ?? { today: 0, last7: 0, last30: 0, allTime: 0 },
+    daily,
+    topPaths,
+    topReferrers,
   };
 }
 

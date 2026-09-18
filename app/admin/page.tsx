@@ -35,6 +35,7 @@ import {
   Flag,
   Ban,
   Lock,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 import { getErrorMessage } from "@/lib/utils";
@@ -43,8 +44,13 @@ import type { BlockedIp, AdminEmail, Message } from "@/lib/db/schema";
 import type { LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import dynamic from "next/dynamic";
 
-type Tab = "security" | "resources" | "reports" | "messages" | "users" | "admins" | "email";
+// Lazy-loaded: the Traffic tab pulls its own data via getTrafficData, so the
+// other six tabs never pay for its JS or query until they open it.
+const TrafficTab = dynamic(() => import("./TrafficTab"));
+
+type Tab = "security" | "resources" | "reports" | "messages" | "users" | "admins" | "email" | "traffic";
 
 // sessionStorage cache so revisits within the same tab render instantly and
 // revalidate in the background. Stale-while-revalidate: cached data shows
@@ -364,6 +370,7 @@ export default function AdminPanel() {
     { key: "users", label: "Users", icon: UserCog, count: usersList.length },
     { key: "admins", label: "Admins", icon: ShieldCheck, count: adminEmails.length },
     { key: "email", label: "Email", icon: Mail, count: emailStats?.totals?.bounced || 0 },
+    { key: "traffic", label: "Traffic", icon: Eye },
   ];
 
   return (
@@ -456,7 +463,7 @@ export default function AdminPanel() {
           {blockedIps.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
               <Globe className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/40 font-medium">No blocked IPs</p>
+              <p className="text-black/60 font-medium">No blocked IPs</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -496,7 +503,7 @@ export default function AdminPanel() {
           {resourcesList.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
               <FileText className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/40 font-medium">No resources yet</p>
+              <p className="text-black/60 font-medium">No resources yet</p>
             </div>
           ) : (
             resourcesList.map((res) => (
@@ -555,7 +562,7 @@ export default function AdminPanel() {
           {reportsList.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
               <Flag className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/40 font-medium">No reports yet</p>
+              <p className="text-black/60 font-medium">No reports yet</p>
             </div>
           ) : (
             reportsList.map((report) => {
@@ -571,7 +578,7 @@ export default function AdminPanel() {
                     <p className="text-xs text-black/50 font-medium mt-0.5">
                       Reported by {report.reporter?.name || "Unknown"} ({report.reporter?.email})
                     </p>
-                    <p className="text-xs text-black/40 font-medium mt-0.5">{new Date(report.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-black/60 font-medium mt-0.5">{new Date(report.createdAt).toLocaleDateString()}</p>
                     {report.description && (
                       <p className="text-xs text-black/60 font-medium mt-2 p-3 bg-gray-50 rounded-lg">{report.description}</p>
                     )}
@@ -612,7 +619,7 @@ export default function AdminPanel() {
           {messagesList.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
               <Mail className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/40 font-medium">No messages yet</p>
+              <p className="text-black/60 font-medium">No messages yet</p>
             </div>
           ) : (
             messagesList.map((msg) => (
@@ -625,7 +632,7 @@ export default function AdminPanel() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-sm">{msg.name}</p>
-                        <p className="text-xs text-black/40 font-medium">{msg.email}</p>
+                        <p className="text-xs text-black/60 font-medium">{msg.email}</p>
                       </div>
                     </div>
                     {expandedMessage !== msg.id && (
@@ -657,7 +664,7 @@ export default function AdminPanel() {
           {usersList.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
               <Users className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/40 font-medium">No users yet</p>
+              <p className="text-black/60 font-medium">No users yet</p>
             </div>
           ) : (
             usersList.map((u) => {
@@ -694,7 +701,7 @@ export default function AdminPanel() {
                   <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                     {isUserAdmin ? (
                       isPermanent ? (
-                        <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/40">
+                        <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/60">
                           <Lock className="w-3.5 h-3.5" /> Permanent
                         </span>
                       ) : (
@@ -745,10 +752,10 @@ export default function AdminPanel() {
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner</span>
                       )}
                     </div>
-                    <p className="text-xs text-black/40 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-black/60 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
                   </div>
                   {permanent ? (
-                    <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/40">
+                    <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/60">
                       <Lock className="w-3.5 h-3.5" /> Permanent
                     </span>
                   ) : (
@@ -769,7 +776,7 @@ export default function AdminPanel() {
           {!emailStats ? (
             <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
               <Mail className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/40 font-medium">Email tracking not configured. Add RESEND_WEBHOOK_SECRET to enable.</p>
+              <p className="text-black/60 font-medium">Email tracking not configured. Add RESEND_WEBHOOK_SECRET to enable.</p>
             </div>
           ) : (
             <>
@@ -810,7 +817,7 @@ export default function AdminPanel() {
               <div className="rounded-2xl border-2 border-black/5 bg-white p-6">
                 <h3 className="font-bold text-lg mb-4">Suppressed Emails ({emailStats.suppressedCount})</h3>
                 {emailStats.recentSuppressions.length === 0 ? (
-                  <p className="text-black/40 font-medium text-sm">No suppressed addresses</p>
+                  <p className="text-black/60 font-medium text-sm">No suppressed addresses</p>
                 ) : (
                   <div className="space-y-2">
                     {emailStats.recentSuppressions.map((s) => (
@@ -821,7 +828,7 @@ export default function AdminPanel() {
                             s.reason === "bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
                           }`}>{s.reason}</span>
                         </div>
-                        <span className="text-xs text-black/40 font-medium">{new Date(s.suppressedAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-black/60 font-medium">{new Date(s.suppressedAt).toLocaleDateString()}</span>
                       </div>
                     ))}
                   </div>
@@ -832,7 +839,7 @@ export default function AdminPanel() {
               <div className="rounded-2xl border-2 border-black/5 bg-white p-6">
                 <h3 className="font-bold text-lg mb-4">Recent Failures (last 30 days)</h3>
                 {emailStats.recentFailures.length === 0 ? (
-                  <p className="text-black/40 font-medium text-sm">No failures recorded</p>
+                  <p className="text-black/60 font-medium text-sm">No failures recorded</p>
                 ) : (
                   <div className="space-y-2">
                     {emailStats.recentFailures.map((f) => (
@@ -842,9 +849,9 @@ export default function AdminPanel() {
                             f.eventType === "email.bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
                           }`}>{f.eventType === "email.bounced" ? "Bounce" : "Complaint"}</span>
                           <span className="text-sm font-medium">{f.to}</span>
-                          {f.subject && <span className="text-xs text-black/40 font-medium truncate max-w-[200px]">{f.subject}</span>}
+                          {f.subject && <span className="text-xs text-black/60 font-medium truncate max-w-[200px]">{f.subject}</span>}
                         </div>
-                        <span className="text-xs text-black/40 font-medium">{new Date(f.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-black/60 font-medium">{new Date(f.createdAt).toLocaleDateString()}</span>
                       </div>
                     ))}
                   </div>
@@ -854,6 +861,9 @@ export default function AdminPanel() {
           )}
         </div>
       )}
+
+      {/* ===== TRAFFIC TAB ===== */}
+      {activeTab === "traffic" && <TrafficTab />}
 
       <ConfirmDialog
         open={confirmState !== null}

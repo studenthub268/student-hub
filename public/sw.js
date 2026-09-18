@@ -2,8 +2,8 @@
 // visitor's caches without a hand edit — one `npm version` bump rewrites the
 // number here and on the terms page at build time
 // (scripts/write-deploy-version.mjs).
-const STATIC_CACHE = "student-hub-static-v0.2.17";
-const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.17";
+const STATIC_CACHE = "student-hub-static-v0.2.18";
+const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.18";
 
 // Status endpoints (admin flag) — cached so signed-in pages render
 // correctly offline and instantly, refreshed in background.
@@ -28,9 +28,9 @@ const IS_DEV =
 const PRECACHE_URLS = [
   "/offline", // must be precached: it is the offline fallback for any uncached page
   "/logo.png",
-  "/favicon.png",
-  "/icon-192.png",
-  "/icon-512.png",
+  "/favicon.png?v=2",
+  "/icon-192.png?v=2",
+  "/icon-512.png?v=2",
   "/manifest.json",
 ];
 
@@ -124,10 +124,12 @@ self.addEventListener("fetch", (event) => {
 
   // Never intercept file downloads (R2), auth callbacks, the connectivity
   // probe, or the deploy-version beacon — these must always hit the network.
+  // /api/ generally stays network-only (webhooks, session checks, analytics
+  // beacons); nothing under it is a cacheable GET resource.
   if (
     url.hostname.includes("r2.") ||
     url.hostname.includes("vercel-storage") ||
-    url.pathname.startsWith("/api/download") ||
+    url.pathname.startsWith("/api/") ||
     NEVER_CACHE_PATHS.includes(url.pathname)
   ) {
     return;

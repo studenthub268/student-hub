@@ -81,7 +81,7 @@ export default async function AuthErrorPage({
             {view.message}
           </p>
           {error && (
-            <p className="mt-3 text-xs font-medium tracking-wider text-black/40">
+            <p className="mt-3 text-xs font-medium tracking-wider text-black/60">
               Error code: {error}
             </p>
           )}

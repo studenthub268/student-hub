@@ -22,6 +22,19 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userAgent = request.headers.get("user-agent") || "";
 
+  // Force HTTPS: behind Vercel TLS terminates early, so a plain-HTTP hit
+  // arrives with x-forwarded-proto=http. Redirect to the same URL over
+  // https (HSTS in next.config covers repeat visits; this catches the first).
+  // Localhost and 127.0.0.1 are exempt so `next dev` keeps working.
+  const host = request.headers.get("host") || "";
+  const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (!isLocal && proto === "http") {
+    const httpsUrl = new URL(request.nextUrl);
+    httpsUrl.protocol = "https:";
+    return NextResponse.redirect(httpsUrl, 308);
+  }
+
   // Escape IP for safe display in HTML error responses
   const escapedIp = escapeHtml(ip);
 
@@ -83,6 +96,7 @@ export async function proxy(request: NextRequest) {
     pathname === "/signup" ||
     pathname === "/contact" ||
     pathname === "/terms" ||
+    pathname === "/privacy" ||
     pathname === "/find" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/api/auth/") ||
@@ -99,7 +113,10 @@ export async function proxy(request: NextRequest) {
     pathname === "/api/upload" ||
     // Deploy-version beacon for the auto-refresh watcher — guests included,
     // and it must never waste a login round trip (it fires every minute).
-    pathname === "/api/version";
+    pathname === "/api/version" ||
+    // Analytics collector: guests included; rate-limited and validated in
+    // the handler, and it must never trigger a login redirect mid-navigation.
+    pathname === "/api/analytics";
 
   if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();

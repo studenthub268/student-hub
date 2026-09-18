@@ -10,14 +10,36 @@ export default function ContactPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  // Honeypot: hidden from humans (CSS), left empty by humans. Bots that fill
+  // every input get rejected server-side — no captcha needed for a form this
+  // small, and real users never solve a puzzle. Never announce it in HTML
+  // comments; the field must look like ordinary markup.
+  const [website, setWebsite] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  // Per-field client errors (server re-validates with the same rules).
+  const [errors, setErrors] = useState<{ name?: string; email?: string; message?: string }>({});
+
+  const validate = () => {
+    const next: typeof errors = {};
+    if (name.trim().length < 2) next.name = "Please enter your name (at least 2 characters).";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) next.email = "Please enter a valid email address.";
+    if (message.trim().length < 10) next.message = "Please write a message of at least 10 characters.";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error("Please fill in all fields");
+    // Honeypot tripped: pretend success so the bot doesn't adapt.
+    if (website) {
+      setIsSent(true);
+      return;
+    }
+
+    if (!validate()) {
+      toast.error("Please fix the highlighted fields");
       return;
     }
 
@@ -27,7 +49,8 @@ export default function ContactPage() {
       await sendMessage({ 
         name: name.trim(), 
         email: email.trim(), 
-        message: message.trim() 
+        message: message.trim(),
+        website, // honeypot — normally ""
       });
 
       setIsSent(true);
@@ -74,7 +97,7 @@ export default function ContactPage() {
                 <User className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-white/50 mb-1">Name</p>
+                <p className="text-xs font-bold tracking-wider text-white/70 mb-1">Name</p>
                 <p className="text-lg font-bold">Muhammad Abubakar</p>
               </div>
             </div>
@@ -84,7 +107,7 @@ export default function ContactPage() {
                 <Mail className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-white/50 mb-1">Email</p>
+                <p className="text-xs font-bold tracking-wider text-white/70 mb-1">Email</p>
                 <a href="mailto:abubakartanveer826@gmail.com" className="text-lg font-bold hover:text-[#0D9488] transition-colors break-all">
                   abubakartanveer826@gmail.com
                 </a>
@@ -96,7 +119,7 @@ export default function ContactPage() {
                 <Globe className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-white/50 mb-1">Support</p>
+                <p className="text-xs font-bold tracking-wider text-white/70 mb-1">Support</p>
                 <p className="text-lg font-bold">24/7 Academic Support</p>
               </div>
             </div>
@@ -106,7 +129,7 @@ export default function ContactPage() {
                 <Clock className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-white/50 mb-1">Availability</p>
+                <p className="text-xs font-bold tracking-wider text-white/70 mb-1">Availability</p>
                 <p className="text-lg font-bold">Open to collaborate</p>
               </div>
             </div>
@@ -155,7 +178,23 @@ export default function ContactPage() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Name"
                     required
-                    className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+                    className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
+                  />
+                  {errors.name && <p className="mt-2 text-xs font-bold text-red-600">{errors.name}</p>}
+                </div>
+
+                {/* Honeypot — visually hidden, keyboard/sr reachable semantics
+                    not wanted: it must stay unfilled by humans. */}
+                <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden opacity-0">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
                   />
                 </div>
 
@@ -167,8 +206,10 @@ export default function ContactPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@university.edu"
                     required
-                    className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+                    className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
+                    aria-invalid={!!errors.email}
                   />
+                  {errors.email && <p className="mt-2 text-xs font-bold text-red-600">{errors.email}</p>}
                 </div>
 
                 <div>
@@ -179,8 +220,10 @@ export default function ContactPage() {
                     placeholder="Your message here..."
                     rows={5}
                     required
-                    className="flex w-full rounded-xl border-2 border-black bg-white px-4 py-3 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] placeholder:text-black/40 focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all resize-none"
+                    className="flex w-full rounded-xl border-2 border-black bg-white px-4 py-3 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] placeholder:text-black/60 focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all resize-none"
+                    aria-invalid={!!errors.message}
                   />
+                  {errors.message && <p className="mt-2 text-xs font-bold text-red-600">{errors.message}</p>}
                 </div>
 
                 <button

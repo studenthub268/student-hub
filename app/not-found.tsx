@@ -1,5 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { MoveUpRight } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Page not found — Student Hub",
+  robots: { index: false, follow: true },
+};
 
 export default function NotFound() {
   return (
@@ -11,7 +17,7 @@ export default function NotFound() {
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
           Page not found
         </h2>
-        <p className="text-black/50 font-medium mb-8">
+        <p className="text-black/60 font-medium mb-8">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Link

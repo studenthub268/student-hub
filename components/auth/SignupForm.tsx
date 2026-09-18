@@ -178,7 +178,7 @@ export function SignupForm() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Name"
                 required
-                className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+                className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
               />
             </div>
 
@@ -190,7 +190,7 @@ export function SignupForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@university.edu"
                 required
-                className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+                className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
               />
             </div>
 
@@ -229,7 +229,7 @@ export function SignupForm() {
               </a>{" "}
               and{" "}
               <a
-                href="/terms#privacy"
+                href="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-bold text-black underline underline-offset-2 hover:text-[#0D9488] transition-colors"
@@ -267,7 +267,7 @@ export function SignupForm() {
           <div className="flex flex-col gap-4">
             <div className="h-px bg-white/15" />
 
-            <p className="text-center text-xs font-bold tracking-widest text-white/50">OR SIGN UP WITH</p>
+            <p className="text-center text-xs font-bold tracking-widest text-white/70">OR SIGN UP WITH</p>
             <OAuthButtons />
 
             <p className="text-center text-sm font-medium text-white/70 pt-1">

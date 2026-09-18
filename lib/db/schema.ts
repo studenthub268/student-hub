@@ -157,6 +157,25 @@ export const suppressedEmails = pgTable('suppressed_emails', {
 
 export type SuppressedEmail = InferSelectModel<typeof suppressedEmails>;
 
+// Aggregate, privacy-safe pageview counts (see /api/analytics): one row per
+// (path, day, referrer-host). No IPs, no cookies, no user identifiers —
+// intentionally NOT tied to users/resources tables.
+export const pageViews = pgTable('page_views', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  path: text('path').notNull(),
+  day: text('day').notNull(), // UTC yyyy-mm-dd
+  referrer: text('referrer'), // cross-site referrer host only, null = direct
+  views: integer('views').default(0).notNull(),
+}, (table) => ({
+  aggKey: uniqueIndex('page_views_path_day_referrer_unique').on(
+    table.path,
+    table.day,
+    table.referrer
+  ),
+}));
+
+export type PageView = InferSelectModel<typeof pageViews>;
+
 // Drizzle Relations
 export const usersRelations = relations(users, ({ many }) => ({
   resources: many(resources),

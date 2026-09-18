@@ -2,9 +2,9 @@ import Link from "next/link";
 import { LAST_UPDATED, POLICY_VERSION } from "@/lib/generated/deploy-version";
 
 export const metadata = {
-  title: "Terms & Privacy — Student Hub",
+  title: "Terms of Service — Student Hub",
   description:
-    "Terms of Service and Privacy Policy for Student Hub: accounts, acceptable use, copyright, data collection, cookies, retention, and your rights.",
+    "Terms of Service for Student Hub: accounts, acceptable use, your content, copyright and takedowns, academic integrity, and liability.",
   alternates: { canonical: "/terms" },
 };
 
@@ -42,24 +42,20 @@ export default function TermsPage() {
     <div className="bg-white min-h-screen">
       <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-[15px] text-black/80">
 
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">Student Hub</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/60">Student Hub</p>
         <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-black">
-          Terms of Service &amp; Privacy Policy
+          Terms of Service
         </h1>
         <p className="mt-4 leading-relaxed">
           Student Hub is a free platform where university students share study material — notes,
-          past papers, quizzes, and assignments. This document covers the rules of the platform
-          (Part I) and how we handle your data (Part II). It applies to everyone who visits or
+          past papers, quizzes, and assignments. These terms cover the rules of the platform;
+          how we handle your data is covered separately in the{" "}
+          <C href="/privacy">privacy policy</C>. Together they apply to everyone who visits or
           uses the site.
         </p>
-        <p className="mt-4 text-sm text-black/50">
+        <p className="mt-4 text-sm text-black/60">
           Last updated {LAST_UPDATED} &nbsp;·&nbsp; Version {POLICY_VERSION}
         </p>
-
-        <hr className="my-10 border-black/10" />
-
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">Part I</p>
-        <h2 className="mt-1 mb-2 text-2xl font-bold tracking-tight text-black">Terms of Service</h2>
 
         <H id="about">1. About these terms</H>
         <P>
@@ -76,7 +72,7 @@ export default function TermsPage() {
           <LI>use a valid email address that you control, and verify it before signing in;</LI>
           <LI>be a student, educator, or otherwise using the platform for personal, non-commercial study purposes;</LI>
           <LI>keep your password confidential and take responsibility for activity under your account; and</LI>
-          <LI>accept these terms and the privacy policy — we record the date and policy version of your acceptance.</LI>
+          <LI>accept these terms and the <C href="/privacy">privacy policy</C> — we record the date and policy version of your acceptance.</LI>
         </ul>
         <P>
           You may sign in with Google or GitHub instead of a password. If you do, the policy
@@ -145,7 +141,7 @@ export default function TermsPage() {
           We may suspend or terminate an account, and remove its content, for serious or repeated
           violations — for example uploading pirated material, attacking the platform, or
           harassment. You may stop using the platform at any time and delete your account
-          yourself (see section 14).
+          yourself (see the <C href="/privacy#your-rights">privacy policy</C>).
         </P>
 
         <H id="liability">8. Disclaimers and liability</H>
@@ -169,99 +165,9 @@ export default function TermsPage() {
           through the <C href="/contact">contact page</C>.
         </P>
 
-        <hr className="my-12 border-black/10" />
-
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">Part II</p>
-        <h2 className="mt-1 mb-2 text-2xl font-bold tracking-tight text-black">Privacy Policy</h2>
-        <P>
-          The short version: we collect only what the site needs to work, we never sell your
-          data, there are no ads or tracking cookies, and you can delete your account and content
-          yourself at any time.
-        </P>
-
-        <H id="data">10. Data we collect</H>
-        <P>We collect the minimum needed to run the platform:</P>
-        <ul className="list-disc pl-5 space-y-1.5">
-          <LI><strong>Account data</strong> — your name, email address, and a password stored only as a bcrypt hash; if you sign in with Google or GitHub, your name, verified email, and profile picture from the provider instead.</LI>
-          <LI><strong>Content data</strong> — the resources you upload (file, title, subject, type, description) and the likes and reports you make.</LI>
-          <LI><strong>Consent data</strong> — when you accepted these terms and which policy version applied.</LI>
-          <LI><strong>Security data</strong> — IP addresses, used for rate limiting and abuse blocking, and logs of blocked attack attempts.</LI>
-          <LI><strong>Email metadata</strong> — delivery events (sent, delivered, bounced) so we can detect broken addresses and stop mailing them.</LI>
-        </ul>
-        <P>
-          We do not collect payment information or precise location, and we do not use
-          advertising trackers.
-        </P>
-
-        <H id="data-use">11. How we use your data</H>
-        <P>
-          To operate your account, sessions, and uploads; to send transactional email such as
-          verification, welcome, sign-in alerts, and password resets; to keep the platform safe
-          by detecting attacks and blocking abusive traffic; and to show aggregate platform
-          statistics — never your individual data. Your email address is used only for account
-          security and service communication, never marketing.
-        </P>
-
-        <H id="cookies">12. Cookies and local storage</H>
-        <P>
-          We use strictly necessary cookies only: a session cookie to keep you signed in (30
-          days), plus CSRF-protection cookies during sign-in flows, and browser local storage
-          where the app needs it to function offline. No analytics, advertising, or third-party
-          tracking cookies are set.
-        </P>
-
-        <H id="sharing">13. Data sharing and processors</H>
-        <P>Your data is processed only by the services that make the platform work:</P>
-        <ul className="list-disc pl-5 space-y-1.5">
-          <LI><strong>Vercel</strong> — application hosting;</LI>
-          <LI><strong>Neon</strong> — hosted PostgreSQL database;</LI>
-          <LI><strong>Cloudflare R2</strong> — storage for uploaded files;</LI>
-          <LI><strong>Resend</strong> — transactional email delivery; and</LI>
-          <LI><strong>Google and GitHub</strong> — if you choose their sign-in, they authenticate you and share your basic profile with us.</LI>
-        </ul>
-        <P>
-          We may disclose information if required by law, or to protect the rights, property, or
-          safety of the platform and its users.
-        </P>
-
-        <H id="your-rights">14. Your rights and data retention</H>
-        <P>You have the right to:</P>
-        <ul className="list-disc pl-5 space-y-1.5">
-          <LI><strong>Access</strong> — request a copy of the personal data we hold about you;</LI>
-          <LI><strong>Correction</strong> — fix inaccurate profile information;</LI>
-          <LI><strong>Deletion</strong> — delete your account and data yourself, anytime, from the Danger Zone on your <C href="/profile">profile page</C>. This permanently removes your profile, uploads and their files, likes, and reports; security records such as blocked IPs are kept only as long as needed; and</LI>
-          <LI><strong>Objection</strong> — object to processing by deleting your account or specific content.</LI>
-        </ul>
-        <P>
-          Verification and password-reset tokens expire automatically (24 hours and 1 hour
-          respectively). Email delivery events are retained for 90 days and then deleted.
-        </P>
-
-        <H id="children">15. Children&apos;s privacy</H>
-        <P>
-          Student Hub is intended for university students and is not directed at children under
-          13 (or under 16 in the EEA/UK). We do not knowingly collect personal data from
-          children. If you believe a child has created an account, let us know via the{" "}
-          <C href="/contact">contact page</C> and we will delete it promptly.
-        </P>
-
-        <H id="security">16. Security</H>
-        <P>
-          We protect your data with bcrypt password hashing, encrypted connections (HTTPS/TLS)
-          everywhere, strict security headers, parameterized database queries, rate limiting with
-          automated attack blocking, and least-privilege access to storage and database. No
-          system is perfectly secure — if you discover a vulnerability, please report it
-          responsibly through the <C href="/contact">contact page</C>. We appreciate it.
-        </P>
-
-        <H id="contact">17. Contact</H>
-        <P>
-          Questions about these terms, your data, or a copyright notice: reach us through the{" "}
-          <C href="/contact">contact page</C>. In short — study honestly, share only what&apos;s
-          yours to share, and your data stays yours.
-        </P>
-
-        <div className="mt-14 pt-8 border-t border-black/10 text-sm text-black/50">
+        <div className="mt-14 pt-8 border-t border-black/10 text-sm text-black/60">
+          <C href="/privacy">Read the Privacy Policy</C>
+          <span className="mx-2 text-black/60">·</span>
           <C href="/">Return to Student Hub</C>
         </div>
       </div>

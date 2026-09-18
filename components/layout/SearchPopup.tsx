@@ -167,7 +167,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search resources, subjects…"
-            className="w-full h-16 pl-14 pr-14 text-lg font-medium outline-none placeholder:text-black/40"
+            className="w-full h-16 pl-14 pr-14 text-lg font-medium outline-none placeholder:text-black/60"
             autoComplete="off"
             autoFocus
           />
@@ -175,7 +175,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
             <button
               type="button"
               onClick={() => { setQuery(""); setResourceSuggestions([]); inputRef.current?.focus(); }}
-              className="absolute right-5 text-black/40 hover:text-black transition-colors"
+              className="absolute right-5 text-black/60 hover:text-black transition-colors"
               aria-label="Clear"
             >
               <X className="h-5 w-5" />
@@ -207,7 +207,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
 
           {trimmed.length >= 2 && suggestions.length === 0 && (
             <div className="px-6 py-8 text-center">
-              <p className="text-sm font-bold tracking-wider text-black/40">No matches for “{query.trim()}”</p>
+              <p className="text-sm font-bold tracking-wider text-black/60">No matches for “{query.trim()}”</p>
               <p className="text-xs font-medium text-black/30 mt-1">Press Enter to search everything</p>
             </div>
           )}
@@ -226,7 +226,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-black">{item.text}</span>
                   {item.type === "Resource" && item.subject && (
-                    <span className="block truncate text-xs font-medium text-black/40 group-hover:text-black/60">
+                    <span className="block truncate text-xs font-medium text-black/60 group-hover:text-black/60">
                       in {item.subject}
                     </span>
                   )}

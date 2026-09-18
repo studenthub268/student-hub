@@ -155,7 +155,7 @@ export default async function Home() {
 
         {recentResources.length === 0 ? (
           <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-black/10">
-            <p className="text-black/40 font-medium text-sm">No resources found yet</p>
+            <p className="text-black/60 font-medium text-sm">No resources found yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 fade-up-stagger">

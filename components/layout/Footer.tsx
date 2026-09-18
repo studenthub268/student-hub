@@ -32,12 +32,15 @@ export default function Footer() {
               Upload
             </Link>
             <Link href="/terms" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
-              Terms & Privacy
+              Terms
+            </Link>
+            <Link href="/privacy" className="text-sm font-bold tracking-wider text-white/70 hover:text-[#0D9488] transition-colors">
+              Privacy
             </Link>
           </div>
         </div>
         <div className="mt-16 pt-8 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs font-medium tracking-wider text-white/50">
+          <p className="text-xs font-medium tracking-wider text-white/70">
             &copy; {new Date().getFullYear()} Student Hub. All rights reserved.
           </p>
           <div className="flex gap-2">

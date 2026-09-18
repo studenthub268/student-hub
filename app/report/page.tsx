@@ -136,7 +136,7 @@ function ReportContent() {
                   className="w-full p-4 border-2 border-black rounded-xl outline-none focus:bg-gray-50 transition-colors font-bold text-xs tracking-wider"
                 />
                 {loadingResources && (
-                  <Loader2 className="absolute right-4 top-4 animate-spin text-black/40" size={16} />
+                  <Loader2 className="absolute right-4 top-4 animate-spin text-black/60" size={16} />
                 )}
               </div>
               
@@ -148,14 +148,14 @@ function ReportContent() {
                     className="w-full p-4 border-2 border-black rounded-xl flex items-center justify-between hover:bg-gray-50 transition-all text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <FileText size={16} className="text-black/40" />
+                      <FileText size={16} className="text-black/60" />
                       <span className="text-sm font-bold tracking-tight line-clamp-1">{r.title}</span>
                     </div>
                     <ChevronRight size={16} />
                   </button>
                 ))}
                 {searchQuery.length >= 2 && resources.length === 0 && !loadingResources && (
-                  <p className="text-center text-xs font-bold text-black/40 py-4">No resources found</p>
+                  <p className="text-center text-xs font-bold text-black/60 py-4">No resources found</p>
                 )}
               </div>
             </div>
@@ -181,7 +181,7 @@ function ReportContent() {
           </h2>
 
           <div className="space-y-4">
-            <label className="text-xs font-black tracking-wider text-black/40 block">Reason for reporting</label>
+            <label className="text-xs font-black tracking-wider text-black/60 block">Reason for reporting</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 "Copyright Infringement",
@@ -208,7 +208,7 @@ function ReportContent() {
           </div>
 
           <div className="space-y-4">
-            <label className="text-xs font-black tracking-wider text-black/40 block">Additional Details</label>
+            <label className="text-xs font-black tracking-wider text-black/60 block">Additional Details</label>
             <textarea
               required
               rows={5}
@@ -248,7 +248,7 @@ export default function ReportPage() {
           <h1 className="text-5xl sm:text-7xl font-black tracking-tighter mb-4 leading-none">
             Report an <span className="text-red-500">Issue</span>
           </h1>
-          <p className="text-xl font-bold tracking-tight text-black/40">Help us maintain the integrity of Student-Hub.</p>
+          <p className="text-xl font-bold tracking-tight text-black/60">Help us maintain the integrity of Student-Hub.</p>
         </div>
 
         <Suspense fallback={<div className="py-20 text-center font-black tracking-widest text-black/30">Loading Report Center…</div>}>
@@ -256,7 +256,7 @@ export default function ReportPage() {
         </Suspense>
 
         <div className="mt-20 text-center">
-          <Link href="/contact" className="text-sm font-bold tracking-wider text-black/40 hover:text-black transition-colors underline underline-offset-8">
+          <Link href="/contact" className="text-sm font-bold tracking-wider text-black/60 hover:text-black transition-colors underline underline-offset-8">
             Need direct help? Contact us instead
           </Link>
         </div>

@@ -137,7 +137,7 @@ export default function UploadForm() {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g., Midterm Past Paper 2023"
           required
-          className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+          className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
         />
       </div>
 
@@ -147,7 +147,7 @@ export default function UploadForm() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Briefly describe what this resource contains..."
-          className="flex min-h-[120px] w-full rounded-xl border-2 border-black bg-white px-4 py-3 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] placeholder:text-black/40 focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+          className="flex min-h-[120px] w-full rounded-xl border-2 border-black bg-white px-4 py-3 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] placeholder:text-black/60 focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
         />
       </div>
 
@@ -159,14 +159,14 @@ export default function UploadForm() {
           value={department}
           onChange={(e) => setDepartment(e.target.value)}
           placeholder="Select or type a department..."
-          className="flex h-14 w-full rounded-xl border-2 border-black bg-white px-4 py-2 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+          className="flex h-14 w-full rounded-xl border-2 border-black bg-white px-4 py-2 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
         />
         <datalist id="department-list">
           {DEPARTMENTS.map((d) => (
             <option key={d} value={d} />
           ))}
         </datalist>
-        <p className="mt-1.5 text-xs font-medium text-black/40">Optional — helps categorize your resource</p>
+        <p className="mt-1.5 text-xs font-medium text-black/60">Optional — helps categorize your resource</p>
       </div>
 
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
@@ -194,14 +194,14 @@ export default function UploadForm() {
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Select or type a subject..."
             required
-            className="flex h-14 w-full rounded-xl border-2 border-black bg-white px-4 py-2 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+            className="flex h-14 w-full rounded-xl border-2 border-black bg-white px-4 py-2 text-base font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
           />
           <datalist id="subject-list">
             {SUBJECTS.map((s) => (
               <option key={s} value={s} />
             ))}
           </datalist>
-          <p className="mt-1.5 text-xs font-medium text-black/40">Pick from the list or type your own subject</p>
+          <p className="mt-1.5 text-xs font-medium text-black/60">Pick from the list or type your own subject</p>
         </div>
       </div>
 
@@ -212,9 +212,9 @@ export default function UploadForm() {
           value={professor}
           onChange={(e) => setProfessor(e.target.value)}
           placeholder="e.g., Dr. Ahmed Khan"
-          className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/40"
+          className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
         />
-        <p className="mt-1.5 text-xs font-medium text-black/40">Optional — helps other students find the right materials</p>
+        <p className="mt-1.5 text-xs font-medium text-black/60">Optional — helps other students find the right materials</p>
       </div>
 
       <div>
@@ -278,7 +278,7 @@ export default function UploadForm() {
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
-            <p className="mt-1.5 text-xs font-bold tracking-wider text-black/40 text-center">
+            <p className="mt-1.5 text-xs font-bold tracking-wider text-black/60 text-center">
               {uploadProgress < 100 ? `Uploading your file… ${uploadProgress}%` : "Finishing up…"}
             </p>
           </div>
@@ -309,7 +309,7 @@ export default function UploadForm() {
                   target="_blank"
                   className="flex items-start gap-3 p-4 rounded-xl border-2 border-black/10 bg-gray-50 hover:bg-gray-100 transition-colors group"
                 >
-                  <LinkIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-black/40 group-hover:text-[#0D9488]" />
+                  <LinkIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-black/60 group-hover:text-[#0D9488]" />
                   <div className="min-w-0">
                     <p className="font-bold text-black truncate">{dup.title}</p>
                     <p className="text-xs font-medium text-black/50 mt-0.5">
