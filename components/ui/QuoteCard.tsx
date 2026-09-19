@@ -35,7 +35,9 @@ export function QuoteCard() {
   );
 
   return (
-    <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-[2rem] p-6 h-36 flex flex-col items-center justify-center relative overflow-hidden border-2 border-black/5">
+    // min-h, not fixed h-36: long quotes at narrow widths need to grow,
+    // a fixed height clipped them
+    <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-[2rem] p-6 min-h-36 flex flex-col items-center justify-center relative overflow-hidden border-2 border-black/5">
       {quote ? (
         <>
           <p className="text-sm sm:text-base font-medium text-gray-600 text-center leading-snug italic max-w-[90%]">
