@@ -18,6 +18,24 @@ interface SessionUser { id: string; name?: string | null; email?: string | null;
 // briefly renders the guest "Get Started" view before the profile appears.
 let cachedUser: SessionUser | null = null;
 let sessionPromise: Promise<SessionUser | null> | null = null;
+let restored = false;
+
+// Restore the last-known session synchronously at module load, so the first
+// client render already shows the signed-in navbar instead of flashing the
+// guest view for as long as /api/auth/session takes to answer. The network
+// fetch below still runs every load and corrects this if it's stale (signed
+// out elsewhere / session expired) — the flash becomes one frame, not 2-4s.
+function restoreLocal() {
+  if (restored) return;
+  restored = true;
+  try {
+    const raw = localStorage.getItem("sh-session");
+    if (raw) cachedUser = JSON.parse(raw);
+  } catch {
+    /* corrupted entry — ignore; network fetch will fix */
+  }
+}
+restoreLocal();
 
 function fetchSession(): Promise<SessionUser | null> {
   if (!sessionPromise) {
@@ -25,6 +43,12 @@ function fetchSession(): Promise<SessionUser | null> {
       .then((res) => res.json())
       .then((session) => {
         cachedUser = session?.user ?? null;
+        try {
+          if (cachedUser) localStorage.setItem("sh-session", JSON.stringify(cachedUser));
+          else localStorage.removeItem("sh-session");
+        } catch {
+          /* storage unavailable (private mode) — in-memory cache only */
+        }
         return cachedUser;
       })
       .catch(() => null);
@@ -37,7 +61,6 @@ function fetchSession(): Promise<SessionUser | null> {
 export function useSessionUser(): SessionUser | null | undefined {
   const [user, setUser] = useState<SessionUser | null | undefined>(cachedUser);
   useEffect(() => {
-    if (cachedUser) return; // state initialized with it; session never changes after resolve
     let mounted = true;
     fetchSession().then((u) => {
       if (mounted) setUser(u);
@@ -55,7 +78,6 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (cachedUser) return; // already known — render it immediately
     fetchSession().then((u) => setUser(u));
   }, []);
 
@@ -78,6 +100,11 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
     // Client-side signOut POSTs with CSRF and redirects home; a plain
     // navigation to /api/auth/signout would land on NextAuth's standalone
     // confirmation page instead.
+    try {
+      localStorage.removeItem("sh-session");
+    } catch {
+      /* ignore */
+    }
     await signOut({ redirectTo: "/" });
   };
 

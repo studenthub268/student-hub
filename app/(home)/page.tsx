@@ -82,7 +82,7 @@ export default async function Home() {
 
       {/* Brutalist Bento Hero Section */}
       <section className="px-6 sm:px-6 lg:px-8 py-8 sm:py-10 max-w-[1400px] mx-auto w-full overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 fade-up-stagger">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
           {/* Top Left: Massive Headline */}
           <div className="lg:col-span-8 flex flex-col justify-center pb-6 lg:pb-0 relative">
@@ -131,8 +131,12 @@ export default async function Home() {
                 <p className="max-w-md text-base font-medium text-black/80 leading-relaxed">
                   Our platform adapts to your academic needs and provides a library that helps you ace your exams. Experience the future of studying today.
                 </p>
-                <Link href="/browse" className="bg-transparent group-hover:scale-110 transition-transform duration-300">
-                  <MoveUpRight className="w-16 h-16 sm:w-20 sm:h-20" strokeWidth={1.5} />
+                <Link
+                  href="/browse"
+                  aria-label="Browse all resources"
+                  className="bg-transparent group-hover:scale-110 transition-transform duration-300"
+                >
+                  <MoveUpRight className="w-16 h-16 sm:w-20 sm:h-20" strokeWidth={1.5} aria-hidden />
                 </Link>
               </div>
             </div>
@@ -142,7 +146,7 @@ export default async function Home() {
       </section>
 
       {/* Recent Resources — server-rendered with the page */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full border-t border-gray-200 mt-6 fade-up">
+      <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full border-t border-gray-200 mt-6">
         <div className="flex justify-between items-end mb-12">
           <div className="space-y-2">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight">Recent Uploads</h2>
@@ -158,7 +162,7 @@ export default async function Home() {
             <p className="text-black/60 font-medium text-sm">No resources found yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 fade-up-stagger">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {recentResources.map((resource) => (
               <div key={resource.id} className="h-full">
                 <ResourceCard resource={resource} />

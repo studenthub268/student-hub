@@ -1,9 +1,13 @@
-import { auth } from "./lib/auth";
 import { NextResponse, type NextRequest } from "next/server";
+import { after } from "next/server";
 import { getIpAddress, isIpBlocked, detectAttack, checkRateLimit, cleanupRateLimitMap, invalidateBlockedIpsCache } from "./lib/ip-block";
 import { escapeHtml } from "./lib/utils";
 import { cleanupOldEmailEvents } from "./lib/cleanup";
 import { notifyAutoBlock, checkBounceRateAlert } from "./lib/alerts";
+// NOTE: lib/auth is deliberately NOT statically imported here — NextAuth pulls
+// its adapter, bcrypt and the whole provider stack into the middleware bundle,
+// whose parse/compile cost lands on every request's TTFB. Only the admin gate
+// needs the real session, and it imports lazily below.
 // NOTE: VPN/proxy use alone is never a blockable offense. Visitors are only
 // auto-blocked for concrete attack behavior (see detectAttack) or manually by
 // an admin. Policy: privacy tools are not suspicious behavior.
@@ -12,11 +16,12 @@ export async function proxy(request: NextRequest) {
   // Run periodic cleanup of in-memory maps
   cleanupRateLimitMap();
 
-  // Lazy DB cleanup — runs at most once per day
-  cleanupOldEmailEvents();
-
-  // Bounce rate alert — runs at most once per hour
-  checkBounceRateAlert();
+  // Maintenance work must never risk delaying or dying with the response:
+  // these lazy jobs do a Neon round trip on the one request per day/hour that
+  // triggers them. `after()` (Next 15+) runs them post-response on Vercel —
+  // guaranteed completion, zero TTFB cost.
+  after(cleanupOldEmailEvents());
+  after(checkBounceRateAlert());
 
   const ip = getIpAddress(request);
   const { pathname } = request.nextUrl;
@@ -79,9 +84,18 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 4. Auth and routing
-  const session = await auth();
-  const user = session?.user;
+  // 4. Auth and routing.
+  // For public routes the session is decoded WITHOUT the NextAuth machinery:
+  // auth() pulls the whole NextAuth/bcrypt/adapter stack into the middleware
+  // bundle (its parse+init cost lands on every request's TTFB); a bare cookie
+  // check is all "signed-in or not" needs here. It is a HINT ONLY — no route
+  // below gains access from it; anything privileged re-verifies server-side.
+  // authjs cookie (NextAuth v5 default): __Secure- prefixed on HTTPS prod,
+  // bare in dev. Checking both avoids any env mismatch silently treating a
+  // signed-in user as a guest (which would redirect them to /login).
+  const hasSessionCookie =
+    request.cookies.has("__Secure-authjs.session-token") ||
+    request.cookies.has("authjs.session-token");
 
   const isPublicRoute =
     pathname === "/" ||
@@ -118,19 +132,30 @@ export async function proxy(request: NextRequest) {
     // the handler, and it must never trigger a login redirect mid-navigation.
     pathname === "/api/analytics";
 
-  if (!user && !isPublicRoute) {
+  if (!hasSessionCookie && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("redirectedFrom", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && (pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/", request.url));
+  // Send already-signed-in users away from /login and /signup. This one
+  // checks the VERIFIED session, not the cookie hint: a stale/invalid cookie
+  // (e.g. after a secret rotation) must never bounce a guest between /login
+  // and / forever. These two paths are low-traffic, so the full auth() here
+  // costs nothing in aggregate.
+  if (hasSessionCookie && (pathname === "/login" || pathname === "/signup")) {
+    const { auth } = await import("./lib/auth");
+    const session = await auth();
+    if (session?.user) return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // Protect admin panel
+  // Protect admin panel — the one place the middleware needs the real
+  // verified session (full auth() here, admin-only so guests never pay it).
   if (pathname.startsWith("/admin")) {
+    const { auth } = await import("./lib/auth");
+    const session = await auth();
+    const user = session?.user;
     if (!user?.email) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
@@ -159,7 +184,11 @@ export async function proxy(request: NextRequest) {
     "camera=(), microphone=(), geolocation=(), interest-cohort=()"
   );
 
-  if (user) {
+  // Same hint as above: signed-in responses must not be shared/cached by
+  // intermediaries. A guest with a leftover cookie getting one extra private
+  // header is harmless; the reverse (missing it) is not, and the real
+  // rendering layer re-verifies the session itself.
+  if (hasSessionCookie) {
     response.headers.set(
       "Cache-Control",
       "private, no-cache, no-store, must-revalidate"
@@ -171,6 +200,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|offline$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|llms\\.txt$|offline$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

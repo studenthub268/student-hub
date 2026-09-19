@@ -1,7 +1,9 @@
 import { db } from "@/lib/db";
 import { emailEvents, adminEmails } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
-import { Resend } from "resend";
+// ponytail: Resend is dynamically imported in the one place it sends, so the
+// middleware bundle's cold start (every request's TTFB) doesn't parse it.
+import type { Resend as ResendType } from "resend";
 
 // ---------------------------------------------------------------------------
 // Configuration (all overridable via env)
@@ -158,7 +160,8 @@ async function sendAdminEmailAlert(subject: string, body: string): Promise<void>
 
     if (admins.length === 0) return;
 
-    const resend = new Resend(apiKey);
+    const { Resend } = await import("resend");
+    const resend: ResendType = new Resend(apiKey);
     const from = process.env.EMAIL_FROM || "Student Hub <noreply@studenthub.dev>";
 
     await resend.emails.send({

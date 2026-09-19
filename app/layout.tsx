@@ -27,15 +27,20 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://student-hub-uet.vercel.app"),
   icons: {
-    // ?v=2 cache-buster: the artwork changed (white background), and both the
-    // service worker and browsers cache icons by URL — a new URL is the only
-    // reliable way for returning visitors to get the new art.
+    // ?v=3 cache-buster: the 512/maskable icons were rebuilt from the crisp
+    // 192 source (they were blurry upscales); both the service worker and
+    // browsers cache icons by URL — a new URL is the only reliable way for
+    // returning visitors to get the new art.
     icon: [
-      { url: "/favicon.png?v=2", type: "image/png", sizes: "any" },
-      { url: "/icon-192.png?v=2", type: "image/png", sizes: "192x192" },
-      { url: "/icon-512.png?v=2", type: "image/png", sizes: "512x512" },
+      // /favicon.ico: browsers auto-request this exact path regardless of
+      // what's declared here — without a real file the probe 404s and logs a
+      // console error on every visit (Lighthouse "errors logged to console").
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon.png?v=3", type: "image/png", sizes: "any" },
+      { url: "/icon-192.png?v=3", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png?v=3", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/icon-192.png?v=2" }],
+    apple: [{ url: "/icon-192.png?v=3" }],
   },
   title: "Student Hub — Study Smarter. Share More.",
   description: "Free university notes, past papers and study resources shared by students. Peer-powered and always free — built for UET students.",

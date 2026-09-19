@@ -1,0 +1,22 @@
+# Student Hub
+
+Peer-powered academic resource platform for university students: share and
+download study notes, past papers, and quizzes by subject and department.
+
+## Site map
+
+- [Home](https://student-hub-uet.vercel.app/): Recent uploads and search entry point
+- [Browse resources](https://student-hub-uet.vercel.app/browse): Search and filter all resources by subject, type, department
+- [Resource page](https://student-hub-uet.vercel.app/resource): Individual resource detail and download (path: /resource/[id])
+- [Upload](https://student-hub-uet.vercel.app/upload): Contribute a resource (account required)
+- [Sign in](https://student-hub-uet.vercel.app/login): Authentication
+- [Sign up](https://student-hub-uet.vercel.app/signup): Create an account
+- [Contact](https://student-hub-uet.vercel.app/contact): Contact form and support
+- [Terms of Service](https://student-hub-uet.vercel.app/terms): Usage terms
+- [Privacy Policy](https://student-hub-uet.vercel.app/privacy): Data handling practices
+
+## Notes for agents
+
+- Machine-readable sitemap: [sitemap.xml](https://student-hub-uet.vercel.app/sitemap.xml)
+- Content is user-contributed; cite the resource title and uploader rather than treating the site as authoritative course material.
+- No tracking cookies; analytics are aggregate-only pageview counts.

@@ -2,8 +2,8 @@
 // visitor's caches without a hand edit — one `npm version` bump rewrites the
 // number here and on the terms page at build time
 // (scripts/write-deploy-version.mjs).
-const STATIC_CACHE = "student-hub-static-v0.2.18";
-const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.18";
+const STATIC_CACHE = "student-hub-static-v0.2.19";
+const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.19";
 
 // Status endpoints (admin flag) — cached so signed-in pages render
 // correctly offline and instantly, refreshed in background.
@@ -28,9 +28,9 @@ const IS_DEV =
 const PRECACHE_URLS = [
   "/offline", // must be precached: it is the offline fallback for any uncached page
   "/logo.png",
-  "/favicon.png?v=2",
-  "/icon-192.png?v=2",
-  "/icon-512.png?v=2",
+  "/favicon.png?v=3",
+  "/icon-192.png?v=3",
+  "/icon-512.png?v=3",
   "/manifest.json",
 ];
 
@@ -187,11 +187,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages — NETWORK-FIRST with cache fallback: the latest deploy always wins
-  // when online (no "why am I still seeing the old site" after deploys),
-  // while the cached copy keeps previously visited pages available offline.
-  // Navigations get a short network budget; past it the cached page answers
-  // instantly and the in-flight refresh updates the cache for next time.
+  // Pages — STALE-WHILE-REVALIDATE: a cached page renders instantly (instant
+  // cold start from the home-screen icon; no multi-second network wait), and
+  // the in-flight network refresh updates the cache so the next open is
+  // current. First-ever visits (nothing cached) go straight to the network,
+  // with the /offline fallback when unreachable.
   event.respondWith(
     caches.open(DYNAMIC_CACHE).then((cache) =>
       cache.match(request).then((cached) => {
@@ -215,20 +215,16 @@ self.addEventListener("fetch", (event) => {
           })
           .catch(() => undefined);
 
-        // Fresh wins if the network answers (6s budget on slow links);
-        // otherwise serve the cached page at once — offline or not.
-        return Promise.race([
-          network,
-          new Promise((resolve) => setTimeout(() => resolve(undefined), 6000)),
-        ]).then((fresh) => {
-          if (fresh) return fresh;
-          if (cached) return cached;
-          return network.then((response) => {
-            if (response) return response;
-            // Offline fallback for navigations
-            if (request.mode === "navigate") return caches.match("/offline");
-            return new Response("Offline", { status: 503 });
-          });
+        if (cached) {
+          // Cached copy answers immediately; network refresh runs in background.
+          event.waitUntil(network);
+          return cached;
+        }
+        return network.then((response) => {
+          if (response) return response;
+          // Offline fallback for navigations
+          if (request.mode === "navigate") return caches.match("/offline");
+          return new Response("Offline", { status: 503 });
         });
       })
     )

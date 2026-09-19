@@ -33,26 +33,33 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
     /* eslint-enable react-hooks/set-state-in-effect */
 
     let cancelled = false;
-    Promise.all([
-      fetch("/api/check-admin").then((res) => (res.ok ? res.json() : null)),
-      fetch("/api/admin/message-count")
-        .then((res) => (res.ok ? res.json() : null))
-        .catch(() => null),
-    ])
-      .then(([adminData, countData]) => {
+    // check-admin FIRST; only confirmed admins pay for the message-count
+    // round-trip. (It used to be fetched in parallel by every visitor — for
+    // guests that endpoint 302s to /login, so each page load wasted a request
+    // and downloaded the login page's HTML mid-render.)
+    fetch("/api/check-admin")
+      .then((res) => (res.ok ? res.json() : null))
+      .then(async (adminData) => {
         if (cancelled) return;
-        if (adminData?.admin === true) {
-          const count = countData?.count || 0;
-          setIsAdmin(true);
-          setMessageCount(count);
-          try {
-            sessionStorage.setItem(
-              ADMIN_STATUS_CACHE_KEY,
-              JSON.stringify({ savedAt: Date.now(), count })
-            );
-          } catch {
-            // best-effort cache only
-          }
+        if (adminData?.admin !== true) return;
+        let count = 0;
+        try {
+          const countData = await fetch("/api/admin/message-count").then((res) =>
+            res.ok ? res.json() : null
+          );
+          count = countData?.count || 0;
+        } catch {
+          // badge is cosmetic — an admin without a count still gets the link
+        }
+        setIsAdmin(true);
+        setMessageCount(count);
+        try {
+          sessionStorage.setItem(
+            ADMIN_STATUS_CACHE_KEY,
+            JSON.stringify({ savedAt: Date.now(), count })
+          );
+        } catch {
+          // best-effort cache only
         }
       })
       .catch(() => {
