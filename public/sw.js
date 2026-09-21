@@ -54,6 +54,42 @@ self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
+// ---- Notifications ------------------------------------------------------
+// Tapping the notification should land the user in the app: focus the
+// existing tab if there is one, otherwise open a fresh one. Without this,
+// clicks on desktop Chrome do nothing (notification just dismisses).
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const target = event.notification.data?.url || "/browse";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // Prefer a tab that is already on the target path, else any app tab.
+      for (const client of clientList) {
+        if (new URL(client.url).pathname === target) return client.focus();
+      }
+      for (const client of clientList) {
+        if ("focus" in client) return client.focus();
+      }
+      return self.clients.openWindow(target);
+    })
+  );
+});
+
+// When any app tab becomes visible again, clear leftover error bubbles —
+// the user is back in the app, so "upload failed" would be stale.
+self.addEventListener("message", (event) => {
+  if (event.data === "sh-clear-notifications") {
+    event.waitUntil(
+      self.registration.getNotifications({ tag: "student-hub-error" }).then((list) => {
+        for (const n of list) n.close();
+      })
+    );
+  }
+});
+
 // Activate — clean up old caches. The dynamic (page) cache is dropped on
 // every SW update so a deploy is picked up on the FIRST visit instead of
 // serving a stale page once — the "why do I still see the old site" trap.
@@ -180,7 +216,8 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() =>
-          cachesn            .match(request)
+          caches
+            .match(request)
             .then((cached) => cached || new Response("Offline", { status: 503 }))
         )
     );

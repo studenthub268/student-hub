@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { Upload, File, X, AlertTriangle, Link as LinkIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
+import {
+  notify,
+  requestNotificationPermission,
+} from "@/lib/notify";
 import { SUBJECTS, RESOURCE_TYPES, DEPARTMENTS } from "@/lib/constants";
 import { formatFileSize, getErrorMessage } from "@/lib/utils";
 import { uploadResource, checkDuplicateResources } from "@/lib/actions/resources";
@@ -85,6 +89,11 @@ export default function UploadForm() {
     setShowDuplicateWarning(false);
     setUploadProgress(0);
 
+    // Ask for OS notification permission inside this tap (iOS requires a
+    // user gesture; desktop shows the browser prompt). Denied/unsupported is
+    // fine — notify() falls back to the in-page toast.
+    void requestNotificationPermission();
+
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -107,11 +116,17 @@ export default function UploadForm() {
         uploadId: uploadIdRef.current,
       });
 
-      toast.success(result?.alreadyExisted ? "Upload already saved — no duplicate created" : "Resource uploaded successfully!");
+      // Native OS notification when permitted (survives leaving the tab —
+      // important for big files on slow networks); branded toast otherwise.
+      void notify(
+        "success",
+        result?.alreadyExisted ? "Upload already saved" : "Resource published",
+        result?.alreadyExisted ? `“${title}” was already saved — no duplicate created.` : `“${title}” is now live for other students.`,
+      );
       router.push("/browse");
       router.refresh();
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to upload resource"));
+      void notify("error", "Upload failed", getErrorMessage(error, "Failed to upload resource"));
       setIsUploading(false);
     } finally {
       uploadInFlightRef.current = false;

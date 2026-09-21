@@ -12,12 +12,27 @@ export function ServiceWorkerRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
+    // Native notifications: clear leftover "upload failed" bubbles when the
+    // user returns to the app (they're stale by then). No-op when the
+    // Notifications API is missing.
+    const clearNotifications = () => {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      navigator.serviceWorker.ready
+        .then((reg) => reg.getNotifications({ tag: "student-hub-error" }))
+        .then((list) => {
+          for (const n of list) n.close();
+        })
+        .catch(() => {});
+    };
+    document.addEventListener("visibilitychange", clearNotifications);
+    window.addEventListener("focus", clearNotifications);
+
     const register = async () => {
       try {
         // ?swv cache-buster: browsers that already pinned a year-long immutable
         // copy of /sw.js (the old header bug) would never re-fetch it — the
         // buster forces this one fetch of the fixed, no-cache worker.
-        const reg = await navigator.serviceWorker.register("/sw.js?swv=7");
+        const reg = await navigator.serviceWorker.register("/sw.js?swv=8");
 
         // If a new worker is already waiting, activate it now
         if (reg.waiting) {
@@ -49,6 +64,11 @@ export function ServiceWorkerRegister() {
     };
 
     register();
+
+    return () => {
+      document.removeEventListener("visibilitychange", clearNotifications);
+      window.removeEventListener("focus", clearNotifications);
+    };
   }, []);
 
   return null;
