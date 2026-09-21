@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { WifiOff } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 /**
  * Offline banner — styled like the verification banner (top bar).
@@ -17,6 +18,18 @@ import { WifiOff } from "lucide-react";
 export function OfflineBanner() {
   const [offline, setOffline] = useState(false);
   const probingRef = useRef(false);
+  // Mirror of `offline` readable inside the probe callbacks, plus a flag
+  // that survives the optimistic online-hide: the toast must fire on the
+  // VERIFIED recovery, which lands after `online` already hid the banner.
+  const offlineRef = useRef(false);
+  const seenOfflineRef = useRef(false);
+
+  // Single funnel for every verdict so the transition lives in one place.
+  const apply = (next: boolean) => {
+    if (next) seenOfflineRef.current = true;
+    offlineRef.current = next;
+    setOffline(next);
+  };
 
   useEffect(() => {
     let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -28,7 +41,7 @@ export function OfflineBanner() {
       probingRef.current = true;
       try {
         if (!navigator.onLine) {
-          setOffline(true);
+          apply(true);
           return;
         }
         const res = await fetch("/api/ping", {
@@ -39,9 +52,21 @@ export function OfflineBanner() {
           // page content for bandwidth.
           priority: "low",
         } as RequestInit & { priority: "low" });
-        setOffline(!res.ok);
+        // Toast only on a VERIFIED recovery: the probe succeeded after the
+        // banner has shown offline at some point (seenOfflineRef survives
+        // the optimistic `online`-event hide, and the optimistic path
+        // itself never toasts — on flaky Wi-Fi it fires before the
+        // internet is actually back).
+        if (res.ok && seenOfflineRef.current) {
+          seenOfflineRef.current = false;
+          toast.success(
+            "Back online — connection restored, showing the latest content.",
+            { icon: "\u26A1" }
+          );
+        }
+        apply(!res.ok);
       } catch {
-        setOffline(true);
+        apply(true);
       } finally {
         probingRef.current = false;
       }
@@ -49,18 +74,18 @@ export function OfflineBanner() {
 
     /* eslint-disable react-hooks/set-state-in-effect -- syncing with an
        external system (connectivity); listeners keep state live */
-    setOffline(!navigator.onLine);
+    apply(!navigator.onLine);
     void check();
 
     const goOffline = () => {
-      setOffline(true);
+      apply(true);
       if (pollInterval) clearInterval(pollInterval);
       // Keep polling while offline so reconnect is caught fast
       pollInterval = setInterval(check, 30_000);
     };
     const goOnline = () => {
       // Optimistically hide, then verify with a real probe
-      setOffline(false);
+      apply(false);
       void check();
     };
     const onFocus = () => void check();
