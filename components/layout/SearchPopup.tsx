@@ -196,7 +196,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
                   <button
                     key={subject}
                     onClick={() => go(`/browse?subject=${encodeURIComponent(subject)}&from=search`)}
-                    className="px-4 py-2 bg-surface border-2 border-ink rounded-full text-sm font-medium text-foreground transition-all hover:bg-accent press"
+                    className="px-4 py-2 bg-surface border-2 border-ink rounded-full text-sm font-medium text-foreground transition-all hover:bg-accent hover:text-accent-contrast press"
                   >
                     {subject}
                   </button>
@@ -218,7 +218,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
               data-suggestion
               onClick={() => handleSelectSuggestion(item)}
               className={`w-full group cursor-pointer px-5 py-4 border-b border-line last:border-b-0 flex items-center justify-between gap-3 transition-colors text-left ${
-                index === activeIndex ? "bg-accent" : "hover:bg-accent"
+                index === activeIndex ? "bg-accent on-ink" : "hover:bg-accent hover:text-accent-contrast"
               }`}
             >
               <span className="flex items-center gap-3 min-w-0">
@@ -236,7 +236,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
                 className={`text-[10px] font-bold tracking-widest px-2.5 py-0.5 rounded-full border border-ink flex-shrink-0 transition-colors ${
                   item.type === "Subject"
                     ? "bg-surface text-foreground group-hover:bg-ink group-hover:on-ink"
-                    : "bg-accent text-foreground"
+                    : "bg-accent text-accent-contrast"
                 }`}
               >
                 {item.type}

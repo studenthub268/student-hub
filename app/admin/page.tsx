@@ -440,7 +440,7 @@ export default function AdminPanel() {
                       </span>
                       <button
                         onClick={() => handleUnblockIp(b.ip)}
-                        className="px-3 py-1.5 rounded-full border-2 border-red-300 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-background hover:border-red-600 transition-all"
+                        className="px-3 py-1.5 rounded-full border-2 border-red-300 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
                       >
                         Unblock
                       </button>
@@ -486,7 +486,7 @@ export default function AdminPanel() {
                         <p className="text-xs text-foreground/50 font-medium">By {entry.blockedBy} · {new Date(entry.blockedAt).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <button onClick={() => handleUnblockIp(entry.ip)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:border-accent transition-all">
+                    <button onClick={() => handleUnblockIp(entry.ip)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
                       <Trash2 className="w-4 h-4" /> Unblock
                     </button>
                   </div>
@@ -541,10 +541,10 @@ export default function AdminPanel() {
                       <Link href={`/resource/${res.id}`} target="_blank" className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors">
                         <ExternalLink className="w-4 h-4" />
                       </Link>
-                      <button onClick={() => startEdit(res)} className="p-2 rounded-lg border-2 border-line hover:bg-accent hover:border-accent transition-all">
+                      <button onClick={() => startEdit(res)} className="p-2 rounded-lg border-2 border-line hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteResource(res.id, res.title)} className="p-2 rounded-lg border-2 border-line hover:bg-red-500 hover:text-background hover:border-red-500 transition-all">
+                      <button onClick={() => handleDeleteResource(res.id, res.title)} className="p-2 rounded-lg border-2 border-line hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -592,7 +592,7 @@ export default function AdminPanel() {
                     {reportedResource?.id && (
                       <button
                         onClick={() => handleDeleteReportedResource(report.id, reportedResource!.id, reportedResource!.title)}
-                        className="p-2 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-500 hover:text-background hover:border-red-500 transition-all"
+                        className="p-2 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
                         title="Delete resource & dismiss report"
                       >
                         <Ban className="w-4 h-4" />
@@ -710,12 +710,12 @@ export default function AdminPanel() {
                         </button>
                       )
                     ) : (
-                      <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:border-accent transition-all">
+                      <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
                         <ShieldCheck className="w-4 h-4" /> Make Admin
                       </button>
                     )}
                     {!isPermanent && (
-                      <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-background hover:border-red-500 transition-all">
+                      <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
                         <Trash2 className="w-4 h-4" /> Delete
                       </button>
                     )}
@@ -759,7 +759,7 @@ export default function AdminPanel() {
                       <Lock className="w-3.5 h-3.5" /> Permanent
                     </span>
                   ) : (
-                    <button onClick={() => handleRemoveAdmin(admin.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-red-500 hover:text-background hover:border-red-500 transition-all">
+                    <button onClick={() => handleRemoveAdmin(admin.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
                       <Trash2 className="w-4 h-4" /> Remove
                     </button>
                   )}

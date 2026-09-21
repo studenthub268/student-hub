@@ -19,7 +19,7 @@ export function ResourceCard({ resource }: ResourceCardProps) {
             <div className="border border-ink rounded-full px-4 py-1.5 text-xs font-semibold tracking-wider">
               {resource.type.replace('-', ' ')}
             </div>
-            <div className="p-2 rounded-full border border-ink group-hover:bg-accent group-hover:rotate-45 transition-all duration-300">
+            <div className="p-2 rounded-full border border-ink group-hover:bg-accent group-hover:text-accent-contrast group-hover:rotate-45 transition-all duration-300">
               <ArrowUpRight className="h-5 w-5" strokeWidth={1.5} />
             </div>
           </div>

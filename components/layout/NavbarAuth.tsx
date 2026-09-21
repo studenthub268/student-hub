@@ -156,13 +156,13 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
             </div>
           </div>
           <div className="py-1">
-            <Link href="/profile" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent transition-colors">
+            <Link href="/profile" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
               <User className="h-4 w-4" /> My Profile
             </Link>
-            <Link href="/upload" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent transition-colors">
+            <Link href="/upload" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
               <Upload className="h-4 w-4" /> Upload Resource
             </Link>
-            <Link href="/browse" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent transition-colors">
+            <Link href="/browse" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
               <BookOpen className="h-4 w-4" /> Browse Resources
             </Link>
           </div>

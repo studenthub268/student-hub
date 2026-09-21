@@ -20,7 +20,7 @@ export function ContributeCta() {
           <p className="text-xl text-background/60 font-medium mb-10 max-w-2xl mx-auto italic">
             Join the thousands of students already sharing their knowledge.
           </p>
-          <Link href="/upload" className="inline-flex items-center gap-2 sm:gap-3 bg-accent text-foreground border-2 border-ink px-6 sm:px-12 py-4 sm:py-5 rounded-full font-bold text-xs sm:text-sm tracking-wider hover:-translate-y-1 transition-all whitespace-nowrap">
+          <Link href="/upload" className="inline-flex items-center gap-2 sm:gap-3 bg-accent text-accent-contrast border-2 border-ink px-6 sm:px-12 py-4 sm:py-5 rounded-full font-bold text-xs sm:text-sm tracking-wider hover:-translate-y-1 transition-all whitespace-nowrap">
             Upload a Resource <ArrowUpRight />
           </Link>
         </div>

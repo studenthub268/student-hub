@@ -47,7 +47,7 @@ export default function Footer() {
             <span className="px-3 py-1 bg-surface/10 rounded-full text-[10px] font-bold tracking-wider text-background/80">
               Built by Students
             </span>
-            <span className="px-3 py-1 bg-accent text-foreground rounded-full text-[10px] font-bold tracking-wider">
+            <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-[10px] font-bold tracking-wider">
               For Students
             </span>
           </div>

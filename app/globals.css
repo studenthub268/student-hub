@@ -29,18 +29,19 @@
 
 .dark {
   color-scheme: dark;
-  --background: #101312;
-  --foreground: #f2f5f4;
-  /* Inverted ink: elements that were near-black in light mode (hero cards,
-     buttons, footer) flip to light so text-background on them keeps
-     contrast. Text ON accent uses --accent-contrast instead (see below). */
-  --ink: #e9edec;
-  --surface: #191d1c;
-  --surface-muted: #222726;
-  --line: rgba(255, 255, 255, 0.12);
-  --line-strong: rgba(255, 255, 255, 0.28);
-  --accent: #2dd4bf;
-  --accent-contrast: #042f2b;
+  --background: #0d1110;
+  --foreground: #e8eceb;
+  /* Pure dark: ink stays dark (a touch lighter than the background so
+     neo-brutalist borders still read as subtle edges) — no white panels. */
+  --ink: #232927;
+  --surface: #161a19;
+  --surface-muted: #1e2422;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  /* Dark teal — the brand color, never brightened for dark mode. */
+  --accent: #0d9488;
+  /* Text ON accent flips to light in dark mode (dark teal bg). */
+  --accent-contrast: #eafff9;
 }
 
 @theme inline {
@@ -65,10 +66,13 @@ body {
 }
 
 /* Text on ink-colored surfaces (hero cards, footer, primary buttons).
-   --background and --ink are always opposites in both modes (white-on-black
-   in light, near-black-on-light in dark), so one rule covers both. */
+   Light mode: background is white, ink black → white text. Dark mode: both
+   go dark, so text flips to the light foreground instead. */
 .on-ink {
   color: var(--background);
+}
+.dark .on-ink {
+  color: var(--foreground);
 }
 
 /* Hard offset shadows, themed per mode. Defined once here instead of
@@ -109,9 +113,8 @@ body {
   --shadow-color: rgba(0, 0, 0, 1);
 }
 .dark {
-  /* Near-white glow at reduced alpha: keeps the neo-brutalist offset read
-     on dark ground without strobing on large cards. */
-  --shadow-color: rgba(242, 245, 244, 0.18);
+  /* Deep black shadow: depth on the raised dark surfaces, no glow. */
+  --shadow-color: rgba(0, 0, 0, 0.55);
 }
 
 /* Elements that carry color transitions already animate the flip smoothly;
@@ -133,7 +136,7 @@ body {
    (capsule search pill snapped to a 4px box on focus). The outline itself
    follows the element's corners automatically. */
 :focus-visible {
-  outline: 2px solid #0D9488;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -183,11 +186,11 @@ body {
 }
 
 .dark * {
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.24);
+  background-color: rgba(255, 255, 255, 0.17);
 }
 
 /* ---- Themed toasts (react-hot-toast) — neo-brutalist to match the site.
