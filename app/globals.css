@@ -29,19 +29,18 @@
 
 .dark {
   color-scheme: dark;
-  --background: #0d1110;
-  --foreground: #e8eceb;
-  /* Pure dark: ink stays dark (a touch lighter than the background so
-     neo-brutalist borders still read as subtle edges) — no white panels. */
-  --ink: #232927;
-  --surface: #161a19;
-  --surface-muted: #1e2422;
-  --line: rgba(255, 255, 255, 0.1);
-  --line-strong: rgba(255, 255, 255, 0.22);
-  /* Dark teal — the brand color, never brightened for dark mode. */
-  --accent: #0d9488;
-  /* Text ON accent flips to light in dark mode (dark teal bg). */
-  --accent-contrast: #eafff9;
+  /* Black-anchored neutrals: background pure black, surfaces near-black
+     gray steps — not a gray slab. */
+  --background: #050505;
+  --foreground: #e6e9e8;
+  --ink: #1a1a1a;
+  --surface: #0f0f0f;
+  --surface-muted: #181818;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.2);
+  /* Deep teal: same hue as the brand, pulled way down for dark mode. */
+  --accent: #0b6e66;
+  --accent-contrast: #e8fffa;
 }
 
 @theme inline {
