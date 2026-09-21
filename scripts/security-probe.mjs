@@ -26,8 +26,10 @@ const admin = await fetch(`${BASE}/admin`, { redirect: "manual" });
 check("/admin guest redirect", [301, 302, 303, 307, 308].includes(admin.status) && (admin.headers.get("location") ?? "").includes("/login"), `status=${admin.status}`);
 
 // --- 3. Admin API locked (guest) ---
-const mc = await fetch(`${BASE}/api/admin/message-count`);
-check("/api/admin/message-count guest -> 401/403", mc.status === 401 || mc.status === 403, `status=${mc.status}`);
+// fetch follows the login redirect by default; disable it so we see the
+// actual gate (307 to /login = protected; 200 = LEAK).
+const mc = await fetch(`${BASE}/api/admin/message-count`, { redirect: "manual" });
+check("/api/admin/message-count guest -> gated", [301, 302, 303, 307, 308, 401, 403].includes(mc.status), `status=${mc.status}`);
 
 // --- 4. Webhook rejects forged signature ---
 const wh = await fetch(`${BASE}/api/webhooks/resend`, {
