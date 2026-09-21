@@ -68,8 +68,17 @@ export const resources = pgTable('resources', {
   department: text('department'),
   downloads: integer('downloads').default(0).notNull(),
   likes: integer('likes').default(0).notNull(),
+  // Idempotency key for the upload flow: the client sends one stable UUID per
+  // logical upload, so a retry after a lost response (flaky network, function
+  // timeout) inserts-on-conflict instead of creating a duplicate resource.
+  uploadKey: uuid('upload_key'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  // One resource per upload key — retries after a lost response hit this
+  // conflict instead of creating a duplicate. Nullable: legacy rows predate
+  // the key, and the R2 key is derived from it on new uploads.
+  uploadKeyUnique: uniqueIndex('resources_upload_key_unique').on(table.uploadKey),
+}));
 
 export type Resource = InferSelectModel<typeof resources>;
 

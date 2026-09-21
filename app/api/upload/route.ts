@@ -6,6 +6,7 @@ import { validateFile } from "@/lib/uploads";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -68,15 +69,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
+    // Optional idempotency key from the client: a stable UUID per logical
+    // upload, reused across retries of the same form submission. Deriving the
+    // R2 key from it means a retry overwrites the same object instead of
+    // orphaning the first one in storage. Invalid/missing values just get a
+    // fresh random key — legacy clients keep working.
+    const clientUploadId = formData.get("uploadId");
+    const uploadId =
+      typeof clientUploadId === "string" && z.string().uuid().safeParse(clientUploadId).success
+        ? clientUploadId
+        : randomUUID();
+
     const ext = file.name.split(".").pop()?.toLowerCase();
-    const key = `${session.user.id}/${randomUUID()}.${ext}`;
+    const key = `${session.user.id}/${uploadId}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
     await putR2Object(key, buffer, file.type);
 
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
 
-    return NextResponse.json({ key, publicUrl });
+    return NextResponse.json({ key, publicUrl, uploadId });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(

@@ -57,6 +57,13 @@
       "when": 1789769660772,
       "tag": "0007_sweet_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790009625962,
+      "tag": "0008_stale_omega_flight",
+      "breakpoints": true
     }
   ]
 }

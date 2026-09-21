@@ -33,6 +33,7 @@ const CARD_COLUMNS = {
   department: resources.department,
   downloads: resources.downloads,
   likes: resources.likes,
+  uploadKey: resources.uploadKey,
   createdAt: resources.createdAt,
   uploader: { name: users.name },
 };

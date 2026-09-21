@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { Upload, File, X, AlertTriangle, Link as LinkIcon } from "lucide-react";
@@ -27,6 +27,8 @@ export default function UploadForm() {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
       setFile(acceptedFiles[0]);
+      // A newly picked file is a new logical upload — never reuse the key.
+      uploadIdRef.current = crypto.randomUUID();
     }
   }, []);
 
@@ -42,9 +44,16 @@ export default function UploadForm() {
 
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  // Idempotency key: one stable UUID per logical upload, shared by the file
+  // PUT and the resource insert. A retry after a lost response (flaky mobile
+  // network, tab closed at "Saving resource…") dedupes server-side instead of
+  // saving the resource twice. A newly picked file starts a new upload.
+  const uploadIdRef = useRef<string>(crypto.randomUUID());
+  const uploadInFlightRef = useRef(false);
+
   // XHR (not fetch) so we get real upload progress events for the bar.
   const uploadFileWithProgress = (formData: FormData) =>
-    new Promise<{ key: string; publicUrl: string }>((resolve, reject) => {
+    new Promise<{ key: string; publicUrl: string; uploadId?: string }>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload");
       xhr.upload.onprogress = (e) => {
@@ -67,6 +76,11 @@ export default function UploadForm() {
 
   const doUpload = async () => {
     if (!file) return;
+    // Re-entry guard: the duplicate-warning modal's "Upload anyway" used to
+    // fire this twice (click handler + implicit form submit) — and a rapid
+    // double-click here can still race React's disabled state.
+    if (uploadInFlightRef.current) return;
+    uploadInFlightRef.current = true;
     setIsUploading(true);
     setShowDuplicateWarning(false);
     setUploadProgress(0);
@@ -74,11 +88,12 @@ export default function UploadForm() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("uploadId", uploadIdRef.current);
 
       const { key, publicUrl } = await uploadFileWithProgress(formData);
       setUploadProgress(100);
 
-      await uploadResource({
+      const result = await uploadResource({
         title,
         description,
         type,
@@ -89,14 +104,17 @@ export default function UploadForm() {
         file_key: key,
         file_type: file.type,
         file_size: file.size,
+        uploadId: uploadIdRef.current,
       });
 
-      toast.success("Resource uploaded successfully!");
+      toast.success(result?.alreadyExisted ? "Upload already saved — no duplicate created" : "Resource uploaded successfully!");
       router.push("/browse");
       router.refresh();
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to upload resource"));
       setIsUploading(false);
+    } finally {
+      uploadInFlightRef.current = false;
     }
   };
 
@@ -322,6 +340,7 @@ export default function UploadForm() {
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
+                type="button"
                 onClick={() => {
                   setShowDuplicateWarning(false);
                   setDuplicates([]);
@@ -331,6 +350,7 @@ export default function UploadForm() {
                 Go back & edit
               </button>
               <button
+                type="button"
                 onClick={doUpload}
                 disabled={isUploading}
                 className="flex-1 h-12 rounded-full border-2 border-black bg-[#111] text-white font-bold text-sm tracking-wider hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_#0D9488] transition-all disabled:opacity-50"
