@@ -9,12 +9,27 @@ import { revalidatePath } from "next/cache";
 import { deleteR2Object } from "@/lib/r2";
 import { invalidateBlockedIpsCache } from "@/lib/ip-block";
 import { isPermanentAdmin } from "@/lib/constants";
+import { checkRateLimit } from "@/lib/actions/rate-limit";
 
 async function isAdmin(email: string): Promise<boolean> {
   const admin = await db.query.adminEmails.findFirst({
     where: eq(adminEmails.email, email),
   });
   return !!admin;
+}
+
+/**
+ * Admin actions are session-gated but still untrusted INPUT — a phished or
+ * hijacked admin session (or a compromised client calling the exported
+ * action directly) must not be able to spam the controls: blockIp rows feed
+ * the middleware blocklist checked on EVERY request, and adminEmails rows
+ * gate every admin action. Modest per-admin budgets, just enough for a
+ * human running the panel.
+ */
+async function adminActionGuard(email: string, action: string, limit = 30, windowSeconds = 300): Promise<void> {
+  if (!(await checkRateLimit(`admin:${email}:${action}`, limit, windowSeconds))) {
+    throw new Error("Too many admin actions — slow down.");
+  }
 }
 
 // Security best practice: admin actions feed the IP blocklist (checked on
@@ -208,6 +223,7 @@ export async function addAdminEmail(email: string) {
 
   const superAdmin = await isAdmin(session.user.email);
   if (!superAdmin) throw new Error("Only admins can add other admins");
+  await adminActionGuard(session.user.email, "add-admin", 10, 3600);
 
   const parsed = adminEmailSchema.safeParse(email);
   if (!parsed.success) throw new Error("Invalid email address");
@@ -222,13 +238,14 @@ export async function blockIp(ip: string, reason: string) {
 
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Only admins can block IPs");
+  await adminActionGuard(session.user.email, "block-ip", 20, 300);
 
   const parsed = ipAddressSchema.safeParse(ip);
   if (!parsed.success) throw new Error("Invalid IP address");
 
   await db.insert(blockedIps).values({
     ip: parsed.data,
-    reason,
+    reason: reason.slice(0, 200),
     blockedBy: session.user.email,
   });
   invalidateBlockedIpsCache();
@@ -254,6 +271,7 @@ export async function removeAdminEmail(email: string) {
 
   const superAdmin = await isAdmin(session.user.email);
   if (!superAdmin) throw new Error("Only admins can remove admins");
+  await adminActionGuard(session.user.email, "remove-admin", 10, 3600);
 
   // Owner accounts are permanent — no one (including themselves via API)
   // can remove them, so the site can never lose its last real admin.
@@ -272,6 +290,8 @@ export async function adminDeleteResource(resourceId: string) {
   if (!session?.user?.email) throw new Error("Not authenticated");
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "delete-resource", 30, 300);
+  if (!z.string().uuid().safeParse(resourceId).success) throw new Error("Invalid resource id");
 
   const resource = await db.query.resources.findFirst({
     where: eq(resources.id, resourceId),
@@ -315,6 +335,8 @@ export async function deleteMessage(messageId: string) {
   if (!session?.user?.email) throw new Error("Not authenticated");
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "delete-message", 30, 300);
+  if (!z.string().uuid().safeParse(messageId).success) throw new Error("Invalid message id");
 
   await db.delete(messages).where(eq(messages.id, messageId));
   return { success: true };
@@ -327,6 +349,8 @@ export async function deleteReport(reportId: string) {
   if (!session?.user?.email) throw new Error("Not authenticated");
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "delete-report", 30, 300);
+  if (!z.string().uuid().safeParse(reportId).success) throw new Error("Invalid report id");
 
   await db.delete(reports).where(eq(reports.id, reportId));
   return { success: true };
@@ -337,6 +361,8 @@ export async function dismissReportAndDeleteResource(reportId: string, resourceI
   if (!session?.user?.email) throw new Error("Not authenticated");
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "dismiss-report", 30, 300);
+  if (!z.string().uuid().safeParse(resourceId).success) throw new Error("Invalid resource id");
 
   // Delete the resource
   const resource = await db.query.resources.findFirst({
@@ -367,6 +393,8 @@ export async function adminDeleteUser(userId: string) {
   if (!session?.user?.email) throw new Error("Not authenticated");
   const admin = await isAdmin(session.user.email);
   if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "delete-user", 10, 3600);
+  if (!z.string().uuid().safeParse(userId).success) throw new Error("Invalid user id");
 
   const target = await db.query.users.findFirst({ where: eq(users.id, userId) });
   if (!target) throw new Error("User not found");

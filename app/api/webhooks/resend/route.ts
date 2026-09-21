@@ -32,6 +32,14 @@ interface WebhookPayload {
 }
 
 export async function POST(req: NextRequest) {
+  // 0. Body cap: legitimate Resend events are tiny (<100KB). Reading an
+  // unbounded body into memory before the signature check is a free
+  // memory-amplification vector.
+  const contentLength = Number(req.headers.get("content-length") ?? "0");
+  if (contentLength > 512 * 1024) {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
+
   // 1. Read raw body (must be the original string, not re-serialised JSON)
   const payload = await req.text();
 
