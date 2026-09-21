@@ -58,7 +58,10 @@
 }
 
 body {
-  background-color: var(--background);
+  /* Surface, not background: pages paint their own bg-surface wrapper, so
+     the body only shows through behind the sticky nav and at overscroll —
+     it must match the page or a darker band appears behind the navbar. */
+  background-color: var(--surface);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
