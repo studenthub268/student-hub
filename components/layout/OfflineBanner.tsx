@@ -60,8 +60,8 @@ export function OfflineBanner() {
         if (res.ok && seenOfflineRef.current) {
           seenOfflineRef.current = false;
           toast.success(
-            "Back online — connection restored, showing the latest content.",
-            { icon: "\u26A1" }
+            "Back online — showing the latest content.",
+            { duration: 2500 }
           );
         }
         apply(!res.ok);
