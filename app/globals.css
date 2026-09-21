@@ -67,6 +67,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Overscroll / rubber-band: without this, the html backdrop (default white
+   in light, black in dark) flashes at the top/bottom edges when scrolling
+   past the document on touch devices and macOS. Tinting html and setting
+   body overscroll-behavior keeps every edge the page's own color. */
+html {
+  background-color: var(--surface);
+  overscroll-behavior-y: none;
+}
+
 /* Text on ink-colored surfaces (hero cards, footer, primary buttons).
    Light mode: background is white, ink black → white text. Dark mode: both
    go dark, so text flips to the light foreground instead. */
