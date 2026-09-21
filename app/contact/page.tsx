@@ -86,7 +86,7 @@ export default function ContactPage() {
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
               Contact Information
             </h2>
-            <p className="text-background/60 font-medium text-sm tracking-wider">
+            <p className="font-medium text-sm tracking-wider opacity-60">
               Reach out and we&apos;ll respond as soon as we can.
             </p>
           </div>
@@ -97,7 +97,7 @@ export default function ContactPage() {
                 <User className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-background/70 mb-1">Name</p>
+                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Name</p>
                 <p className="text-lg font-bold">Muhammad Abubakar</p>
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function ContactPage() {
                 <Mail className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-background/70 mb-1">Email</p>
+                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Email</p>
                 <a href="mailto:abubakartanveer826@gmail.com" className="text-lg font-bold hover:text-accent transition-colors break-all">
                   abubakartanveer826@gmail.com
                 </a>
@@ -119,7 +119,7 @@ export default function ContactPage() {
                 <Globe className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-background/70 mb-1">Support</p>
+                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Support</p>
                 <p className="text-lg font-bold">24/7 Academic Support</p>
               </div>
             </div>
@@ -129,14 +129,14 @@ export default function ContactPage() {
                 <Clock className="h-5 w-5" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider text-background/70 mb-1">Availability</p>
+                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Availability</p>
                 <p className="text-lg font-bold">Open to collaborate</p>
               </div>
             </div>
           </div>
 
           <div className="relative z-10 mt-12 flex gap-2">
-            <span className="px-3 py-1 bg-surface/10 rounded-full text-[10px] font-bold tracking-wider text-background/80">
+            <span className="px-3 py-1 bg-surface/10 rounded-full text-[10px] font-bold tracking-wider opacity-80">
               Student Developer
             </span>
             <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-[10px] font-bold tracking-wider">

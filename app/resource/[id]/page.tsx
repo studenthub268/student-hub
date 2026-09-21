@@ -194,7 +194,7 @@ export default async function ResourceDetailPage({
         <div className="lg:col-span-2">
           <div className="rounded-[2rem] border-2 border-ink bg-surface shadow-hard overflow-hidden h-[60vh] sm:h-[70vh] lg:h-full lg:min-h-[800px] flex flex-col">
             <div className="bg-ink border-b-2 border-ink p-4 px-6 flex justify-between items-center">
-              <span className="text-sm font-medium text-background tracking-wider">Document Preview</span>
+              <span className="text-sm font-medium opacity-70 tracking-wider">Document Preview</span>
               <div className="flex gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>

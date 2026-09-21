@@ -66,11 +66,11 @@ function PerkList() {
       {PERKS.map(({ icon: Icon, title, text }) => (
         <li key={title} className="flex items-start gap-3.5">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/25 bg-surface/5">
-            <Icon className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2.5} />
+            <Icon className="w-5 h-5 text-accent" strokeWidth={2.5} />
           </span>
           <span className="flex flex-col gap-0.5">
             <span className="text-sm font-bold on-ink">{title}</span>
-            <span className="text-xs font-medium text-background/60">{text}</span>
+            <span className="text-xs font-medium opacity-60">{text}</span>
           </span>
         </li>
       ))}
@@ -267,12 +267,12 @@ export function SignupForm() {
           <div className="flex flex-col gap-4">
             <div className="h-px bg-surface/15" />
 
-            <p className="text-center text-xs font-bold tracking-widest text-background/70">OR SIGN UP WITH</p>
+            <p className="text-center text-xs font-bold tracking-widest opacity-70">OR SIGN UP WITH</p>
             <OAuthButtons />
 
-            <p className="text-center text-sm font-medium text-background/70 pt-1">
+            <p className="text-center text-sm font-medium opacity-70 pt-1">
               Already have an account?{" "}
-              <Link href="/login" className="font-bold text-background underline underline-offset-4 hover:text-[#2DD4BF] transition-colors">
+              <Link href="/login" className="font-bold underline underline-offset-4 hover:opacity-70 transition-opacity">
                 Log in
               </Link>
             </p>

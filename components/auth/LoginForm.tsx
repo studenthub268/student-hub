@@ -70,9 +70,9 @@ function PerkList() {
       {PERKS.map(({ icon: Icon, text }) => (
         <li key={text} className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/25 bg-surface/5">
-            <Icon className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2.5} />
+            <Icon className="w-5 h-5 text-accent" strokeWidth={2.5} />
           </span>
-          <span className="text-sm font-medium text-background/85">{text}</span>
+          <span className="text-sm font-medium opacity-85">{text}</span>
         </li>
       ))}
     </ul>
@@ -201,7 +201,7 @@ export function LoginForm() {
             <p className="text-3xl sm:text-[2.75rem] font-extrabold leading-[0.95] tracking-tight uppercase on-ink">
               <span className="whitespace-nowrap">Study smarter.</span>
               <br />
-              <span className="text-[#2DD4BF] whitespace-nowrap">Share more.</span>
+              <span className="text-accent whitespace-nowrap">Share more.</span>
             </p>
           </div>
 
@@ -212,12 +212,12 @@ export function LoginForm() {
           <div className="flex flex-col gap-3">
             <div className="h-px bg-surface/15" />
 
-            <p className="text-center text-xs font-bold tracking-widest text-background/70">OR CONTINUE WITH</p>
+            <p className="text-center text-xs font-bold tracking-widest opacity-70">OR CONTINUE WITH</p>
             <OAuthButtons />
 
-            <p className="text-center text-sm font-medium text-background/70 pt-0.5">
+            <p className="text-center text-sm font-medium opacity-70 pt-0.5">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="font-bold text-background underline underline-offset-4 hover:text-[#2DD4BF] transition-colors">
+              <Link href="/signup" className="font-bold underline underline-offset-4 hover:opacity-70 transition-opacity">
                 Sign up
               </Link>
             </p>

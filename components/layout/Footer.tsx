@@ -22,29 +22,29 @@ export default function Footer() {
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-            <Link href="/" prefetch className="text-sm font-bold tracking-wider text-background/70 hover:text-accent transition-colors">
+            <Link href="/" prefetch className="text-sm font-bold tracking-wider opacity-70 hover:opacity-100 transition-opacity">
               Home
             </Link>
-            <Link href="/browse" prefetch className="text-sm font-bold tracking-wider text-background/70 hover:text-accent transition-colors">
+            <Link href="/browse" prefetch className="text-sm font-bold tracking-wider opacity-70 hover:opacity-100 transition-opacity">
               Browse Resources
             </Link>
-            <Link href="/upload" prefetch className="text-sm font-bold tracking-wider text-background/70 hover:text-accent transition-colors">
+            <Link href="/upload" prefetch className="text-sm font-bold tracking-wider opacity-70 hover:opacity-100 transition-opacity">
               Upload
             </Link>
-            <Link href="/terms" className="text-sm font-bold tracking-wider text-background/70 hover:text-accent transition-colors">
+            <Link href="/terms" className="text-sm font-bold tracking-wider opacity-70 hover:opacity-100 transition-opacity">
               Terms of Service
             </Link>
-            <Link href="/privacy" className="text-sm font-bold tracking-wider text-background/70 hover:text-accent transition-colors">
+            <Link href="/privacy" className="text-sm font-bold tracking-wider opacity-70 hover:opacity-100 transition-opacity">
               Privacy Policy
             </Link>
           </div>
         </div>
         <div className="mt-16 pt-8 border-t border-foreground/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs font-medium tracking-wider text-background/70">
+          <p className="text-xs font-medium tracking-wider opacity-70">
             &copy; {new Date().getFullYear()} Student Hub. All rights reserved.
           </p>
           <div className="flex gap-2">
-            <span className="px-3 py-1 bg-surface/10 rounded-full text-[10px] font-bold tracking-wider text-background/80">
+            <span className="px-3 py-1 bg-surface/10 rounded-full text-[10px] font-bold tracking-wider opacity-80">
               Built by Students
             </span>
             <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-[10px] font-bold tracking-wider">

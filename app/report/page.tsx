@@ -162,11 +162,11 @@ function ReportContent() {
           )}
         </div>
 
-        <div className="p-8 bg-ink on-ink rounded-[2.5rem] shadow-[8px_8px_0px_0px_rgba(217,249,157,0.3)]">
+        <div className="p-8 bg-ink on-ink rounded-[2.5rem] shadow-hard-lg">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
             <AlertTriangle className="text-accent" /> Reporting Policy
           </h3>
-          <p className="text-sm text-background/60 font-medium leading-relaxed">
+          <p className="text-sm opacity-60 font-medium leading-relaxed">
             Please only report resources that violate copyright, contain inappropriate content, or are academically dishonest. False reporting may lead to account restrictions.
           </p>
         </div>
