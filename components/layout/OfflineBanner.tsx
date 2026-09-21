@@ -84,11 +84,19 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="bg-red-500 border-b-2 border-ink px-4 py-2.5 text-center text-sm font-bold text-background"
+      className="offline-banner border-b border-line-strong bg-ink px-4 py-2.5 text-center text-sm on-ink"
     >
-      <span className="inline-flex flex-wrap items-center justify-center gap-2">
-        <WifiOff className="h-4 w-4 shrink-0" />
-        <span>You&apos;re offline — showing saved pages. Reconnect to load the latest content.</span>
+      <span className="inline-flex flex-wrap items-center justify-center gap-2.5">
+        <WifiOff className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+        <span
+          className="offline-dot h-2 w-2 shrink-0 rounded-full bg-amber-400"
+          aria-hidden="true"
+        />
+        <span className="font-semibold tracking-tight">
+          You&apos;re offline —{" "}
+          <span className="opacity-70">showing saved pages.</span> Reconnect to
+          load the latest content.
+        </span>
       </span>
     </div>
   );

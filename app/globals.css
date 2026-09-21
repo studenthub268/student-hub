@@ -135,6 +135,34 @@ html {
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
+/* ---- Offline banner ----
+   Slides down when the probe loses connectivity; the pulsing amber dot
+   says "still trying" without extra words. Both animations are killed by
+   the prefers-reduced-motion clamp at the bottom of this file. */
+.offline-banner {
+  animation: banner-drop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes banner-drop {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.offline-dot {
+  animation: offline-pulse 1.6s ease-in-out infinite;
+}
+@keyframes offline-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
 /* ---- Premium base ---- */
 /* NOTE: deliberately NO `scroll-behavior: smooth` on html. Next.js resets
    scroll to top on every navigation; with smooth enabled that reset becomes
