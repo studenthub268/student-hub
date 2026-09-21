@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { User, LogOut, Upload, BookOpen, ChevronRight } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface NavbarAuthProps {
   mobile?: boolean;
@@ -165,6 +166,7 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
             <Link href="/browse" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
               <BookOpen className="h-4 w-4" /> Browse Resources
             </Link>
+            <ThemeToggle />
           </div>
           <div className="border-t-2 border-ink">
             <button onClick={handleSignOut} className="flex w-full items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">

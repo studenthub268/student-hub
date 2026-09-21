@@ -103,7 +103,6 @@ export function Navbar() {
             <Search className="h-5 w-5" />
           </button>
           <div className="hidden md:block"><NavbarAuth /></div>
-          <ThemeToggle className="hidden md:flex" />
 
           {/* Hamburger */}
           <button
@@ -143,6 +142,9 @@ export function Navbar() {
             {/* Admin Link (mobile) — inline with nav links; closes the menu on tap,
                 same as every other menu item */}
             <AdminLink dark onNavigate={() => setMobileOpen(false)} />
+
+            {/* Theme row — outside NavbarAuth so guests get it too */}
+            <ThemeToggle mobile />
 
             {/* Auth Section */}
             <NavbarAuth mobile onClose={() => setMobileOpen(false)} />

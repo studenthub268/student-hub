@@ -11,7 +11,6 @@ import { CookieConsent } from "@/components/layout/CookieConsent";
 import { DeployWatcher } from "@/components/DeployWatcher";
 import ScrollRestoration from "@/components/ScrollRestoration";
 import { Analytics } from "@/components/ui/Analytics";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -120,7 +119,6 @@ export default function RootLayout({
         <OfflineBanner />
         <VerificationBanner />
         <Navbar />
-        <ThemeToggle className="fixed bottom-4 right-4 z-[120] hidden sm:flex" />
         <main className="flex-1">{children}</main>
         <Footer />
         <Toaster
