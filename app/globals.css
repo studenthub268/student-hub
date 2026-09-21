@@ -163,6 +163,23 @@ html {
   }
 }
 
+/* ---- Cookie consent card ----
+   Slides up from its bottom anchor with the same fast-out ease as the
+   offline banner (killed by the prefers-reduced-motion clamp below). */
+.cookie-card {
+  animation: card-rise 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes card-rise {
+  from {
+    transform: translateY(calc(100% + 1rem));
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* ---- Premium base ---- */
 /* NOTE: deliberately NO `scroll-behavior: smooth` on html. Next.js resets
    scroll to top on every navigation; with smooth enabled that reset becomes

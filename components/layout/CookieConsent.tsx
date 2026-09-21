@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
+import { Cookie } from "lucide-react";
 
 const STORAGE_KEY = "sh-cookie-consent-v1";
 const CONSENT_EVENT = "sh-cookie-consent";
@@ -53,18 +54,26 @@ export function CookieConsent() {
       aria-label="Cookie notice"
       className="fixed inset-x-3 bottom-3 z-50 sm:inset-x-0 sm:bottom-4 sm:mx-auto sm:max-w-xl"
     >
-      <div className="rounded-2xl border-2 border-ink bg-surface p-4 shadow-hard sm:flex sm:items-center sm:gap-4">
-        <p className="text-xs font-medium leading-relaxed text-foreground/80 sm:flex-1">
-          We use essential cookies only — session sign-in and CSRF protection.
-          No ads, no tracking. Details in our{" "}
-          <Link
-            href="/privacy#cookies"
-            className="font-bold underline underline-offset-2 hover:text-accent"
+      <div className="cookie-card rounded-2xl border-2 border-ink bg-surface p-4 shadow-hard sm:flex sm:items-center sm:gap-4">
+        <div className="sm:flex sm:items-center sm:gap-3 sm:flex-1">
+          <span
+            className="mb-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink bg-accent/10 sm:mb-0"
+            aria-hidden="true"
           >
-            privacy policy
-          </Link>
-          .
-        </p>
+            <Cookie className="h-4 w-4 text-accent" />
+          </span>
+          <p className="text-xs font-medium leading-relaxed text-foreground/80">
+            We use essential cookies only — session sign-in and CSRF
+            protection. No ads, no tracking. Details in our{" "}
+            <Link
+              href="/privacy#cookies"
+              className="font-bold underline underline-offset-2 hover:text-accent"
+            >
+              privacy policy
+            </Link>
+            .
+          </p>
+        </div>
         <div className="mt-3 flex gap-2 sm:mt-0 sm:shrink-0">
           <button
             type="button"
@@ -76,7 +85,7 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={() => decide("accepted")}
-            className="h-10 flex-1 rounded-full border-2 border-ink bg-ink on-ink px-4 text-xs font-bold tracking-wider transition-colors hover:bg-ink sm:flex-none"
+            className="h-10 flex-1 rounded-full border-2 border-ink bg-accent px-4 text-xs font-bold tracking-wider text-accent-contrast transition-all hover:-translate-y-0.5 hover:shadow-hard-sm sm:flex-none"
           >
             Got it
           </button>
