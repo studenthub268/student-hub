@@ -149,25 +149,25 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
   return createPortal(
     <div className="fixed inset-0 z-[110] flex items-start justify-center px-4 pt-[12vh]">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px]" onClick={onClose} />
 
       {/* Window */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Search Student Hub"
-        className="relative w-full max-w-xl rounded-[2rem] border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden scale-in"
+        className="relative w-full max-w-xl rounded-[2rem] border-2 border-ink bg-surface shadow-hard-lg overflow-hidden scale-in"
       >
         {/* Input row */}
-        <form onSubmit={handleSubmit} className="relative flex items-center border-b-2 border-black">
-          <Search className="absolute left-5 h-5 w-5 text-black/70 pointer-events-none" strokeWidth={2} />
+        <form onSubmit={handleSubmit} className="relative flex items-center border-b-2 border-ink">
+          <Search className="absolute left-5 h-5 w-5 text-foreground/70 pointer-events-none" strokeWidth={2} />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search resources, subjects…"
-            className="w-full h-16 pl-14 pr-14 text-lg font-medium outline-none placeholder:text-black/60"
+            className="w-full h-16 pl-14 pr-14 text-lg font-medium outline-none placeholder:text-foreground/60"
             autoComplete="off"
             autoFocus
           />
@@ -175,7 +175,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
             <button
               type="button"
               onClick={() => { setQuery(""); setResourceSuggestions([]); inputRef.current?.focus(); }}
-              className="absolute right-5 text-black/60 hover:text-black transition-colors"
+              className="absolute right-5 text-foreground/60 hover:text-foreground transition-colors"
               aria-label="Clear"
             >
               <X className="h-5 w-5" />
@@ -188,7 +188,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
           {/* Empty state — nothing typed: suggest a few subjects */}
           {trimmed.length === 0 && (
             <div className="px-5 py-4">
-              <p className="text-[10px] font-bold tracking-widest text-black/30 uppercase mb-3">Try a subject</p>
+              <p className="text-[10px] font-bold tracking-widest text-foreground/50 uppercase mb-3">Try a subject</p>
               <div className="flex flex-wrap gap-2">
                 {SUBJECTS.filter((s) =>
                   ["Programming Fundamentals", "Circuit Analysis and Design", "Electricity and Magnetism"].includes(s)
@@ -196,7 +196,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
                   <button
                     key={subject}
                     onClick={() => go(`/browse?subject=${encodeURIComponent(subject)}&from=search`)}
-                    className="px-4 py-2 bg-white border-2 border-black rounded-full text-sm font-medium text-black transition-all hover:bg-[#0D9488] press"
+                    className="px-4 py-2 bg-surface border-2 border-ink rounded-full text-sm font-medium text-foreground transition-all hover:bg-accent press"
                   >
                     {subject}
                   </button>
@@ -207,8 +207,8 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
 
           {trimmed.length >= 2 && suggestions.length === 0 && (
             <div className="px-6 py-8 text-center">
-              <p className="text-sm font-bold tracking-wider text-black/60">No matches for “{query.trim()}”</p>
-              <p className="text-xs font-medium text-black/30 mt-1">Press Enter to search everything</p>
+              <p className="text-sm font-bold tracking-wider text-foreground/60">No matches for “{query.trim()}”</p>
+              <p className="text-xs font-medium text-foreground/50 mt-1">Press Enter to search everything</p>
             </div>
           )}
 
@@ -217,26 +217,26 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
               key={`${item.type}-${item.id}`}
               data-suggestion
               onClick={() => handleSelectSuggestion(item)}
-              className={`w-full group cursor-pointer px-5 py-4 border-b border-black/5 last:border-b-0 flex items-center justify-between gap-3 transition-colors text-left ${
-                index === activeIndex ? "bg-[#0D9488]" : "hover:bg-[#0D9488]"
+              className={`w-full group cursor-pointer px-5 py-4 border-b border-line last:border-b-0 flex items-center justify-between gap-3 transition-colors text-left ${
+                index === activeIndex ? "bg-accent" : "hover:bg-accent"
               }`}
             >
               <span className="flex items-center gap-3 min-w-0">
-                <Search className="h-4 w-4 text-black/30 group-hover:text-black/60 flex-shrink-0" />
+                <Search className="h-4 w-4 text-foreground/50 group-hover:text-foreground/60 flex-shrink-0" />
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium text-black">{item.text}</span>
+                  <span className="block truncate text-sm font-medium text-foreground">{item.text}</span>
                   {item.type === "Resource" && item.subject && (
-                    <span className="block truncate text-xs font-medium text-black/60 group-hover:text-black/60">
+                    <span className="block truncate text-xs font-medium text-foreground/60 group-hover:text-foreground/60">
                       in {item.subject}
                     </span>
                   )}
                 </span>
               </span>
               <span
-                className={`text-[10px] font-bold tracking-widest px-2.5 py-0.5 rounded-full border border-black flex-shrink-0 transition-colors ${
+                className={`text-[10px] font-bold tracking-widest px-2.5 py-0.5 rounded-full border border-ink flex-shrink-0 transition-colors ${
                   item.type === "Subject"
-                    ? "bg-white text-black group-hover:bg-black group-hover:text-white"
-                    : "bg-[#0D9488] text-black"
+                    ? "bg-surface text-foreground group-hover:bg-ink group-hover:on-ink"
+                    : "bg-accent text-foreground"
                 }`}
               >
                 {item.type}
@@ -245,9 +245,9 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
           ))}
 
           {/* Footer hint */}
-          <div className="px-6 py-3 bg-gray-50 border-t border-black/5 flex items-center justify-between">
-            <span className="text-[10px] font-bold tracking-widest text-black/30 uppercase">Search</span>
-            <span className="text-[10px] font-medium text-black/30">
+          <div className="px-6 py-3 bg-surface-muted border-t border-line flex items-center justify-between">
+            <span className="text-[10px] font-bold tracking-widest text-foreground/50 uppercase">Search</span>
+            <span className="text-[10px] font-medium text-foreground/50">
               {/* Touch has no Esc — say what actually closes it there. */}
               <span className="sm:hidden">Tap outside to close</span>
               <span className="hidden sm:inline">Enter for full results · Esc to close</span>

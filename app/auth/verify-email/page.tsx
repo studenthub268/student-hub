@@ -42,16 +42,16 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 bg-white selection:bg-[#0D9488]">
-      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-black bg-[#0D9488] p-8 sm:p-10 shadow-[4px_4px_0px_0px_#111]">
+    <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 bg-surface selection:bg-accent">
+      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard">
 
         <div className="mb-8 text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-black">
+          <h2 className="text-4xl font-bold tracking-tight text-foreground">
             {status === "loading" && "Verifying..."}
             {status === "success" && "Email Verified!"}
             {status === "error" && "Verification Failed"}
           </h2>
-          <p className="text-base text-black/60 font-medium tracking-wider mt-2">
+          <p className="text-base text-foreground/60 font-medium tracking-wider mt-2">
             {status === "loading" && "Please wait while we verify your email."}
             {status === "success" && "Your account is now active. You can log in and start exploring."}
             {status === "error" && (
@@ -66,7 +66,7 @@ export default function VerifyEmailPage() {
           {status === "success" && (
             <Link
               href={signedIn ? "/" : "/login"}
-              className="w-full text-center text-lg h-16 flex items-center justify-center rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-wider hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all"
+              className="w-full text-center text-lg h-16 flex items-center justify-center rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-wider hover:-translate-y-1 hover:bg-ink hover:shadow-hard-accent transition-all"
             >
               {signedIn ? "Go to Home" : "Go to Login"}
             </Link>
@@ -75,13 +75,13 @@ export default function VerifyEmailPage() {
             <>
               <Link
                 href="/signup"
-                className="w-full text-center text-lg h-16 flex items-center justify-center rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-wider hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all"
+                className="w-full text-center text-lg h-16 flex items-center justify-center rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-wider hover:-translate-y-1 hover:bg-ink hover:shadow-hard-accent transition-all"
               >
                 Sign Up Again
               </Link>
               <Link
                 href="/login"
-                className="w-full text-center text-lg h-14 flex items-center justify-center rounded-full border-2 border-black bg-white text-black font-bold tracking-wider hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all"
+                className="w-full text-center text-lg h-14 flex items-center justify-center rounded-full border-2 border-ink bg-surface text-foreground font-bold tracking-wider hover:-translate-y-1 hover:shadow-hard-accent transition-all"
               >
                 Go to Login
               </Link>

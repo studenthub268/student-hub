@@ -107,10 +107,10 @@ export default async function ResourceDetailPage({
   const typeConfig = getTypeConfig(resource.type);
 
   const getFileIcon = (fileType: string | null) => {
-    if (!fileType) return <File size={48} className="text-black/60" strokeWidth={1} />;
-    if (fileType.includes("pdf")) return <FileText size={48} className="text-black" strokeWidth={1} />;
-    if (fileType.includes("image")) return <FileImage size={48} className="text-black" strokeWidth={1} />;
-    return <File size={48} className="text-black/60" strokeWidth={1} />;
+    if (!fileType) return <File size={48} className="text-foreground/60" strokeWidth={1} />;
+    if (fileType.includes("pdf")) return <FileText size={48} className="text-foreground" strokeWidth={1} />;
+    if (fileType.includes("image")) return <FileImage size={48} className="text-foreground" strokeWidth={1} />;
+    return <File size={48} className="text-foreground/60" strokeWidth={1} />;
   };
 
   const isPDF = resource.fileType?.includes("pdf");
@@ -120,7 +120,7 @@ export default async function ResourceDetailPage({
     <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-[1400px]">
       <Link 
         href="/browse" 
-        className="hidden md:inline-flex items-center text-sm font-medium text-black hover:opacity-70 mb-8 tracking-wider transition-opacity"
+        className="hidden md:inline-flex items-center text-sm font-medium text-foreground hover:opacity-70 mb-8 tracking-wider transition-opacity"
       >
         <ArrowLeft className="mr-2 h-4 w-4" strokeWidth={2} />
         Back to Browse
@@ -129,38 +129,38 @@ export default async function ResourceDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Details */}
         <div className="lg:col-span-1 space-y-8">
-          <div className="rounded-[2rem] border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_#111]">
-            <div className="inline-flex items-center rounded-full border border-black px-4 py-1.5 text-xs font-semibold tracking-wider mb-6 bg-[#0D9488]">
+          <div className="rounded-[2rem] border-2 border-ink bg-surface p-8 shadow-hard">
+            <div className="inline-flex items-center rounded-full border border-ink px-4 py-1.5 text-xs font-semibold tracking-wider mb-6 bg-accent text-accent-contrast">
               {typeConfig.label}
             </div>
             
-            <h1 className="text-4xl font-normal tracking-tight text-black mb-4 leading-tight">{resource.title}</h1>
-            <p className="inline-block bg-gray-100 rounded-full px-4 py-1 text-sm font-medium text-black mb-6 border border-black/10">{resource.subject}</p>
+            <h1 className="text-4xl font-normal tracking-tight text-foreground mb-4 leading-tight">{resource.title}</h1>
+            <p className="inline-block bg-surface-muted rounded-full px-4 py-1 text-sm font-medium text-foreground mb-6 border border-line">{resource.subject}</p>
             
             {resource.description && (
-              <div className="prose prose-sm text-black/70 mb-8 border-t-2 border-black/10 pt-6 font-medium leading-relaxed">
+              <div className="prose prose-sm text-foreground/70 mb-8 border-t-2 border-line pt-6 font-medium leading-relaxed">
                 <p>{resource.description}</p>
               </div>
             )}
             
-            <div className="flex flex-col gap-4 border-t-2 border-black/10 pt-6 text-sm text-black font-medium">
+            <div className="flex flex-col gap-4 border-t-2 border-line pt-6 text-sm text-foreground font-medium">
               <div className="flex items-center gap-3">
-                <div className="p-2 border border-black rounded-full bg-gray-50"><User size={16} strokeWidth={2} /></div>
+                <div className="p-2 border border-ink rounded-full bg-surface-muted"><User size={16} strokeWidth={2} /></div>
                 <span>Uploaded by <span className="font-bold">{resource.uploader?.name || "Unknown"}</span></span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="p-2 border border-black rounded-full bg-gray-50"><Calendar size={16} strokeWidth={2} /></div>
+                <div className="p-2 border border-ink rounded-full bg-surface-muted"><Calendar size={16} strokeWidth={2} /></div>
                 <span>{new Date(resource.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
               </div>
               {resource.professor && (
                 <div className="flex items-center gap-3">
-                  <div className="p-2 border border-black rounded-full bg-gray-50"><FileText size={16} strokeWidth={2} /></div>
+                  <div className="p-2 border border-ink rounded-full bg-surface-muted"><FileText size={16} strokeWidth={2} /></div>
                   <span>Professor: <span className="font-bold">{resource.professor}</span></span>
                 </div>
               )}
             </div>
 
-            <div className="mt-8 border-t-2 border-black/10 pt-6">
+            <div className="mt-8 border-t-2 border-line pt-6">
               <ResourceActions 
                 resourceId={resource.id}
                 initialLikes={resource.likes || 0}
@@ -172,17 +172,17 @@ export default async function ResourceDetailPage({
             </div>
           </div>
 
-          <div className="rounded-[2rem] border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_#111]">
-            <h3 className="text-xl font-normal text-black mb-6 tracking-tight">File Information</h3>
+          <div className="rounded-[2rem] border-2 border-ink bg-surface p-8 shadow-hard">
+            <h3 className="text-xl font-normal text-foreground mb-6 tracking-tight">File Information</h3>
             <div className="flex items-center gap-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-[1rem] border-2 border-black bg-[#0D9488]">
+              <div className="flex h-20 w-20 items-center justify-center rounded-[1rem] border-2 border-ink bg-accent">
                 {getFileIcon(resource.fileType)}
               </div>
               <div>
-                <div className="font-bold text-black text-2xl tracking-tighter">
+                <div className="font-bold text-foreground text-2xl tracking-tighter">
                   {resource.fileType?.split('/')[1]?.toUpperCase() || "FILE"}
                 </div>
-                <div className="text-base text-black/60 font-medium tracking-wider mt-1">
+                <div className="text-base text-foreground/60 font-medium tracking-wider mt-1">
                   {resource.fileSize ? formatFileSize(resource.fileSize) : "Unknown size"}
                 </div>
               </div>
@@ -192,9 +192,9 @@ export default async function ResourceDetailPage({
 
         {/* Right Column: Preview */}
         <div className="lg:col-span-2">
-          <div className="rounded-[2rem] border-2 border-black bg-white shadow-[4px_4px_0px_0px_#111] overflow-hidden h-[60vh] sm:h-[70vh] lg:h-full lg:min-h-[800px] flex flex-col">
-            <div className="bg-[#111] border-b-2 border-black p-4 px-6 flex justify-between items-center">
-              <span className="text-sm font-medium text-white tracking-wider">Document Preview</span>
+          <div className="rounded-[2rem] border-2 border-ink bg-surface shadow-hard overflow-hidden h-[60vh] sm:h-[70vh] lg:h-full lg:min-h-[800px] flex flex-col">
+            <div className="bg-ink border-b-2 border-ink p-4 px-6 flex justify-between items-center">
+              <span className="text-sm font-medium text-background tracking-wider">Document Preview</span>
               <div className="flex gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
@@ -202,13 +202,13 @@ export default async function ResourceDetailPage({
               </div>
             </div>
             
-            <div className="flex-1 min-h-0 bg-gray-100 relative p-4 sm:p-8">
+            <div className="flex-1 min-h-0 bg-surface-muted relative p-4 sm:p-8">
               {/* Anchored to the card box (not content-sized): a portrait photo
                   would otherwise inflate h-full beyond the fixed card height and
                   get cut off by the card's overflow-hidden. NOTE: must not carry
                   `relative` — it beats `absolute` in the cascade and silently
                   puts the frame back in flow. */}
-              <div className="absolute inset-4 sm:inset-8 border-2 border-black border-dashed rounded-2xl bg-white overflow-hidden shadow-inner">
+              <div className="absolute inset-4 sm:inset-8 border-2 border-ink border-dashed rounded-2xl bg-surface overflow-hidden shadow-inner">
                 {isPDF ? (
                   <iframe 
                     src={`${resource.fileUrl}#toolbar=0`} 
@@ -222,14 +222,14 @@ export default async function ResourceDetailPage({
                       alt={resource.title}
                       width={1200}
                       height={900}
-                      className="max-w-full max-h-full object-contain drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black"
+                      className="max-w-full max-h-full object-contain drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-ink"
                     />
                   </div>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-black">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-foreground">
                     {getFileIcon(resource.fileType)}
                     <p className="mt-6 text-xl font-medium tracking-tight">Preview not available</p>
-                    <p className="text-base mt-2 text-black/60 font-medium">Please download the file to view it.</p>
+                    <p className="text-base mt-2 text-foreground/60 font-medium">Please download the file to view it.</p>
                   </div>
                 )}
               </div>

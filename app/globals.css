@@ -1,13 +1,58 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: `dark:` utilities respond to the .dark class on
+   <html> (set pre-paint by the inline script in app/layout.tsx), not the
+   OS media query — the user's explicit choice must win. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- Theme tokens ----
+   All component colors resolve through these variables; utilities like
+   bg-surface / border-ink / text-foreground map onto them via @theme below.
+   Dark mode = `dark` class on <html> (set before paint by the inline script
+   in app/layout.tsx; no flash). `color-scheme` also flips native widgets,
+   form controls and scrollbars. */
+
 :root {
+  color-scheme: light;
   --background: #ffffff;
-  --foreground: #0a0a0a;
+  --foreground: #111111;
+  /* Inverse pair ("ink on paper"): used by text-on-ink elements so they
+     invert cleanly in dark mode (white text becomes near-black text). */
+  --ink: #111111;
+  --surface: #ffffff;
+  --surface-muted: #f4f4f5;
+  --line: rgba(0, 0, 0, 0.1);
+  --line-strong: rgba(0, 0, 0, 0.25);
+  --accent: #0d9488;
+  --accent-contrast: #0d3d38;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #101312;
+  --foreground: #f2f5f4;
+  /* Inverted ink: elements that were near-black in light mode (hero cards,
+     buttons, footer) flip to light so text-background on them keeps
+     contrast. Text ON accent uses --accent-contrast instead (see below). */
+  --ink: #e9edec;
+  --surface: #191d1c;
+  --surface-muted: #222726;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.28);
+  --accent: #2dd4bf;
+  --accent-contrast: #042f2b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
   --font-sans: var(--font-geist-sans), sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -17,6 +62,63 @@ body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Text on ink-colored surfaces (hero cards, footer, primary buttons).
+   --background and --ink are always opposites in both modes (white-on-black
+   in light, near-black-on-light in dark), so one rule covers both. */
+.on-ink {
+  color: var(--background);
+}
+
+/* Hard offset shadows, themed per mode. Defined once here instead of
+   shadow-[...] arbitrary values at every call site so dark mode can soften
+   them (black shadows vanish on dark ground; these glow). */
+@utility shadow-hard-sm {
+  box-shadow: 2px 2px 0px 0px var(--shadow-color);
+}
+@utility shadow-hard {
+  box-shadow: 4px 4px 0px 0px var(--shadow-color);
+}
+@utility shadow-hard-lg {
+  box-shadow: 8px 8px 0px 0px var(--shadow-color);
+}
+@utility shadow-hard-xl {
+  box-shadow: 12px 12px 0px 0px var(--shadow-color);
+}
+@utility shadow-hard-accent-sm {
+  box-shadow: 2px 2px 0px 0px var(--accent);
+}
+@utility shadow-hard-accent {
+  box-shadow: 4px 4px 0px 0px var(--accent);
+}
+@utility shadow-hard-accent-lg {
+  box-shadow: 8px 8px 0px 0px var(--accent);
+}
+@utility shadow-hard-dim {
+  box-shadow: 4px 4px 0px 0px var(--line-strong);
+}
+@utility shadow-hard-faint {
+  box-shadow: 4px 4px 0px 0px var(--line);
+}
+@utility shadow-hard-invert {
+  box-shadow: 4px 4px 0px 0px var(--background);
+}
+
+:root {
+  --shadow-color: rgba(0, 0, 0, 1);
+}
+.dark {
+  /* Near-white glow at reduced alpha: keeps the neo-brutalist offset read
+     on dark ground without strobing on large cards. */
+  --shadow-color: rgba(242, 245, 244, 0.18);
+}
+
+/* Elements that carry color transitions already animate the flip smoothly;
+   nothing extra needed here. The nav shell gets one so the bar blends while
+   the theme switches underneath it. */
+.nav-shell {
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 /* ---- Premium base ---- */
@@ -80,14 +182,23 @@ body {
   background-color: rgba(13, 148, 136, 0.85);
 }
 
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.24);
+}
+
 /* ---- Themed toasts (react-hot-toast) — neo-brutalist to match the site.
-     Classes are attached via <Toaster toastOptions>. ---- */
+     Classes are attached via <Toaster toastOptions>. Colors ride the theme
+     tokens so toasts flip with the mode. ---- */
 .sh-toast {
-  border: 2px solid #111 !important;
+  border: 2px solid var(--ink) !important;
   border-radius: 1rem !important;
-  box-shadow: 4px 4px 0px 0px #111 !important;
-  background: #fff !important;
-  color: #111 !important;
+  box-shadow: 4px 4px 0px 0px var(--shadow-color) !important;
+  background: var(--surface) !important;
+  color: var(--foreground) !important;
   font-weight: 500 !important;
   font-family: var(--font-geist-sans), sans-serif !important;
   padding: 12px 16px !important;
@@ -95,12 +206,12 @@ body {
 }
 
 .sh-toast-success {
-  border-color: #0D9488 !important;
+  border-color: var(--accent) !important;
 }
 
 .sh-toast-error {
   border-color: #ef4444 !important;
-  background: #fef2f2 !important;
+  background: var(--surface-muted) !important;
 }
 
 
@@ -153,12 +264,21 @@ body {
 .shimmer {
   background: linear-gradient(
     100deg,
-    rgba(0, 0, 0, 0.04) 40%,
-    rgba(0, 0, 0, 0.09) 50%,
-    rgba(0, 0, 0, 0.04) 60%
+    var(--shimmer-base) 40%,
+    var(--shimmer-sheen) 50%,
+    var(--shimmer-base) 60%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
+}
+
+:root {
+  --shimmer-base: rgba(0, 0, 0, 0.04);
+  --shimmer-sheen: rgba(0, 0, 0, 0.09);
+}
+.dark {
+  --shimmer-base: rgba(255, 255, 255, 0.05);
+  --shimmer-sheen: rgba(255, 255, 255, 0.11);
 }
 
 /* Escape hatch on loading skeletons: reveal only if loading drags on

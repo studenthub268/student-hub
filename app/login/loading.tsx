@@ -8,7 +8,7 @@ export default function LoginLoading() {
           <Skeleton className="h-8 w-48 mx-auto" />
           <Skeleton className="h-5 w-64 mx-auto" />
         </div>
-        <div className="rounded-[2rem] border-2 border-black/5 p-8 space-y-5">
+        <div className="rounded-[2rem] border-2 border-line p-8 space-y-5">
           <div className="space-y-2">
             <Skeleton className="h-5 w-12" />
             <Skeleton className="h-12 w-full rounded-xl" />

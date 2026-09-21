@@ -14,8 +14,8 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 /** Black brand panel — mirrors the homepage hero card. Fills the card height. */
 function BrandPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative hidden overflow-hidden bg-[#111] p-6 sm:p-8 lg:flex flex-col text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#0D9488]/40 via-[#111] to-[#111]" />
+    <div className="relative hidden overflow-hidden bg-ink p-6 sm:p-8 lg:flex flex-col on-ink">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent/40 via-ink to-ink" />
       <div className="relative z-10 flex h-full flex-col justify-between">{children}</div>
     </div>
   );
@@ -26,7 +26,7 @@ function OAuthButtons({ onProvider }: { onProvider?: (provider: "github" | "goog
   const start = (provider: "github" | "google") =>
     onProvider ? onProvider(provider) : signIn(provider, { callbackUrl: "/" });
   const base =
-    "w-full h-14 flex items-center justify-center gap-3 rounded-full border-2 border-black bg-white text-black font-bold text-sm tracking-wider hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#0D9488] transition-all whitespace-nowrap";
+    "w-full h-14 flex items-center justify-center gap-3 rounded-full border-2 border-ink bg-surface text-foreground font-bold text-sm tracking-wider hover:-translate-y-0.5 hover:shadow-hard-accent-sm transition-all whitespace-nowrap";
 
   return (
     <div className="space-y-3">
@@ -46,7 +46,7 @@ function OAuthButtons({ onProvider }: { onProvider?: (provider: "github" | "goog
 function BrandMark() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-black bg-white shadow-[2px_2px_0px_0px_#0D9488]">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-surface shadow-hard-accent-sm">
         <Image src="/logo.png" alt="" width={64} height={64} className="w-7 h-7 object-contain" />
       </span>
       <span className="text-xl font-bold tracking-tighter">Student Hub</span>
@@ -65,12 +65,12 @@ function PerkList() {
     <ul className="space-y-5">
       {PERKS.map(({ icon: Icon, title, text }) => (
         <li key={title} className="flex items-start gap-3.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-white/25 bg-white/5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/25 bg-surface/5">
             <Icon className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2.5} />
           </span>
           <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-bold text-white">{title}</span>
-            <span className="text-xs font-medium text-white/60">{text}</span>
+            <span className="text-sm font-bold on-ink">{title}</span>
+            <span className="text-xs font-medium text-background/60">{text}</span>
           </span>
         </li>
       ))}
@@ -127,12 +127,12 @@ export function SignupForm() {
 
   if (submitted) {
     return (
-      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-black bg-[#0D9488] p-8 sm:p-10 shadow-[6px_6px_0px_0px_#111]">
+      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard-lg">
         <div className="text-center space-y-6">
-          <div className="bg-white rounded-2xl border-2 border-black p-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-lg font-bold text-black tracking-tight mb-2">Check your inbox</p>
-            <p className="text-sm font-medium text-black/70">
-              We&apos;ve sent a verification link to <span className="font-bold text-black">{email}</span>.
+          <div className="bg-surface rounded-2xl border-2 border-ink p-6 shadow-hard-sm">
+            <p className="text-lg font-bold text-foreground tracking-tight mb-2">Check your inbox</p>
+            <p className="text-sm font-medium text-foreground/70">
+              We&apos;ve sent a verification link to <span className="font-bold text-foreground">{email}</span>.
               Click the link to activate your account — the link expires in 24 hours.
             </p>
           </div>
@@ -144,13 +144,13 @@ export function SignupForm() {
               setPassword("");
               setConfirmPassword("");
             }}
-            className="text-sm font-bold text-black underline underline-offset-4 hover:text-black/60 transition-colors"
+            className="text-sm font-bold text-foreground underline underline-offset-4 hover:text-foreground/60 transition-colors"
           >
             Didn&apos;t get the email? Try again
           </button>
           <Link
             href="/login"
-            className="block text-sm font-bold text-black/60 hover:text-black transition-colors"
+            className="block text-sm font-bold text-foreground/60 hover:text-foreground transition-colors"
           >
             Already verified? Log in
           </Link>
@@ -160,42 +160,42 @@ export function SignupForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-black bg-[#0D9488] shadow-[6px_6px_0px_0px_#111] overflow-hidden">
+    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-ink bg-accent shadow-hard-lg overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2">
         {/* Form side */}
         <div className="p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
           <div className="mb-7">
-            <h2 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-black">Create an account</h2>
-            <p className="text-sm sm:text-base text-black/60 font-medium tracking-wider mt-2">Join the student hub today</p>
+            <h2 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-foreground">Create an account</h2>
+            <p className="text-sm sm:text-base text-foreground/60 font-medium tracking-wider mt-2">Join the student hub today</p>
           </div>
 
           <form onSubmit={handleSignup} noValidate className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-bold text-black tracking-widest">Full Name</label>
+              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Full Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Name"
                 required
-                className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
+                className="w-full h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base font-medium text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/60"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-black tracking-widest">Email</label>
+              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@university.edu"
                 required
-                className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
+                className="w-full h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base font-medium text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/60"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-black tracking-widest">Password</label>
+              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Password</label>
               <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -206,7 +206,7 @@ export function SignupForm() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-black tracking-widest">Confirm Password</label>
+              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Confirm Password</label>
               <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -217,13 +217,13 @@ export function SignupForm() {
             </div>
 
             {/* Passive consent — submitting the form accepts the policies */}
-            <p className="text-xs font-medium text-black/70 leading-snug text-center px-2">
+            <p className="text-xs font-medium text-foreground/70 leading-snug text-center px-2">
               By signing up, you accept our{" "}
               <a
                 href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-black underline underline-offset-2 hover:text-[#0D9488] transition-colors"
+                className="font-bold text-foreground underline underline-offset-2 hover:text-accent transition-colors"
               >
                 Terms of Service
               </a>{" "}
@@ -232,7 +232,7 @@ export function SignupForm() {
                 href="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-black underline underline-offset-2 hover:text-[#0D9488] transition-colors"
+                className="font-bold text-foreground underline underline-offset-2 hover:text-accent transition-colors"
               >
                 Privacy Policy
               </a>
@@ -240,7 +240,7 @@ export function SignupForm() {
 
             <button
               type="submit"
-              className="w-full text-lg h-14 rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-widest hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#fff] transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              className="w-full text-lg h-14 rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-widest hover:-translate-y-1 hover:bg-ink hover:shadow-hard-invert transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
               disabled={loading}
             >
               {loading ? "Creating account..." : "Sign Up"}
@@ -253,7 +253,7 @@ export function SignupForm() {
           <div className="flex flex-col gap-5">
             <BrandMark />
 
-            <p className="text-3xl sm:text-4xl font-bold leading-[0.95] tracking-[-0.02em] uppercase text-white">
+            <p className="text-3xl sm:text-4xl font-bold leading-[0.95] tracking-[-0.02em] uppercase on-ink">
               <span className="whitespace-nowrap">Study smarter.</span>
               <br />
               <span className="text-[#2DD4BF] whitespace-nowrap">Share more.</span>
@@ -265,14 +265,14 @@ export function SignupForm() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="h-px bg-white/15" />
+            <div className="h-px bg-surface/15" />
 
-            <p className="text-center text-xs font-bold tracking-widest text-white/70">OR SIGN UP WITH</p>
+            <p className="text-center text-xs font-bold tracking-widest text-background/70">OR SIGN UP WITH</p>
             <OAuthButtons />
 
-            <p className="text-center text-sm font-medium text-white/70 pt-1">
+            <p className="text-center text-sm font-medium text-background/70 pt-1">
               Already have an account?{" "}
-              <Link href="/login" className="font-bold text-white underline underline-offset-4 hover:text-[#2DD4BF] transition-colors">
+              <Link href="/login" className="font-bold text-background underline underline-offset-4 hover:text-[#2DD4BF] transition-colors">
                 Log in
               </Link>
             </p>
@@ -281,12 +281,12 @@ export function SignupForm() {
       </div>
 
       {/* Mobile-only OAuth + login toggle — the black brand panel is hidden on small screens */}
-      <div className="lg:hidden flex flex-col gap-4 border-t-2 border-black/20 p-6 sm:p-8">
-        <p className="text-center text-xs font-bold tracking-widest text-black/60">OR SIGN UP WITH</p>
+      <div className="lg:hidden flex flex-col gap-4 border-t-2 border-line p-6 sm:p-8">
+        <p className="text-center text-xs font-bold tracking-widest text-foreground/60">OR SIGN UP WITH</p>
         <OAuthButtons />
-        <p className="text-center text-sm font-medium text-black/70">
+        <p className="text-center text-sm font-medium text-foreground/70">
           Already have an account?{" "}
-          <Link href="/login" className="font-bold text-black underline underline-offset-4 hover:text-white transition-colors">
+          <Link href="/login" className="font-bold text-foreground underline underline-offset-4 hover:text-background transition-colors">
             Log in
           </Link>
         </p>

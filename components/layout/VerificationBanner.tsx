@@ -76,7 +76,7 @@ export function VerificationBanner() {
   };
 
   return (
-    <div className="bg-amber-400 border-b-2 border-black px-4 py-2.5 text-center text-sm font-bold text-black">
+    <div className="bg-amber-400 border-b-2 border-ink px-4 py-2.5 text-center text-sm font-bold text-foreground">
       <span className="inline-flex flex-wrap items-center justify-center gap-2">
         <MailWarning className="h-4 w-4 shrink-0" />
         <span>Please verify your email address to fully activate your account.</span>

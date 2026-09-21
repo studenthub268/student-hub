@@ -53,13 +53,13 @@ export function CookieConsent() {
       aria-label="Cookie notice"
       className="fixed inset-x-3 bottom-3 z-50 sm:inset-x-0 sm:bottom-4 sm:mx-auto sm:max-w-xl"
     >
-      <div className="rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#111] sm:flex sm:items-center sm:gap-4">
-        <p className="text-xs font-medium leading-relaxed text-black/80 sm:flex-1">
+      <div className="rounded-2xl border-2 border-ink bg-surface p-4 shadow-hard sm:flex sm:items-center sm:gap-4">
+        <p className="text-xs font-medium leading-relaxed text-foreground/80 sm:flex-1">
           We use essential cookies only — session sign-in and CSRF protection.
           No ads, no tracking. Details in our{" "}
           <Link
             href="/privacy#cookies"
-            className="font-bold underline underline-offset-2 hover:text-[#0D9488]"
+            className="font-bold underline underline-offset-2 hover:text-accent"
           >
             privacy policy
           </Link>
@@ -69,14 +69,14 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={() => decide("declined")}
-            className="h-10 flex-1 rounded-full border-2 border-black bg-white px-4 text-xs font-bold tracking-wider text-black transition-colors hover:bg-gray-100 sm:flex-none"
+            className="h-10 flex-1 rounded-full border-2 border-ink bg-surface px-4 text-xs font-bold tracking-wider text-foreground transition-colors hover:bg-surface-muted sm:flex-none"
           >
             Decline
           </button>
           <button
             type="button"
             onClick={() => decide("accepted")}
-            className="h-10 flex-1 rounded-full border-2 border-black bg-[#111] px-4 text-xs font-bold tracking-wider text-white transition-colors hover:bg-black sm:flex-none"
+            className="h-10 flex-1 rounded-full border-2 border-ink bg-ink on-ink px-4 text-xs font-bold tracking-wider transition-colors hover:bg-ink sm:flex-none"
           >
             Got it
           </button>

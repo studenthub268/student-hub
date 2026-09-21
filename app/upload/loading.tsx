@@ -10,7 +10,7 @@ export default function UploadLoading() {
       </div>
 
       {/* Form */}
-      <div className="rounded-[2rem] border-2 border-black/5 p-8 space-y-6">
+      <div className="rounded-[2rem] border-2 border-line p-8 space-y-6">
         <div className="space-y-2">
           <Skeleton className="h-5 w-16" />
           <Skeleton className="h-12 w-full rounded-xl" />
@@ -37,8 +37,8 @@ export default function UploadLoading() {
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-12 w-full rounded-xl" />
         </div>
-        <Skeleton className="h-px w-full bg-black/10" />
-        <Skeleton className="h-40 w-full rounded-2xl border-2 border-dashed border-black/10" />
+        <Skeleton className="h-px w-full bg-line" />
+        <Skeleton className="h-40 w-full rounded-2xl border-2 border-dashed border-line" />
         <Skeleton className="h-14 w-full rounded-full" />
       </div>
     </div>

@@ -20,19 +20,19 @@ export default function BrowseError({
       <h2 className="text-3xl font-bold tracking-tight mb-4">
         Couldn&apos;t load resources
       </h2>
-      <p className="text-black/50 font-medium mb-8 max-w-md">
+      <p className="text-foreground/60 font-medium mb-8 max-w-md">
         We&apos;re having trouble connecting to the database. Please try again in a moment.
       </p>
       <div className="flex gap-4">
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 bg-[#111] text-white px-8 py-4 rounded-full font-bold text-sm tracking-wider hover:-translate-y-1 transition-all"
+          className="inline-flex items-center gap-2 bg-ink on-ink px-8 py-4 rounded-full font-bold text-sm tracking-wider hover:-translate-y-1 transition-all"
         >
           Try again
         </button>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 border-2 border-black px-8 py-4 rounded-full font-bold text-sm tracking-wider hover:-translate-y-1 transition-all"
+          className="inline-flex items-center gap-2 border-2 border-ink px-8 py-4 rounded-full font-bold text-sm tracking-wider hover:-translate-y-1 transition-all"
         >
           Go home <MoveUpRight className="w-4 h-4" />
         </Link>

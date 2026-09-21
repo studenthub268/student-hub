@@ -50,7 +50,7 @@ export default function ConfirmDialog({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px]"
         onClick={() => !busy && onCancel()}
       />
 
@@ -59,19 +59,19 @@ export default function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-[2rem] border-2 border-black bg-white p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] scale-in"
+        className="relative w-full max-w-md rounded-[2rem] border-2 border-ink bg-surface p-8 shadow-hard-lg scale-in"
       >
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-black bg-red-500 text-white">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink bg-red-500 text-background">
           <AlertTriangle className="h-6 w-6" strokeWidth={2} />
         </div>
-        <h2 className="text-center text-xl font-black tracking-tight text-black">{title}</h2>
-        <p className="mt-3 text-center text-sm font-medium leading-relaxed text-black/60">{message}</p>
+        <h2 className="text-center text-xl font-black tracking-tight text-foreground">{title}</h2>
+        <p className="mt-3 text-center text-sm font-medium leading-relaxed text-foreground/60">{message}</p>
 
         <div className="mt-8 flex gap-3">
           <button
             onClick={onCancel}
             disabled={busy}
-            className="flex-1 rounded-full border-2 border-black bg-white px-5 py-3 text-sm font-bold tracking-wider text-black transition-all hover:bg-gray-50 disabled:opacity-50"
+            className="flex-1 rounded-full border-2 border-ink bg-surface px-5 py-3 text-sm font-bold tracking-wider text-foreground transition-all hover:bg-surface-muted disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -79,7 +79,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             disabled={busy}
             autoFocus
-            className="flex-1 rounded-full border-2 border-black bg-red-500 px-5 py-3 text-sm font-bold tracking-wider text-white transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#111] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            className="flex-1 rounded-full border-2 border-ink bg-red-500 px-5 py-3 text-sm font-bold tracking-wider text-background transition-all hover:-translate-y-0.5 hover:shadow-hard disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             {busy ? busyLabel : confirmLabel}
           </button>

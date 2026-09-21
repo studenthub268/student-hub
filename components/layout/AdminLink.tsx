@@ -78,11 +78,11 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
       <Link
         href="/admin"
         onClick={onNavigate}
-        className="flex items-center px-6 py-4 text-base font-bold text-black hover:bg-[#0D9488] transition-colors"
+        className="flex items-center px-6 py-4 text-base font-bold text-foreground hover:bg-accent hover:text-accent-contrast transition-colors"
       >
         Admin
         {messageCount > 0 && (
-          <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="ml-auto w-5 h-5 bg-red-500 text-background text-[10px] font-bold rounded-full flex items-center justify-center">
             {messageCount > 99 ? "99+" : messageCount}
           </span>
         )}
@@ -94,11 +94,11 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
   return (
     <Link
       href="/admin"
-      className="text-sm font-medium text-black hover:text-gray-500 transition-colors relative"
+      className="text-sm font-medium text-foreground hover:text-foreground/60 transition-colors relative"
     >
       Admin
       {messageCount > 0 && (
-        <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+        <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-background text-[10px] font-bold rounded-full flex items-center justify-center">
           {messageCount > 99 ? "99+" : messageCount}
         </span>
       )}

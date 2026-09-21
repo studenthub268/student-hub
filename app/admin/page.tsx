@@ -357,7 +357,7 @@ export default function AdminPanel() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-black/10 border-t-[#0D9488] rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-line border-t-accent rounded-full animate-spin" />
       </div>
     );
   }
@@ -377,7 +377,7 @@ export default function AdminPanel() {
     <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Admin Panel</h1>
-        <p className="text-black/50 font-medium">Manage security, resources, messages, and admin access.</p>
+        <p className="text-foreground/60 font-medium">Manage security, resources, messages, and admin access.</p>
       </div>
 
       {/* Tabs */}
@@ -390,15 +390,15 @@ export default function AdminPanel() {
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm tracking-wider transition-all ${
                 activeTab === tab.key
-                  ? "bg-[#111] text-white"
-                  : "bg-gray-100 text-black hover:bg-gray-200"
+                  ? "bg-ink on-ink"
+                  : "bg-surface-muted text-foreground hover:bg-surface-muted"
               }`}
             >
               <Icon className="w-4 h-4" />
               {tab.label}
               {tab.count !== undefined && (
                 <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-                  activeTab === tab.key ? "bg-white/20" : "bg-black/10"
+                  activeTab === tab.key ? "bg-surface/20" : "bg-line"
                 }`}>
                   {tab.count}
                 </span>
@@ -440,7 +440,7 @@ export default function AdminPanel() {
                       </span>
                       <button
                         onClick={() => handleUnblockIp(b.ip)}
-                        className="px-3 py-1.5 rounded-full border-2 border-red-300 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
+                        className="px-3 py-1.5 rounded-full border-2 border-red-300 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-background hover:border-red-600 transition-all"
                       >
                         Unblock
                       </button>
@@ -451,28 +451,28 @@ export default function AdminPanel() {
             </div>
           )}
 
-          <form onSubmit={handleBlockIp} noValidate className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
+          <form onSubmit={handleBlockIp} noValidate className="bg-surface-muted rounded-2xl p-6 border-2 border-line">
             <h3 className="font-bold text-lg mb-4">Block an IP address</h3>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input type="text" value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="IP address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
-              <input type="text" value={newIpReason} onChange={(e) => setNewIpReason(e.target.value)} placeholder="Reason" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
-              <button type="submit" className="w-full sm:w-auto h-12 sm:h-14 px-6 rounded-full bg-[#111] text-white font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all">Block</button>
+              <input type="text" value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="IP address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base sm:text-sm font-medium focus:outline-none focus:shadow-hard-sm transition-all" />
+              <input type="text" value={newIpReason} onChange={(e) => setNewIpReason(e.target.value)} placeholder="Reason" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base sm:text-sm font-medium focus:outline-none focus:shadow-hard-sm transition-all" />
+              <button type="submit" className="w-full sm:w-auto h-12 sm:h-14 px-6 rounded-full bg-ink on-ink font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all">Block</button>
             </div>
           </form>
 
           {blockedIps.length === 0 ? (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
-              <Globe className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/60 font-medium">No blocked IPs</p>
+            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
+              <Globe className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+              <p className="text-foreground/60 font-medium">No blocked IPs</p>
             </div>
           ) : (
             <div className="space-y-3">
               {blockedIps.map((entry) => {
                 const blockType = entry.blockedBy === "system" ? "attack" : "manual";
-                const badgeColor = blockType === "attack" ? "bg-red-100 text-red-700 border-red-300" : "bg-gray-100 text-gray-700 border-gray-300";
+                const badgeColor = blockType === "attack" ? "bg-red-100 text-red-700 border-red-300" : "bg-surface-muted text-foreground border-line";
                 const badgeLabel = blockType === "attack" ? "Attack" : "Manual";
                 return (
-                  <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white hover:shadow-md transition-shadow">
+                  <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-red-50 border border-red-200 flex items-center justify-center">
                         <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -482,11 +482,11 @@ export default function AdminPanel() {
                           <p className="font-bold text-sm font-mono">{entry.ip}</p>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>{badgeLabel}</span>
                         </div>
-                        <p className="text-xs text-black/50 font-medium">{entry.reason}</p>
-                        <p className="text-xs text-black/30 font-medium">By {entry.blockedBy} · {new Date(entry.blockedAt).toLocaleDateString()}</p>
+                        <p className="text-xs text-foreground/60 font-medium">{entry.reason}</p>
+                        <p className="text-xs text-foreground/50 font-medium">By {entry.blockedBy} · {new Date(entry.blockedAt).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <button onClick={() => handleUnblockIp(entry.ip)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-[#0D9488] hover:border-[#0D9488] transition-all">
+                    <button onClick={() => handleUnblockIp(entry.ip)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:border-accent transition-all">
                       <Trash2 className="w-4 h-4" /> Unblock
                     </button>
                   </div>
@@ -501,28 +501,28 @@ export default function AdminPanel() {
       {activeTab === "resources" && (
         <div className="space-y-3">
           {resourcesList.length === 0 ? (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
-              <FileText className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/60 font-medium">No resources yet</p>
+            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
+              <FileText className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+              <p className="text-foreground/60 font-medium">No resources yet</p>
             </div>
           ) : (
             resourcesList.map((res) => (
-                  <div key={res.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
+                  <div key={res.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
                 {editingResource === res.id ? (
                   /* Edit mode */
                   <div className="space-y-3">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-bold text-sm">Editing resource</h4>
-                      <button onClick={() => setEditingResource(null)} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
+                      <button onClick={() => setEditingResource(null)} className="p-1 hover:bg-surface-muted rounded-lg"><X className="w-4 h-4" /></button>
                     </div>
-                    <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-black/10 text-sm font-medium focus:outline-none" placeholder="Title" />
-                    <input value={editForm.subject} onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-black/10 text-sm font-medium focus:outline-none" placeholder="Subject" />
-                    <input value={editForm.professor} onChange={(e) => setEditForm({ ...editForm, professor: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-black/10 text-sm font-medium focus:outline-none" placeholder="Professor" />
-                    <input value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-black/10 text-sm font-medium focus:outline-none" placeholder="Department" />
-                    <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full h-20 px-3 py-2 rounded-lg border-2 border-black/10 text-sm font-medium focus:outline-none resize-none" placeholder="Description" />
+                    <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Title" />
+                    <input value={editForm.subject} onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Subject" />
+                    <input value={editForm.professor} onChange={(e) => setEditForm({ ...editForm, professor: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Professor" />
+                    <input value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Department" />
+                    <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full h-20 px-3 py-2 rounded-lg border-2 border-line text-sm font-medium focus:outline-none resize-none" placeholder="Description" />
                     <div className="flex gap-2">
-                      <button onClick={() => handleSaveEdit(res.id)} className="px-4 py-2 rounded-full bg-[#0D9488] text-black font-bold text-xs tracking-wider">Save</button>
-                      <button onClick={() => setEditingResource(null)} className="px-4 py-2 rounded-full bg-gray-100 font-bold text-xs tracking-wider">Cancel</button>
+                      <button onClick={() => handleSaveEdit(res.id)} className="px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs tracking-wider">Save</button>
+                      <button onClick={() => setEditingResource(null)} className="px-4 py-2 rounded-full bg-surface-muted font-bold text-xs tracking-wider">Cancel</button>
                     </div>
                   </div>
                 ) : (
@@ -530,21 +530,21 @@ export default function AdminPanel() {
                   <div className="flex items-center justify-between w-full">
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-sm truncate">{res.title}</p>
-                      <p className="text-xs text-black/50 font-medium mt-0.5">
+                      <p className="text-xs text-foreground/60 font-medium mt-0.5">
                         {res.subject} · {res.type} · {res.uploader?.name || "Anonymous"}
                       </p>
-                      <p className="text-xs text-black/30 font-medium">
+                      <p className="text-xs text-foreground/50 font-medium">
                         {res.likes} likes · {new Date(res.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
-                      <Link href={`/resource/${res.id}`} target="_blank" className="p-2 rounded-lg border-2 border-black/10 hover:bg-gray-100 transition-colors">
+                      <Link href={`/resource/${res.id}`} target="_blank" className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors">
                         <ExternalLink className="w-4 h-4" />
                       </Link>
-                      <button onClick={() => startEdit(res)} className="p-2 rounded-lg border-2 border-black/10 hover:bg-[#0D9488] hover:border-[#0D9488] transition-all">
+                      <button onClick={() => startEdit(res)} className="p-2 rounded-lg border-2 border-line hover:bg-accent hover:border-accent transition-all">
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteResource(res.id, res.title)} className="p-2 rounded-lg border-2 border-black/10 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                      <button onClick={() => handleDeleteResource(res.id, res.title)} className="p-2 rounded-lg border-2 border-line hover:bg-red-500 hover:text-background hover:border-red-500 transition-all">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -560,39 +560,39 @@ export default function AdminPanel() {
       {activeTab === "reports" && (
         <div className="space-y-3">
           {reportsList.length === 0 ? (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
-              <Flag className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/60 font-medium">No reports yet</p>
+            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
+              <Flag className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+              <p className="text-foreground/60 font-medium">No reports yet</p>
             </div>
           ) : (
             reportsList.map((report) => {
               const reportedResource = report.resource;
               return (
-              <div key={report.id} className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 rounded-xl border-2 border-red-100 bg-white">
+              <div key={report.id} className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 rounded-xl border-2 border-red-100 bg-surface">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">Report</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200">{report.reason}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-muted text-foreground border border-line">{report.reason}</span>
                     </div>
                     <p className="font-bold text-sm mt-1">Resource: {reportedResource?.title || "Deleted"}</p>
-                    <p className="text-xs text-black/50 font-medium mt-0.5">
+                    <p className="text-xs text-foreground/60 font-medium mt-0.5">
                       Reported by {report.reporter?.name || "Unknown"} ({report.reporter?.email})
                     </p>
-                    <p className="text-xs text-black/60 font-medium mt-0.5">{new Date(report.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-foreground/60 font-medium mt-0.5">{new Date(report.createdAt).toLocaleDateString()}</p>
                     {report.description && (
-                      <p className="text-xs text-black/60 font-medium mt-2 p-3 bg-gray-50 rounded-lg">{report.description}</p>
+                      <p className="text-xs text-foreground/60 font-medium mt-2 p-3 bg-surface-muted rounded-lg">{report.description}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                     {reportedResource?.id && (
-                      <Link href={`/resource/${reportedResource.id}`} target="_blank" className="p-2 rounded-lg border-2 border-black/10 hover:bg-gray-100 transition-colors">
+                      <Link href={`/resource/${reportedResource.id}`} target="_blank" className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors">
                         <ExternalLink className="w-4 h-4" />
                       </Link>
                     )}
                     {reportedResource?.id && (
                       <button
                         onClick={() => handleDeleteReportedResource(report.id, reportedResource!.id, reportedResource!.title)}
-                        className="p-2 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                        className="p-2 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-500 hover:text-background hover:border-red-500 transition-all"
                         title="Delete resource & dismiss report"
                       >
                         <Ban className="w-4 h-4" />
@@ -600,7 +600,7 @@ export default function AdminPanel() {
                     )}
                     <button
                       onClick={() => handleDeleteReport(report.id)}
-                      className="p-2 rounded-lg border-2 border-black/10 hover:bg-gray-100 transition-colors"
+                      className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors"
                       title="Dismiss report only"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -617,39 +617,39 @@ export default function AdminPanel() {
       {activeTab === "messages" && (
         <div className="space-y-3">
           {messagesList.length === 0 ? (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
-              <Mail className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/60 font-medium">No messages yet</p>
+            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
+              <Mail className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+              <p className="text-foreground/60 font-medium">No messages yet</p>
             </div>
           ) : (
             messagesList.map((msg) => (
-              <div key={msg.id} className="p-4 rounded-xl border-2 border-black/5 bg-white">
+              <div key={msg.id} className="p-4 rounded-xl border-2 border-line bg-surface">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedMessage(expandedMessage === msg.id ? null : msg.id)}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#0D9488]/10 flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-4 h-4 text-[#0D9488]" />
+                      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <Mail className="w-4 h-4 text-accent" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-sm">{msg.name}</p>
-                        <p className="text-xs text-black/60 font-medium">{msg.email}</p>
+                        <p className="text-xs text-foreground/60 font-medium">{msg.email}</p>
                       </div>
                     </div>
                     {expandedMessage !== msg.id && (
-                      <p className="text-xs text-black/50 font-medium mt-2 ml-11 truncate">{msg.message}</p>
+                      <p className="text-xs text-foreground/60 font-medium mt-2 ml-11 truncate">{msg.message}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
-                    <span className="text-xs text-black/30 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
-                    {expandedMessage === msg.id ? <ChevronUp className="w-4 h-4 text-black/30" /> : <ChevronDown className="w-4 h-4 text-black/30" />}
+                    <span className="text-xs text-foreground/50 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                    {expandedMessage === msg.id ? <ChevronUp className="w-4 h-4 text-foreground/50" /> : <ChevronDown className="w-4 h-4 text-foreground/50" />}
                     <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
                 {expandedMessage === msg.id && (
-                  <div className="mt-4 ml-11 p-4 bg-gray-50 rounded-xl">
-                    <p className="text-sm font-medium text-black/70 whitespace-pre-wrap">{msg.message}</p>
+                  <div className="mt-4 ml-11 p-4 bg-surface-muted rounded-xl">
+                    <p className="text-sm font-medium text-foreground/70 whitespace-pre-wrap">{msg.message}</p>
                   </div>
                 )}
               </div>
@@ -662,9 +662,9 @@ export default function AdminPanel() {
       {activeTab === "users" && (
         <div className="space-y-3">
           {usersList.length === 0 ? (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
-              <Users className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/60 font-medium">No users yet</p>
+            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
+              <Users className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+              <p className="text-foreground/60 font-medium">No users yet</p>
             </div>
           ) : (
             usersList.map((u) => {
@@ -672,7 +672,7 @@ export default function AdminPanel() {
               const isPermanent = isPermanentAdmin(u.email);
               const providerChips = u.providers.length > 0 ? u.providers : ["credentials"];
               return (
-                <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
+                <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar image={u.image} name={u.name} email={u.email} size={40} />
                     <div className="min-w-0">
@@ -681,19 +681,19 @@ export default function AdminPanel() {
                         {isUserAdmin && (isPermanent ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner · Admin</span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0D9488]/15 text-[#0D9488] border border-[#0D9488]/30">Admin</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/15 text-accent border border-accent/30">Admin</span>
                         ))}
                         {!u.emailVerified && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200">Unverified</span>
                         )}
                         {providerChips.map((p) => (
-                          <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                          <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-muted text-foreground border border-line">
                             {p === "credentials" ? "Email" : p === "github" ? "GitHub" : p === "google" ? "Google" : p}
                           </span>
                         ))}
                       </div>
-                      <p className="text-xs text-black/50 font-medium truncate">{u.email}</p>
-                      <p className="text-xs text-black/30 font-medium">
+                      <p className="text-xs text-foreground/60 font-medium truncate">{u.email}</p>
+                      <p className="text-xs text-foreground/50 font-medium">
                         {u.resourceCount} resource{u.resourceCount === 1 ? "" : "s"} · Joined {new Date(u.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -701,21 +701,21 @@ export default function AdminPanel() {
                   <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                     {isUserAdmin ? (
                       isPermanent ? (
-                        <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/60">
+                        <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-foreground/60">
                           <Lock className="w-3.5 h-3.5" /> Permanent
                         </span>
                       ) : (
-                        <button onClick={() => handleDemoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-gray-100 transition-all">
+                        <button onClick={() => handleDemoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-surface-muted transition-all">
                           <ShieldOff className="w-4 h-4" /> Remove Admin
                         </button>
                       )
                     ) : (
-                      <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-[#0D9488] hover:border-[#0D9488] transition-all">
+                      <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:border-accent transition-all">
                         <ShieldCheck className="w-4 h-4" /> Make Admin
                       </button>
                     )}
                     {!isPermanent && (
-                      <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                      <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-background hover:border-red-500 transition-all">
                         <Trash2 className="w-4 h-4" /> Delete
                       </button>
                     )}
@@ -730,11 +730,11 @@ export default function AdminPanel() {
       {/* ===== ADMINS TAB ===== */}
       {activeTab === "admins" && (
         <div className="space-y-6">
-          <form onSubmit={handleAddAdmin} noValidate className="bg-gray-50 rounded-2xl p-6 border-2 border-black/5">
+          <form onSubmit={handleAddAdmin} noValidate className="bg-surface-muted rounded-2xl p-6 border-2 border-line">
             <h3 className="font-bold text-lg mb-4">Add admin</h3>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="Email address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-black bg-white text-base sm:text-sm font-medium focus:outline-none focus:shadow-[2px_2px_0px_0px_#111] transition-all" />
-              <button type="submit" className="w-full sm:w-auto h-12 sm:h-14 px-6 rounded-full bg-[#111] text-white font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+              <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="Email address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base sm:text-sm font-medium focus:outline-none focus:shadow-hard-sm transition-all" />
+              <button type="submit" className="w-full sm:w-auto h-12 sm:h-14 px-6 rounded-full bg-ink on-ink font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
                 <Plus className="w-4 h-4" /> Add Admin
               </button>
             </div>
@@ -744,7 +744,7 @@ export default function AdminPanel() {
             {adminEmails.map((admin) => {
               const permanent = isPermanentAdmin(admin.email);
               return (
-                <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-black/5 bg-white">
+                <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-sm">{admin.email}</p>
@@ -752,14 +752,14 @@ export default function AdminPanel() {
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner</span>
                       )}
                     </div>
-                    <p className="text-xs text-black/60 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-foreground/60 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
                   </div>
                   {permanent ? (
-                    <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-black/60">
+                    <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-foreground/60">
                       <Lock className="w-3.5 h-3.5" /> Permanent
                     </span>
                   ) : (
-                    <button onClick={() => handleRemoveAdmin(admin.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                    <button onClick={() => handleRemoveAdmin(admin.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-red-500 hover:text-background hover:border-red-500 transition-all">
                       <Trash2 className="w-4 h-4" /> Remove
                     </button>
                   )}
@@ -774,9 +774,9 @@ export default function AdminPanel() {
       {activeTab === "email" && (
         <div className="space-y-6">
           {!emailStats ? (
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-black/10">
-              <Mail className="w-12 h-12 mx-auto text-black/20 mb-4" />
-              <p className="text-black/60 font-medium">Email tracking not configured. Add RESEND_WEBHOOK_SECRET to enable.</p>
+            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
+              <Mail className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+              <p className="text-foreground/60 font-medium">Email tracking not configured. Add RESEND_WEBHOOK_SECRET to enable.</p>
             </div>
           ) : (
             <>
@@ -791,7 +791,7 @@ export default function AdminPanel() {
                   { label: "Clicked", value: emailStats.totals.clicked, color: "bg-cyan-50 border-cyan-200" },
                 ].map((m) => (
                   <div key={m.label} className={`rounded-2xl border-2 p-5 ${m.color}`}>
-                    <p className="text-xs font-bold text-black/50 tracking-wider uppercase">{m.label}</p>
+                    <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">{m.label}</p>
                     <p className="text-3xl font-black tracking-tight mt-1">{m.value}</p>
                   </div>
                 ))}
@@ -799,36 +799,36 @@ export default function AdminPanel() {
 
               {/* Rate cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-2xl border-2 border-black/5 bg-white p-5">
-                  <p className="text-xs font-bold text-black/50 tracking-wider uppercase">Delivery Rate</p>
+                <div className="rounded-2xl border-2 border-line bg-surface p-5">
+                  <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">Delivery Rate</p>
                   <p className="text-3xl font-black tracking-tight mt-1">{emailStats.totals.deliveryRate}%</p>
                 </div>
-                <div className="rounded-2xl border-2 border-black/5 bg-white p-5">
-                  <p className="text-xs font-bold text-black/50 tracking-wider uppercase">Bounce Rate</p>
+                <div className="rounded-2xl border-2 border-line bg-surface p-5">
+                  <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">Bounce Rate</p>
                   <p className={`text-3xl font-black tracking-tight mt-1 ${Number(emailStats.totals.bounceRate) > 5 ? "text-red-600" : ""}`}>{emailStats.totals.bounceRate}%</p>
                 </div>
-                <div className="rounded-2xl border-2 border-black/5 bg-white p-5">
-                  <p className="text-xs font-bold text-black/50 tracking-wider uppercase">Open Rate</p>
+                <div className="rounded-2xl border-2 border-line bg-surface p-5">
+                  <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">Open Rate</p>
                   <p className="text-3xl font-black tracking-tight mt-1">{emailStats.totals.openRate}%</p>
                 </div>
               </div>
 
               {/* Suppressed emails */}
-              <div className="rounded-2xl border-2 border-black/5 bg-white p-6">
+              <div className="rounded-2xl border-2 border-line bg-surface p-6">
                 <h3 className="font-bold text-lg mb-4">Suppressed Emails ({emailStats.suppressedCount})</h3>
                 {emailStats.recentSuppressions.length === 0 ? (
-                  <p className="text-black/60 font-medium text-sm">No suppressed addresses</p>
+                  <p className="text-foreground/60 font-medium text-sm">No suppressed addresses</p>
                 ) : (
                   <div className="space-y-2">
                     {emailStats.recentSuppressions.map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-2 border-b border-black/5 last:border-0">
+                      <div key={s.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-sm font-bold">{s.email}</span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                             s.reason === "bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
                           }`}>{s.reason}</span>
                         </div>
-                        <span className="text-xs text-black/60 font-medium">{new Date(s.suppressedAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-foreground/60 font-medium">{new Date(s.suppressedAt).toLocaleDateString()}</span>
                       </div>
                     ))}
                   </div>
@@ -836,22 +836,22 @@ export default function AdminPanel() {
               </div>
 
               {/* Recent failures */}
-              <div className="rounded-2xl border-2 border-black/5 bg-white p-6">
+              <div className="rounded-2xl border-2 border-line bg-surface p-6">
                 <h3 className="font-bold text-lg mb-4">Recent Failures (last 30 days)</h3>
                 {emailStats.recentFailures.length === 0 ? (
-                  <p className="text-black/60 font-medium text-sm">No failures recorded</p>
+                  <p className="text-foreground/60 font-medium text-sm">No failures recorded</p>
                 ) : (
                   <div className="space-y-2">
                     {emailStats.recentFailures.map((f) => (
-                      <div key={f.id} className="flex items-center justify-between py-2 border-b border-black/5 last:border-0">
+                      <div key={f.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
                         <div className="flex items-center gap-3">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                             f.eventType === "email.bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
                           }`}>{f.eventType === "email.bounced" ? "Bounce" : "Complaint"}</span>
                           <span className="text-sm font-medium">{f.to}</span>
-                          {f.subject && <span className="text-xs text-black/60 font-medium truncate max-w-[200px]">{f.subject}</span>}
+                          {f.subject && <span className="text-xs text-foreground/60 font-medium truncate max-w-[200px]">{f.subject}</span>}
                         </div>
-                        <span className="text-xs text-black/60 font-medium">{new Date(f.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-foreground/60 font-medium">{new Date(f.createdAt).toLocaleDateString()}</span>
                       </div>
                     ))}
                   </div>

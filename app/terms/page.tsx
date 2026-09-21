@@ -14,7 +14,7 @@ function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
     <h2
       id={id}
-      className="scroll-mt-24 pt-10 pb-3 text-xl font-bold tracking-tight text-black border-b border-black/10"
+      className="scroll-mt-24 pt-10 pb-3 text-xl font-bold tracking-tight text-foreground border-b border-line"
     >
       {children}
     </h2>
@@ -31,7 +31,7 @@ function LI({ children }: { children: React.ReactNode }) {
 
 function C({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="text-black underline decoration-black/30 underline-offset-2 hover:decoration-[#0D9488] hover:text-[#0D9488]">
+    <Link href={href} className="text-foreground underline decoration-foreground/30 underline-offset-2 hover:decoration-accent hover:text-accent">
       {children}
     </Link>
   );
@@ -39,11 +39,11 @@ function C({ href, children }: { href: string; children: React.ReactNode }) {
 
 export default function TermsPage() {
   return (
-    <div className="bg-white min-h-screen">
-      <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-[15px] text-black/80">
+    <div className="bg-surface min-h-screen">
+      <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-[15px] text-foreground/80">
 
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/60">Student Hub</p>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-black">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">Student Hub</p>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
           Terms of Service
         </h1>
         <p className="mt-4 leading-relaxed">
@@ -53,7 +53,7 @@ export default function TermsPage() {
           <C href="/privacy">privacy policy</C>. Together they apply to everyone who visits or
           uses the site.
         </p>
-        <p className="mt-4 text-sm text-black/60">
+        <p className="mt-4 text-sm text-foreground/60">
           Last updated {LAST_UPDATED} &nbsp;·&nbsp; Version {POLICY_VERSION}
         </p>
 
@@ -165,9 +165,9 @@ export default function TermsPage() {
           through the <C href="/contact">contact page</C>.
         </P>
 
-        <div className="mt-14 pt-8 border-t border-black/10 text-sm text-black/60">
+        <div className="mt-14 pt-8 border-t border-line text-sm text-foreground/60">
           <C href="/privacy">Read the Privacy Policy</C>
-          <span className="mx-2 text-black/60">·</span>
+          <span className="mx-2 text-foreground/60">·</span>
           <C href="/">Return to Student Hub</C>
         </div>
       </div>

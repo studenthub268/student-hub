@@ -12,7 +12,7 @@ export default function ContactLoading() {
         ))}
       </div>
 
-      <div className="rounded-[2rem] border-2 border-black/5 p-8 space-y-6">
+      <div className="rounded-[2rem] border-2 border-line p-8 space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Skeleton className="h-5 w-12" />

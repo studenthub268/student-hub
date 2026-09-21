@@ -37,13 +37,13 @@ export function QuoteCard() {
   return (
     // min-h, not fixed h-36: long quotes at narrow widths need to grow,
     // a fixed height clipped them
-    <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-[2rem] p-6 min-h-36 flex flex-col items-center justify-center relative overflow-hidden border-2 border-black/5">
+    <div className="bg-gradient-to-br from-surface-muted to-surface-muted/60 rounded-[2rem] p-6 min-h-36 flex flex-col items-center justify-center relative overflow-hidden border-2 border-line">
       {quote ? (
         <>
-          <p className="text-sm sm:text-base font-medium text-gray-600 text-center leading-snug italic max-w-[90%]">
+          <p className="text-sm sm:text-base font-medium text-foreground/70 text-center leading-snug italic max-w-[90%]">
             &ldquo;{quote.text}&rdquo;
           </p>
-          <span className="text-xs text-gray-400 mt-2 font-semibold tracking-wider">
+          <span className="text-xs text-foreground/50 mt-2 font-semibold tracking-wider">
             &mdash; {quote.author}
           </span>
         </>

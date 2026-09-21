@@ -24,7 +24,7 @@ export function PasswordInput({ size = "lg", className = "", ...props }: Passwor
       <input
         {...props}
         type={visible ? "text" : "password"}
-        className={`w-full ${height} px-4 pr-12 rounded-xl border-2 border-black bg-white ${text} font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60 ${className}`}
+        className={`w-full ${height} px-4 pr-12 rounded-xl border-2 border-ink bg-surface ${text} font-medium text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/60 ${className}`}
       />
       <button
         type="button"
@@ -32,7 +32,7 @@ export function PasswordInput({ size = "lg", className = "", ...props }: Passwor
         tabIndex={-1}
         aria-label={visible ? "Hide password" : "Show password"}
         title={visible ? "Hide password" : "Show password"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-black/50 hover:text-black transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-foreground/60 hover:text-foreground transition-colors"
       >
         {visible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
       </button>

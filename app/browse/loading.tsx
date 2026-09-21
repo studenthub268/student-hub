@@ -19,7 +19,7 @@ export default function BrowseLoading() {
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="rounded-[2rem] border-2 border-black/5 p-6 space-y-4">
+          <div key={i} className="rounded-[2rem] border-2 border-line p-6 space-y-4">
             <div className="flex justify-between">
               <Skeleton className="h-6 w-24 rounded-full" />
               <Skeleton className="h-10 w-10 rounded-full" />
@@ -29,7 +29,7 @@ export default function BrowseLoading() {
               <Skeleton className="h-6 w-20 rounded-full" />
               <Skeleton className="h-6 w-16 rounded-full" />
             </div>
-            <Skeleton className="h-px w-full bg-black/10" />
+            <Skeleton className="h-px w-full bg-line" />
             <div className="flex justify-between">
               <div className="flex gap-4">
                 <Skeleton className="h-5 w-12" />

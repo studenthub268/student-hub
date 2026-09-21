@@ -59,19 +59,19 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 bg-white selection:bg-[#0D9488]">
-      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-black bg-[#0D9488] p-8 sm:p-10 shadow-[4px_4px_0px_0px_#111]">
+    <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 bg-surface selection:bg-accent">
+      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard">
 
         <div className="mb-8 text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-black">New Password</h2>
-          <p className="text-base text-black/60 font-medium tracking-wider mt-2">
+          <h2 className="text-4xl font-bold tracking-tight text-foreground">New Password</h2>
+          <p className="text-base text-foreground/60 font-medium tracking-wider mt-2">
             Set a strong new password for your account
           </p>
         </div>
 
         <form onSubmit={handlePasswordReset} noValidate className="space-y-6">
           <div>
-            <label className="mb-2 block text-sm font-bold text-black tracking-wider">New Password</label>
+            <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">New Password</label>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-black tracking-wider">Confirm New Password</label>
+            <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Confirm New Password</label>
             <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -92,7 +92,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            className="w-full text-lg h-16 mt-4 rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-wider hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            className="w-full text-lg h-16 mt-4 rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-wider hover:-translate-y-1 hover:bg-ink hover:shadow-hard-accent transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
             disabled={loading}
           >
             {loading ? "Updating..." : "Update Password"}

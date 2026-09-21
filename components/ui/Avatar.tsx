@@ -37,7 +37,7 @@ export function Avatar({
     const src = image.replace(/=s\d+-c$/, "=s256-c");
     return (
       <span
-        className={`relative block shrink-0 overflow-hidden rounded-full border-2 border-black bg-black ${className}`}
+        className={`relative block shrink-0 overflow-hidden rounded-full border-2 border-ink bg-ink ${className}`}
         style={{ width: size, height: size }}
       >
         <Image
@@ -53,7 +53,7 @@ export function Avatar({
 
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-black font-bold text-white ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-ink on-ink font-bold ${className}`}
       style={{ width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.34)) }}
     >
       {initials}

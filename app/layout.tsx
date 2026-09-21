@@ -11,6 +11,7 @@ import { CookieConsent } from "@/components/layout/CookieConsent";
 import { DeployWatcher } from "@/components/DeployWatcher";
 import ScrollRestoration from "@/components/ScrollRestoration";
 import { Analytics } from "@/components/ui/Analytics";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -79,8 +80,27 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0D9488",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0D9488" },
+    { media: "(prefers-color-scheme: dark)", color: "#101312" },
+  ],
 };
+
+// Runs before first paint: reads the saved choice (localStorage `sh-theme`),
+// falls back to the OS preference, and sets the `dark` class on <html>.
+// Without this, a dark-theme visitor gets a white flash on every load.
+// Kept in sync with components/layout/ThemeToggle.tsx.
+const themeInitScript = `
+(function(){
+  try {
+    var t = localStorage.getItem('sh-theme');
+  } catch (e) {}
+  if (t !== 'light' && t !== 'dark') {
+    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  if (t === 'dark') document.documentElement.classList.add('dark');
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -91,11 +111,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} h-full antialiased`}
+      suppressHydrationWarning={true}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
         <OfflineBanner />
         <VerificationBanner />
         <Navbar />
+        <ThemeToggle className="fixed bottom-4 right-4 z-[120] hidden sm:flex" />
         <main className="flex-1">{children}</main>
         <Footer />
         <Toaster

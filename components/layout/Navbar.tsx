@@ -6,6 +6,7 @@ import { Menu, X, ArrowLeft, Search } from "lucide-react";
 import NavbarSearch from "./NavbarSearch";
 import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
+import { ThemeToggle } from "./ThemeToggle";
 import SearchPopup from "./SearchPopup";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,9 +18,9 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-// Shared shape for the two square icon buttons (search + hamburger).
+// Shared shape for the square icon buttons (search + hamburger + theme).
 const ICON_BTN =
-  "flex items-center justify-center h-10 w-10 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]";
+  "flex items-center justify-center h-10 w-10 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm";
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -47,14 +48,14 @@ export function Navbar() {
       {/* z-[110] keeps the bar (its X / search buttons) tappable above the
           menu overlay's click-away catcher below. */}
       <div className="relative z-[110] mx-auto max-w-7xl">
-      <div className="flex h-14 items-center justify-between rounded-2xl border-2 border-black bg-white/70 backdrop-blur-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-4 sm:px-6">
+      <div className="nav-shell flex h-14 items-center justify-between rounded-2xl border-2 border-ink bg-surface/70 backdrop-blur-xl shadow-hard px-4 sm:px-6">
 
         {/* Logo + Mobile Back Button */}
         <div className="flex items-center gap-2">
           {pathname !== "/" && (
             <button
               onClick={() => router.back()}
-              className="md:hidden p-2 rounded-xl border-2 border-black bg-white text-black hover:bg-[#0D9488] transition-all press shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="md:hidden p-2 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -64,14 +65,14 @@ export function Navbar() {
             <Image src="/logo.png" alt="Student Hub Logo" width={64} height={64} className="w-8 h-8 rounded-full object-contain shrink-0" priority />
             {/* text-base below sm: at ~320px viewports a text-xl nowrap wordmark
                 overflows into the search/hamburger buttons */}
-            <span className="text-base sm:text-xl font-bold tracking-tighter text-black ml-1 group-hover:opacity-80 whitespace-nowrap">Student Hub</span>
+            <span className="text-base sm:text-xl font-bold tracking-tighter text-foreground ml-1 group-hover:opacity-80 whitespace-nowrap">Student Hub</span>
           </Link>
         </div>
 
         {/* Desktop Nav Links */}
         <div className="hidden md:flex items-center md:space-x-5 lg:space-x-8">
           {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} prefetch className="text-sm font-medium text-black hover:text-gray-500 transition-colors">
+            <Link key={link.href} href={link.href} prefetch className="text-sm font-medium text-foreground hover:text-foreground/60 transition-colors">
               {link.label}
             </Link>
           ))}
@@ -91,6 +92,7 @@ export function Navbar() {
             <Search className="h-5 w-5" />
           </button>
           <div className="hidden md:block"><NavbarAuth /></div>
+          <ThemeToggle className="hidden md:flex" />
 
           {/* Hamburger */}
           <button
@@ -111,7 +113,7 @@ export function Navbar() {
         <div className="md:hidden fixed inset-0 z-[100]">
           {/* Click-away catcher — transparent, sits behind the panel */}
           <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-black bg-white/95 backdrop-blur-xl shadow-[8px_8px_0px_0px_#111] scale-in origin-top">
+          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-ink bg-surface/95 backdrop-blur-xl shadow-hard-lg scale-in origin-top">
             
             {/* Nav Links */}
             {NAV_LINKS.map((link, index) => (
@@ -119,8 +121,8 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center px-6 py-4 text-base font-bold text-black hover:bg-[#0D9488] transition-colors ${
-                  index < NAV_LINKS.length - 1 ? "border-b border-black/10" : ""
+                className={`flex items-center px-6 py-4 text-base font-bold text-foreground hover:bg-accent hover:text-accent-contrast transition-colors ${
+                  index < NAV_LINKS.length - 1 ? "border-b border-line" : ""
                 }`}
               >
                 {link.label}

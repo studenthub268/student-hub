@@ -33,11 +33,11 @@ function FilterPill({ label, active, count, disabled, pending, className, onClic
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border-2 border-black transition-all text-left ${className || ""} ${
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border-2 border-ink transition-all text-left ${className || ""} ${
         active
-          ? "bg-[#0D9488] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-          : "bg-white hover:bg-gray-50"
-      } ${disabled && !active ? "opacity-40 cursor-not-allowed hover:bg-white" : ""} ${
+          ? "bg-accent shadow-hard-sm"
+          : "bg-surface hover:bg-surface-muted"
+      } ${disabled && !active ? "opacity-40 cursor-not-allowed hover:bg-surface" : ""} ${
         pending && active ? "opacity-60 animate-pulse" : ""
       }`}
     >
@@ -45,7 +45,7 @@ function FilterPill({ label, active, count, disabled, pending, className, onClic
       {typeof count === "number" && (
         <span
           className={`text-xs font-bold tabular-nums ${
-            active ? "text-black" : "text-black/50"
+            active ? "text-foreground" : "text-foreground/60"
           }`}
         >
           {count}
@@ -112,8 +112,8 @@ export default function BrowseContent({
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 max-w-[1400px]">
       <div className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
-          <h1 className="text-4xl sm:text-5xl font-medium tracking-tight text-black">Browse Resources</h1>
-          <p className="mt-4 text-lg text-black/60 font-medium">Find exactly what you need to ace your next exam.</p>
+          <h1 className="text-4xl sm:text-5xl font-medium tracking-tight text-foreground">Browse Resources</h1>
+          <p className="mt-4 text-lg text-foreground/60 font-medium">Find exactly what you need to ace your next exam.</p>
         </div>
       </div>
 
@@ -125,7 +125,7 @@ export default function BrowseContent({
       <div className="space-y-6 mb-10 fade-up">
         {/* Type Filter */}
         <div>
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-black tracking-wider">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground tracking-wider">
             <Filter className="h-4 w-4" strokeWidth={1.5} /> Resource Type
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -157,7 +157,7 @@ export default function BrowseContent({
 
         {/* Subject Filter */}
         <div>
-          <h3 className="mb-3 text-sm font-bold text-black tracking-wider">Subject</h3>
+          <h3 className="mb-3 text-sm font-bold text-foreground tracking-wider">Subject</h3>
           <div className="flex flex-wrap gap-2">
             <FilterPill
               label="All Subjects"
@@ -189,7 +189,7 @@ export default function BrowseContent({
             {/* Show more/less — phone-only (CSS), flips the chip hiding above. */}
             <button
               onClick={() => setShowAllSubjects((v) => !v)}
-              className={`items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-black/30 text-black/60 transition-colors hover:border-black hover:text-black md:hidden ${
+              className={`items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-line-strong text-foreground/60 transition-colors hover:border-ink hover:text-foreground md:hidden ${
                 showAllSubjects ? "hidden" : "inline-flex"
               }`}
             >
@@ -198,7 +198,7 @@ export default function BrowseContent({
             </button>
             <button
               onClick={() => setShowAllSubjects(false)}
-              className={`items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-black text-black transition-colors hover:bg-gray-50 md:hidden ${
+              className={`items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border-2 border-dashed border-ink text-foreground transition-colors hover:bg-surface-muted md:hidden ${
                 showAllSubjects ? "inline-flex" : "hidden"
               }`}
             >
@@ -212,14 +212,14 @@ export default function BrowseContent({
 
       {/* Results */}
       <div>
-        <div className="mb-6 text-base text-black/60 font-medium">
+        <div className="mb-6 text-base text-foreground/60 font-medium">
           {fromSearch ? (
             <>
               Showing {resources.length} result{resources.length !== 1 && "s"}
               {searchContext && (
-                <> for <span className="font-bold text-black">“{searchContext}”</span></>
+                <> for <span className="font-bold text-foreground">“{searchContext}”</span></>
               )}
-              <span className="text-black/30"> · </span>
+              <span className="text-foreground/50"> · </span>
               <button
                 onClick={() =>
                   startTransition(() => {
@@ -228,7 +228,7 @@ export default function BrowseContent({
                     router.push("/browse");
                   })
                 }
-                className="underline underline-offset-2 hover:text-black transition-colors"
+                className="underline underline-offset-2 hover:text-foreground transition-colors"
               >
                 Browse with filters
               </button>
@@ -247,15 +247,15 @@ export default function BrowseContent({
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-black bg-[#f8fafc] py-32 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-black bg-white mb-6">
-              <Search className="h-8 w-8 text-black" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-ink bg-surface-muted py-32 text-center shadow-hard-faint">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-ink bg-surface mb-6">
+              <Search className="h-8 w-8 text-foreground" strokeWidth={1.5} />
             </div>
-            <h3 className="text-2xl font-medium text-black">No resources found</h3>
-            <p className="mt-4 text-black/60 max-w-sm mx-auto font-medium">
+            <h3 className="text-2xl font-medium text-foreground">No resources found</h3>
+            <p className="mt-4 text-foreground/60 max-w-sm mx-auto font-medium">
               We couldn&apos;t find anything matching your current filters.</p>
             <button onClick={clearAll}
-              className="mt-8 rounded-full border-2 border-black bg-[#111] px-6 py-3 text-sm font-medium text-white transition-all hover:bg-black/80 hover:-translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]">Clear all filters</button>
+              className="mt-8 rounded-full border-2 border-ink bg-ink on-ink px-6 py-3 text-sm font-medium on-ink transition-all hover:bg-ink/80 hover:-translate-y-1 shadow-hard-dim">Clear all filters</button>
           </div>
         )}
       </div>

@@ -12,8 +12,8 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 /** Black brand panel — mirrors the homepage hero card. Compact for the short login form. */
 function BrandPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative hidden overflow-hidden bg-[#111] p-6 sm:p-8 lg:flex flex-col text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#0D9488]/40 via-[#111] to-[#111]" />
+    <div className="relative hidden overflow-hidden bg-ink p-6 sm:p-8 lg:flex flex-col on-ink">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent/40 via-ink to-ink" />
       <div className="relative z-10 flex h-full flex-col justify-between gap-y-5">{children}</div>
     </div>
   );
@@ -28,7 +28,7 @@ function OAuthButtons({
   onProvider?: (provider: "github" | "google") => void;
 }) {
   const base =
-    "w-full h-14 flex items-center justify-center gap-3 rounded-full border-2 border-black bg-white text-black font-bold text-sm tracking-wider hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#0D9488] transition-all whitespace-nowrap";
+    "w-full h-14 flex items-center justify-center gap-3 rounded-full border-2 border-ink bg-surface text-foreground font-bold text-sm tracking-wider hover:-translate-y-0.5 hover:shadow-hard-accent-sm transition-all whitespace-nowrap";
   const start = (provider: "github" | "google") =>
     onProvider ? onProvider(provider) : signIn(provider, { callbackUrl: "/" });
 
@@ -50,7 +50,7 @@ function OAuthButtons({
 function BrandMark() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-black bg-white shadow-[2px_2px_0px_0px_#0D9488]">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-surface shadow-hard-accent-sm">
         <Image src="/logo.png" alt="" width={64} height={64} className="w-7 h-7 object-contain" />
       </span>
       <span className="text-xl font-bold tracking-tighter">Student Hub</span>
@@ -69,10 +69,10 @@ function PerkList() {
     <ul className="space-y-4">
       {PERKS.map(({ icon: Icon, text }) => (
         <li key={text} className="flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-white/25 bg-white/5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/25 bg-surface/5">
             <Icon className="w-5 h-5 text-[#2DD4BF]" strokeWidth={2.5} />
           </span>
-          <span className="text-sm font-medium text-white/85">{text}</span>
+          <span className="text-sm font-medium text-background/85">{text}</span>
         </li>
       ))}
     </ul>
@@ -143,34 +143,34 @@ export function LoginForm() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-black bg-[#0D9488] shadow-[6px_6px_0px_0px_#111] overflow-hidden">
+    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-ink bg-accent shadow-hard-lg overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2">
         {/* Form side — roomy spacing so it matches the panel's height */}
         <div className="p-6 sm:p-8 lg:p-9 flex flex-col justify-center">
           <div className="mb-8">
-            <h2 className="text-3xl sm:text-[2.75rem] font-extrabold leading-none tracking-tight text-black">Welcome back</h2>
-            <p className="text-sm sm:text-base text-black/60 font-medium tracking-wider mt-2">Sign in to your account</p>
+            <h2 className="text-3xl sm:text-[2.75rem] font-extrabold leading-none tracking-tight text-foreground">Welcome back</h2>
+            <p className="text-sm sm:text-base text-foreground/60 font-medium tracking-wider mt-2">Sign in to your account</p>
           </div>
 
           <form onSubmit={handleLogin} noValidate className="space-y-6">
             <div>
-              <label className="mb-2 block text-sm font-bold text-black tracking-widest">Email</label>
+              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@university.edu"
                 required
-                className="w-full h-14 px-4 rounded-xl border-2 border-black bg-white text-base font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-black/60"
+                className="w-full h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base font-medium text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/60"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-bold text-black tracking-widest">Password</label>
+                <label className="block text-sm font-bold text-foreground tracking-widest">Password</label>
                 <Link
                   href="/login/forgot-password"
-                  className="text-xs font-bold text-black/60 hover:text-black hover:underline underline-offset-2 transition-colors tracking-wider"
+                  className="text-xs font-bold text-foreground/60 hover:text-foreground hover:underline underline-offset-2 transition-colors tracking-wider"
                 >
                   Forgot password?
                 </Link>
@@ -185,7 +185,7 @@ export function LoginForm() {
 
             <button
               type="submit"
-              className="w-full text-lg h-16 rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-widest hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#fff] transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              className="w-full text-lg h-16 rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-widest hover:-translate-y-1 hover:bg-ink hover:shadow-hard-invert transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign In"}
@@ -198,7 +198,7 @@ export function LoginForm() {
           <div className="flex flex-col gap-4">
             <BrandMark />
 
-            <p className="text-3xl sm:text-[2.75rem] font-extrabold leading-[0.95] tracking-tight uppercase text-white">
+            <p className="text-3xl sm:text-[2.75rem] font-extrabold leading-[0.95] tracking-tight uppercase on-ink">
               <span className="whitespace-nowrap">Study smarter.</span>
               <br />
               <span className="text-[#2DD4BF] whitespace-nowrap">Share more.</span>
@@ -210,14 +210,14 @@ export function LoginForm() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="h-px bg-white/15" />
+            <div className="h-px bg-surface/15" />
 
-            <p className="text-center text-xs font-bold tracking-widest text-white/70">OR CONTINUE WITH</p>
+            <p className="text-center text-xs font-bold tracking-widest text-background/70">OR CONTINUE WITH</p>
             <OAuthButtons />
 
-            <p className="text-center text-sm font-medium text-white/70 pt-0.5">
+            <p className="text-center text-sm font-medium text-background/70 pt-0.5">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="font-bold text-white underline underline-offset-4 hover:text-[#2DD4BF] transition-colors">
+              <Link href="/signup" className="font-bold text-background underline underline-offset-4 hover:text-[#2DD4BF] transition-colors">
                 Sign up
               </Link>
             </p>
@@ -226,12 +226,12 @@ export function LoginForm() {
       </div>
 
       {/* Mobile-only OAuth + signup toggle — the black brand panel is hidden on small screens */}
-      <div className="lg:hidden flex flex-col gap-4 border-t-2 border-black/20 p-6 sm:p-8">
-        <p className="text-center text-xs font-bold tracking-widest text-black/60">OR CONTINUE WITH</p>
+      <div className="lg:hidden flex flex-col gap-4 border-t-2 border-line p-6 sm:p-8">
+        <p className="text-center text-xs font-bold tracking-widest text-foreground/60">OR CONTINUE WITH</p>
         <OAuthButtons />
-        <p className="text-center text-sm font-medium text-black/70">
+        <p className="text-center text-sm font-medium text-foreground/70">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-bold text-black underline underline-offset-4 hover:text-white transition-colors">
+          <Link href="/signup" className="font-bold text-foreground underline underline-offset-4 hover:text-background transition-colors">
             Sign up
           </Link>
         </p>

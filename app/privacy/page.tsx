@@ -14,7 +14,7 @@ function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
     <h2
       id={id}
-      className="scroll-mt-24 pt-10 pb-3 text-xl font-bold tracking-tight text-black border-b border-black/10"
+      className="scroll-mt-24 pt-10 pb-3 text-xl font-bold tracking-tight text-foreground border-b border-line"
     >
       {children}
     </h2>
@@ -33,7 +33,7 @@ function C({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className="text-black underline decoration-black/30 underline-offset-2 hover:decoration-[#0D9488] hover:text-[#0D9488]"
+      className="text-foreground underline decoration-foreground/30 underline-offset-2 hover:decoration-accent hover:text-accent"
     >
       {children}
     </Link>
@@ -42,12 +42,12 @@ function C({ href, children }: { href: string; children: React.ReactNode }) {
 
 export default function PrivacyPage() {
   return (
-    <div className="bg-white min-h-screen">
-      <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-[15px] text-black/80">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/60">
+    <div className="bg-surface min-h-screen">
+      <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-[15px] text-foreground/80">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
           Student Hub
         </p>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-black">
+        <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
           Privacy Policy
         </h1>
         <p className="mt-4 leading-relaxed">
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
           site needs to work, we never sell your data, and you can delete your
           account and content yourself at any time.
         </p>
-        <p className="mt-4 text-sm text-black/60">
+        <p className="mt-4 text-sm text-foreground/60">
           Last updated {LAST_UPDATED} &nbsp;·&nbsp; Version {POLICY_VERSION}
         </p>
 
@@ -199,9 +199,9 @@ export default function PrivacyPage() {
           yours.
         </P>
 
-        <div className="mt-14 pt-8 border-t border-black/10 text-sm text-black/60">
+        <div className="mt-14 pt-8 border-t border-line text-sm text-foreground/60">
           <C href="/terms">Read the Terms of Service</C>
-          <span className="mx-2 text-black/60">·</span>
+          <span className="mx-2 text-foreground/60">·</span>
           <C href="/">Return to Student Hub</C>
         </div>
       </div>

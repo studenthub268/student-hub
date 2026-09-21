@@ -68,20 +68,20 @@ export default async function AuthErrorPage({
   }
 
   return (
-    <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 bg-white selection:bg-[#0D9488]">
-      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-black bg-[#0D9488] p-8 sm:p-10 shadow-[4px_4px_0px_0px_#111]">
+    <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 bg-surface selection:bg-accent">
+      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-black bg-amber-100">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink bg-amber-100">
             <AlertTriangle className="h-7 w-7 text-amber-600" strokeWidth={2} />
           </div>
-          <h2 className="text-4xl font-bold tracking-tight text-black">
+          <h2 className="text-4xl font-bold tracking-tight text-foreground">
             {view.heading}
           </h2>
-          <p className="text-base text-black/60 font-medium tracking-wider mt-2">
+          <p className="text-base text-foreground/60 font-medium tracking-wider mt-2">
             {view.message}
           </p>
           {error && (
-            <p className="mt-3 text-xs font-medium tracking-wider text-black/60">
+            <p className="mt-3 text-xs font-medium tracking-wider text-foreground/60">
               Error code: {error}
             </p>
           )}
@@ -90,13 +90,13 @@ export default async function AuthErrorPage({
         <div className="flex flex-col gap-4">
           <Link
             href="/login"
-            className="w-full text-center text-lg h-16 flex items-center justify-center rounded-full border-2 border-black bg-[#111] text-white font-bold tracking-wider hover:-translate-y-1 hover:bg-black hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all"
+            className="w-full text-center text-lg h-16 flex items-center justify-center rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-wider hover:-translate-y-1 hover:bg-ink hover:shadow-hard-accent transition-all"
           >
             Try signing in again
           </Link>
           <Link
             href="/"
-            className="w-full text-center text-lg h-14 flex items-center justify-center rounded-full border-2 border-black bg-white text-black font-bold tracking-wider hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#0D9488] transition-all"
+            className="w-full text-center text-lg h-14 flex items-center justify-center rounded-full border-2 border-ink bg-surface text-foreground font-bold tracking-wider hover:-translate-y-1 hover:shadow-hard-accent transition-all"
           >
             Back to homepage
           </Link>
