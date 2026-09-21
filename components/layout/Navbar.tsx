@@ -43,12 +43,23 @@ export function Navbar() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
+  // Opaque bar once content scrolls underneath (70% at top keeps the
+  // frosted look; 95% + blur hides everything when it overlaps content).
+  // .nav-shell's background transition animates the switch.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <nav className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 pb-4">
       {/* z-[110] keeps the bar (its X / search buttons) tappable above the
           menu overlay's click-away catcher below. */}
       <div className="relative z-[110] mx-auto max-w-7xl">
-      <div className="nav-shell flex h-14 items-center justify-between rounded-2xl border-2 border-ink bg-surface/70 backdrop-blur-xl shadow-hard px-4 sm:px-6">
+      <div className={`nav-shell flex h-14 items-center justify-between rounded-2xl border-2 border-ink ${scrolled ? "bg-surface/95" : "bg-surface/70"} backdrop-blur-xl shadow-hard px-4 sm:px-6`}>
 
         {/* Logo + Mobile Back Button */}
         <div className="flex items-center gap-2">
