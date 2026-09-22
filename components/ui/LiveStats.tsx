@@ -16,7 +16,9 @@ export function LiveStats() {
         <span className="text-3xl font-medium tracking-tighter leading-[0.95] text-center">
           Student<br />Built
         </span>
-        <span className="text-xs text-foreground/50 mt-1 tracking-wider font-medium text-center">By students, for students</span>
+        {/* opacity, not text-foreground/50: this caption sits on the bg-ink
+            card, where a near-black colour at 50% was invisible (1:1). */}
+        <span className="text-xs opacity-70 mt-1 tracking-wider font-medium text-center">By students, for students</span>
       </div>
     </div>
   );

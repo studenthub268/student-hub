@@ -483,7 +483,7 @@ export default function AdminPanel() {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${badgeColor}`}>{badgeLabel}</span>
                         </div>
                         <p className="text-xs text-foreground/60 font-medium">{entry.reason}</p>
-                        <p className="text-xs text-foreground/50 font-medium">By {entry.blockedBy} · {new Date(entry.blockedAt).toLocaleDateString()}</p>
+                        <p className="text-xs text-foreground/70 font-medium">By {entry.blockedBy} · {new Date(entry.blockedAt).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <button onClick={() => handleUnblockIp(entry.ip)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
@@ -533,7 +533,7 @@ export default function AdminPanel() {
                       <p className="text-xs text-foreground/60 font-medium mt-0.5">
                         {res.subject} · {res.type} · {res.uploader?.name || "Anonymous"}
                       </p>
-                      <p className="text-xs text-foreground/50 font-medium">
+                      <p className="text-xs text-foreground/70 font-medium">
                         {res.likes} likes · {new Date(res.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -640,7 +640,7 @@ export default function AdminPanel() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
-                    <span className="text-xs text-foreground/50 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-foreground/70 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
                     {expandedMessage === msg.id ? <ChevronUp className="w-4 h-4 text-foreground/50" /> : <ChevronDown className="w-4 h-4 text-foreground/50" />}
                     <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
@@ -693,7 +693,7 @@ export default function AdminPanel() {
                         ))}
                       </div>
                       <p className="text-xs text-foreground/60 font-medium truncate">{u.email}</p>
-                      <p className="text-xs text-foreground/50 font-medium">
+                      <p className="text-xs text-foreground/70 font-medium">
                         {u.resourceCount} resource{u.resourceCount === 1 ? "" : "s"} · Joined {new Date(u.createdAt).toLocaleDateString()}
                       </p>
                     </div>

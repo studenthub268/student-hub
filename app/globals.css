@@ -8,17 +8,35 @@
 
 :root {
   color-scheme: light;
-  --background: #ffffff;
+  /* Low-glare palette: warm paper instead of pure white.
+     #ffffff on #111111 is an 18.9:1 contrast ratio — technically maximal,
+     and exactly why long reading sessions sting. These surfaces sit at ~3%
+     off white so the page keeps its crispness without the glare.
+     The dimmed-text alphas (text-foreground/60 and /70, used for every
+     caption and meta line) were checked against these values: /60 stays at
+     4.8:1 on the page and 4.65:1 on muted surfaces, so dulling the background
+     did NOT cost any text its WCAG AA pass. --foreground is therefore still
+     near-black on purpose — lightening it too would drop those alphas under
+     4.5:1. */
+  --background: #f8f7f4;
   --foreground: #111111;
   /* "Ink on paper" pair: the dark blocks (hero card, footer, primary
      buttons) paint with --ink and their text with --background. */
   --ink: #111111;
-  --surface: #ffffff;
-  --surface-muted: #f4f4f5;
-  --line: rgba(0, 0, 0, 0.1);
-  --line-strong: rgba(0, 0, 0, 0.25);
-  --accent: #0d9488;
-  --accent-contrast: #0d3d38;
+  --surface: #f8f7f4;
+  --surface-muted: #eae9e4;
+  --line: rgba(17, 17, 17, 0.12);
+  --line-strong: rgba(17, 17, 17, 0.3);
+  /* Deeper, less saturated teal. #0d9488 was a bright mid-teal; this is the
+     same hue pulled well down until it reads calm on paper.
+     NOTE: at this depth DARK on-teal text is impossible (near-black lands at
+     3.1:1), so --accent-contrast is LIGHT — which is what the token always
+     meant ("the color that contrasts with the accent"). Light on this teal is
+     5.65:1, and still 4.89:1 at /90, so secondary text on the teal panels can
+     dim and keep passing AA. The previous pairing only managed 3.2:1 and
+     relied on being large. */
+  --accent: #0b6f63;
+  --accent-contrast: #f8f7f4;
 }
 
 @theme inline {
@@ -60,6 +78,20 @@ html {
   color: var(--background);
 }
 
+/* Every accent-filled surface carries the contrasting text colour, so no call
+   site has to remember the pair — and none can forget it. A dark accent makes
+   dark text unreadable (3.1:1), which is what the audit caught on the active
+   browse filter chip, the auth panels and several buttons.
+
+   Written unlayered on purpose: Tailwind's utilities live in @layer utilities,
+   and unlayered rules outrank layered ones, so this also corrects call sites
+   that pass an explicit text-foreground alongside bg-accent. It matches only
+   the literal class bg-accent — hover:bg-accent / group-hover:bg-accent are
+   separate class names and keep whatever colour their own state sets. */
+.bg-accent {
+  color: var(--accent-contrast);
+}
+
 /* Hard offset shadows. Defined once here instead of shadow-[...] arbitrary
    values at every call site. */
 @utility shadow-hard-sm {
@@ -94,7 +126,9 @@ html {
 }
 
 :root {
-  --shadow-color: rgba(0, 0, 0, 1);
+  /* 0.85, not solid black: the hard offset edges still read as ink on paper,
+     without the hot black-on-white vibration of a pure black shadow. */
+  --shadow-color: rgba(17, 17, 17, 0.85);
 }
 
 /* Elements that carry color transitions already animate the flip smoothly;
@@ -190,7 +224,7 @@ html {
    WebKit (Chrome/Edge/Safari) + Firefox equivalents. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  scrollbar-color: rgba(17, 17, 17, 0.3) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -210,18 +244,18 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.28);
+  background-color: rgba(17, 17, 17, 0.3);
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(13, 148, 136, 0.6);
+  background-color: rgba(11, 111, 99, 0.65);
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background-color: rgba(13, 148, 136, 0.85);
+  background-color: rgba(11, 111, 99, 0.9);
 }
 
 /* ---- Themed toasts (react-hot-toast) — neo-brutalist to match the site.

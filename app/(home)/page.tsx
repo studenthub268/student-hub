@@ -139,7 +139,7 @@ export default async function Home() {
             <div className="mt-12 sm:mt-16 relative z-10">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight mb-6">Accessible</h2>
               <div className="flex flex-col sm:flex-row justify-between items-end border-t border-line pt-6 gap-6">
-                <p className="max-w-md text-base font-medium text-accent-contrast/80 leading-relaxed">
+                <p className="max-w-md text-base font-medium text-accent-contrast/90 leading-relaxed">
                   Our platform adapts to your academic needs and provides a library that helps you ace your exams. Experience the future of studying today.
                 </p>
                 <Link

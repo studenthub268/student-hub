@@ -63,15 +63,15 @@ export default function ResetPasswordPage() {
       <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard">
 
         <div className="mb-8 text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-foreground">New Password</h2>
-          <p className="text-base text-foreground/60 font-medium tracking-wider mt-2">
+          <h2 className="text-4xl font-bold tracking-tight">New Password</h2>
+          <p className="text-base opacity-90 font-medium tracking-wider mt-2">
             Set a strong new password for your account
           </p>
         </div>
 
         <form onSubmit={handlePasswordReset} noValidate className="space-y-6">
           <div>
-            <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">New Password</label>
+            <label className="mb-2 block text-sm font-bold tracking-wider">New Password</label>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Confirm New Password</label>
+            <label className="mb-2 block text-sm font-bold tracking-wider">Confirm New Password</label>
             <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

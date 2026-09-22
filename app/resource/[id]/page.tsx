@@ -107,10 +107,13 @@ export default async function ResourceDetailPage({
   const typeConfig = getTypeConfig(resource.type);
 
   const getFileIcon = (fileType: string | null) => {
-    if (!fileType) return <File size={48} className="text-foreground/60" strokeWidth={1} />;
-    if (fileType.includes("pdf")) return <FileText size={48} className="text-foreground" strokeWidth={1} />;
-    if (fileType.includes("image")) return <FileImage size={48} className="text-foreground" strokeWidth={1} />;
-    return <File size={48} className="text-foreground/60" strokeWidth={1} />;
+    // No colour of its own: this icon is dropped both on a light preview pane
+    // and inside an accent-filled tile, so it inherits whichever context it
+    // lands in instead of hardcoding the dark body colour.
+    if (!fileType) return <File size={48} strokeWidth={1} />;
+    if (fileType.includes("pdf")) return <FileText size={48} strokeWidth={1} />;
+    if (fileType.includes("image")) return <FileImage size={48} strokeWidth={1} />;
+    return <File size={48} strokeWidth={1} />;
   };
 
   const isPDF = resource.fileType?.includes("pdf");

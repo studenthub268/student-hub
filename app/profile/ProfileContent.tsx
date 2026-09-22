@@ -35,13 +35,13 @@ export default function ProfileContent({
             <div className="mx-auto w-fit rounded-full border-4 border-ink">
               <Avatar image={profile?.image} name={profile?.name} email={profile?.email} size={88} />
             </div>
-            <h1 className="mt-6 text-2xl font-black tracking-tight text-foreground">
+            <h1 className="mt-6 text-2xl font-black tracking-tight">
               {profile?.name || "Student"}
             </h1>
-            <p className="mt-1 text-sm font-medium text-foreground/60 break-all">
+            <p className="mt-1 text-sm font-medium opacity-90 break-all">
               {profile?.email}
             </p>
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold tracking-wider text-foreground/60">
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold tracking-wider opacity-90">
               <Calendar className="h-3.5 w-3.5" />
               Joined {joinDate}
             </div>
@@ -52,7 +52,7 @@ export default function ProfileContent({
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard flex flex-col items-center justify-center text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent border-2 border-ink mb-4">
-              <FileText className="h-6 w-6 text-foreground" strokeWidth={2} />
+              <FileText className="h-6 w-6 text-accent-contrast" strokeWidth={2} />
             </div>
             <span className="text-4xl font-black tracking-tighter text-foreground">{resources.length}</span>
             <span className="text-xs font-bold tracking-wider text-foreground/60 mt-1">Uploads</span>
@@ -60,7 +60,7 @@ export default function ProfileContent({
 
           <div className="rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard flex flex-col items-center justify-center text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent border-2 border-ink mb-4">
-              <Heart className="h-6 w-6 text-foreground" strokeWidth={2} />
+              <Heart className="h-6 w-6 text-accent-contrast" strokeWidth={2} />
             </div>
             <span className="text-4xl font-black tracking-tighter text-foreground">{totalLikes}</span>
             <span className="text-xs font-bold tracking-wider text-foreground/60 mt-1">Likes Received</span>
@@ -76,7 +76,7 @@ export default function ProfileContent({
           </h2>
           <Link
             href="/upload"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border-2 border-ink bg-accent px-5 py-2.5 text-sm font-bold tracking-wider text-foreground hover:-translate-y-1 hover:shadow-hard-accent transition-all"
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border-2 border-ink bg-accent px-5 py-2.5 text-sm font-bold tracking-wider hover:-translate-y-1 hover:shadow-hard-accent transition-all"
           >
             <Upload className="h-4 w-4" />
             Upload New

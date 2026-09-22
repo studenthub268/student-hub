@@ -143,18 +143,22 @@ export function LoginForm() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-ink bg-accent shadow-hard-lg overflow-hidden">
+    // text-accent-contrast: the whole card is accent-coloured, so every string
+    // on it inherits the light on-teal colour. Dark text here measured 3.1:1.
+    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-ink bg-accent text-accent-contrast shadow-hard-lg overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2">
         {/* Form side — roomy spacing so it matches the panel's height */}
         <div className="p-6 sm:p-8 lg:p-9 flex flex-col justify-center">
           <div className="mb-8">
-            <h2 className="text-3xl sm:text-5xl font-extrabold leading-none tracking-tight text-foreground">Welcome back</h2>
-            <p className="text-sm sm:text-base text-foreground/60 font-medium tracking-wider mt-2">Sign in to your account</p>
+            <h2 className="text-3xl sm:text-5xl font-extrabold leading-none tracking-tight">Welcome back</h2>
+            {/* opacity-90, not a dimmed colour: at this panel's contrast budget
+                (5.65:1 max) anything below 90% opacity drops under 4.5:1. */}
+            <p className="text-sm sm:text-base opacity-90 font-medium tracking-wider mt-2">Sign in to your account</p>
           </div>
 
           <form onSubmit={handleLogin} noValidate className="space-y-6">
             <div>
-              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Email</label>
+              <label className="mb-2 block text-sm font-bold tracking-widest">Email</label>
               <input
                 type="email"
                 value={email}
@@ -167,10 +171,10 @@ export function LoginForm() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-bold text-foreground tracking-widest">Password</label>
+                <label className="block text-sm font-bold tracking-widest">Password</label>
                 <Link
                   href="/login/forgot-password"
-                  className="text-xs font-bold text-foreground/60 hover:text-foreground hover:underline underline-offset-2 transition-colors tracking-wider"
+                  className="text-xs font-bold opacity-90 hover:opacity-100 hover:underline underline-offset-2 transition-all tracking-wider"
                 >
                   Forgot password?
                 </Link>
@@ -227,11 +231,11 @@ export function LoginForm() {
 
       {/* Mobile-only OAuth + signup toggle — the black brand panel is hidden on small screens */}
       <div className="lg:hidden flex flex-col gap-4 border-t-2 border-line p-6 sm:p-8">
-        <p className="text-center text-xs font-bold tracking-widest text-foreground/60">OR CONTINUE WITH</p>
+        <p className="text-center text-xs font-bold tracking-widest opacity-90">OR CONTINUE WITH</p>
         <OAuthButtons />
-        <p className="text-center text-sm font-medium text-foreground/70">
+        <p className="text-center text-sm font-medium opacity-90">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-bold text-foreground underline underline-offset-4 hover:text-background transition-colors">
+          <Link href="/signup" className="font-bold underline underline-offset-4 hover:opacity-80 transition-all">
             Sign up
           </Link>
         </p>

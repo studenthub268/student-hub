@@ -127,12 +127,14 @@ export function SignupForm() {
 
   if (submitted) {
     return (
-      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard-lg">
+      // text-accent-contrast: the card is accent-coloured, so its text is the
+      // light on-teal colour (dark text here measured 3.1:1).
+      <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent text-accent-contrast p-8 sm:p-10 shadow-hard-lg">
         <div className="text-center space-y-6">
           <div className="bg-surface rounded-2xl border-2 border-ink p-6 shadow-hard-sm">
-            <p className="text-lg font-bold text-foreground tracking-tight mb-2">Check your inbox</p>
-            <p className="text-sm font-medium text-foreground/70">
-              We&apos;ve sent a verification link to <span className="font-bold text-foreground">{email}</span>.
+            <p className="text-lg font-bold tracking-tight mb-2">Check your inbox</p>
+            <p className="text-sm font-medium opacity-90">
+              We&apos;ve sent a verification link to <span className="font-bold">{email}</span>.
               Click the link to activate your account — the link expires in 24 hours.
             </p>
           </div>
@@ -144,13 +146,13 @@ export function SignupForm() {
               setPassword("");
               setConfirmPassword("");
             }}
-            className="text-sm font-bold text-foreground underline underline-offset-4 hover:text-foreground/60 transition-colors"
+            className="text-sm font-bold underline underline-offset-4 hover:opacity-80 transition-all"
           >
             Didn&apos;t get the email? Try again
           </button>
           <Link
             href="/login"
-            className="block text-sm font-bold text-foreground/60 hover:text-foreground transition-colors"
+            className="block text-sm font-bold opacity-90 hover:opacity-100 transition-all"
           >
             Already verified? Log in
           </Link>
@@ -160,18 +162,20 @@ export function SignupForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-ink bg-accent shadow-hard-lg overflow-hidden">
+    <div className="mx-auto w-full max-w-4xl rounded-[2rem] border-2 border-ink bg-accent text-accent-contrast shadow-hard-lg overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2">
         {/* Form side */}
         <div className="p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
           <div className="mb-7">
-            <h2 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-foreground">Create an account</h2>
-            <p className="text-sm sm:text-base text-foreground/60 font-medium tracking-wider mt-2">Join the student hub today</p>
+            <h2 className="text-5xl sm:text-6xl font-extrabold tracking-tight">Create an account</h2>
+            {/* opacity-90: this panel tops out at 5.65:1, so secondary text
+                cannot dim further without falling under 4.5:1. */}
+            <p className="text-sm sm:text-base opacity-90 font-medium tracking-wider mt-2">Join the student hub today</p>
           </div>
 
           <form onSubmit={handleSignup} noValidate className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Full Name</label>
+              <label className="mb-2 block text-sm font-bold tracking-widest">Full Name</label>
               <input
                 type="text"
                 value={name}
@@ -183,7 +187,7 @@ export function SignupForm() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Email</label>
+              <label className="mb-2 block text-sm font-bold tracking-widest">Email</label>
               <input
                 type="email"
                 value={email}
@@ -195,7 +199,7 @@ export function SignupForm() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Password</label>
+              <label className="mb-2 block text-sm font-bold tracking-widest">Password</label>
               <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -206,7 +210,7 @@ export function SignupForm() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-foreground tracking-widest">Confirm Password</label>
+              <label className="mb-2 block text-sm font-bold tracking-widest">Confirm Password</label>
               <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -217,13 +221,13 @@ export function SignupForm() {
             </div>
 
             {/* Passive consent — submitting the form accepts the policies */}
-            <p className="text-xs font-medium text-foreground/70 leading-snug text-center px-2">
+            <p className="text-xs font-medium opacity-90 leading-snug text-center px-2">
               By signing up, you accept our{" "}
               <a
                 href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-foreground underline underline-offset-2 hover:text-accent transition-colors"
+                className="font-bold underline underline-offset-2 hover:opacity-80 transition-all"
               >
                 Terms of Service
               </a>{" "}
@@ -232,7 +236,7 @@ export function SignupForm() {
                 href="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-foreground underline underline-offset-2 hover:text-accent transition-colors"
+                className="font-bold underline underline-offset-2 hover:opacity-80 transition-all"
               >
                 Privacy Policy
               </a>
@@ -282,11 +286,11 @@ export function SignupForm() {
 
       {/* Mobile-only OAuth + login toggle — the black brand panel is hidden on small screens */}
       <div className="lg:hidden flex flex-col gap-4 border-t-2 border-line p-6 sm:p-8">
-        <p className="text-center text-xs font-bold tracking-widest text-foreground/60">OR SIGN UP WITH</p>
+        <p className="text-center text-xs font-bold tracking-widest opacity-90">OR SIGN UP WITH</p>
         <OAuthButtons />
-        <p className="text-center text-sm font-medium text-foreground/70">
+        <p className="text-center text-sm font-medium opacity-90">
           Already have an account?{" "}
-          <Link href="/login" className="font-bold text-foreground underline underline-offset-4 hover:text-background transition-colors">
+          <Link href="/login" className="font-bold underline underline-offset-4 hover:opacity-80 transition-all">
             Log in
           </Link>
         </p>

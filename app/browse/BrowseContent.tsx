@@ -44,8 +44,10 @@ function FilterPill({ label, active, count, disabled, pending, className, onClic
       {label}
       {typeof count === "number" && (
         <span
+          // Active pill is accent-filled, so the badge inherits the chip's
+          // on-accent colour instead of forcing the dark body colour onto it.
           className={`text-xs font-bold tabular-nums ${
-            active ? "text-foreground" : "text-foreground/60"
+            active ? "" : "text-foreground/60"
           }`}
         >
           {count}

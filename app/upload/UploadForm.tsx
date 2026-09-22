@@ -293,8 +293,10 @@ export default function UploadForm() {
         {!file ? (
           <div
             {...getRootProps()}
+            // Drag state is an accent TINT, not a fill: the copy inside is
+            // dark, and a solid accent would leave it unreadable mid-drag.
             className={`mt-2 flex cursor-pointer flex-col items-center justify-center rounded-[1rem] border-2 border-dashed border-ink px-6 py-12 transition-all ${
-              isDragActive ? "bg-accent scale-[1.02]" : "bg-surface-muted hover:bg-surface-muted"
+              isDragActive ? "bg-accent/15 scale-[1.02]" : "bg-surface-muted hover:bg-surface-muted"
             }`}
           >
             <input {...getInputProps()} />
@@ -312,7 +314,7 @@ export default function UploadForm() {
         ) : (
           <div className="mt-2 flex items-center justify-between rounded-[1rem] border-2 border-ink bg-surface p-4 shadow-hard-sm">
             <div className="flex items-center gap-4 overflow-hidden">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[0.5rem] bg-accent border-2 border-ink text-foreground">
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[0.5rem] bg-accent border-2 border-ink text-accent-contrast">
                 <File size={24} strokeWidth={1.5} />
               </div>
               <div className="min-w-0 flex-1">

@@ -188,7 +188,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
           {/* Empty state — nothing typed: suggest a few subjects */}
           {trimmed.length === 0 && (
             <div className="px-5 py-4">
-              <p className="text-[10px] font-bold tracking-widest text-foreground/50 uppercase mb-3">Try a subject</p>
+              <p className="text-xs font-bold tracking-widest text-foreground/70 uppercase mb-3">Try a subject</p>
               <div className="flex flex-wrap gap-2">
                 {SUBJECTS.filter((s) =>
                   ["Programming Fundamentals", "Circuit Analysis and Design", "Electricity and Magnetism"].includes(s)
@@ -208,7 +208,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
           {trimmed.length >= 2 && suggestions.length === 0 && (
             <div className="px-6 py-8 text-center">
               <p className="text-sm font-bold tracking-wider text-foreground/60">No matches for “{query.trim()}”</p>
-              <p className="text-xs font-medium text-foreground/50 mt-1">Press Enter to search everything</p>
+              <p className="text-xs font-medium text-foreground/70 mt-1">Press Enter to search everything</p>
             </div>
           )}
 
@@ -233,7 +233,7 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
                 </span>
               </span>
               <span
-                className={`text-[10px] font-bold tracking-widest px-2.5 py-0.5 rounded-full border border-ink flex-shrink-0 transition-colors ${
+                className={`text-xs font-bold tracking-widest px-2.5 py-0.5 rounded-full border border-ink flex-shrink-0 transition-colors ${
                   item.type === "Subject"
                     ? "bg-surface text-foreground group-hover:bg-ink group-hover:on-ink"
                     : "bg-accent text-accent-contrast"
@@ -246,8 +246,8 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
 
           {/* Footer hint */}
           <div className="px-6 py-3 bg-surface-muted border-t border-line flex items-center justify-between">
-            <span className="text-[10px] font-bold tracking-widest text-foreground/50 uppercase">Search</span>
-            <span className="text-[10px] font-medium text-foreground/50">
+            <span className="text-xs font-bold tracking-widest text-foreground/70 uppercase">Search</span>
+            <span className="text-xs font-medium text-foreground/70">
               {/* Touch has no Esc — say what actually closes it there. */}
               <span className="sm:hidden">Tap outside to close</span>
               <span className="hidden sm:inline">Enter for full results · Esc to close</span>

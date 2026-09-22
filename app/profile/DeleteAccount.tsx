@@ -107,7 +107,7 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
                   onChange={(e) => setConfirmText(e.target.value)}
                   placeholder="DELETE MY ACCOUNT"
                   autoComplete="off"
-                  className="w-full h-12 px-4 rounded-xl border-2 border-ink bg-surface text-sm font-bold text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/50"
+                  className="w-full h-12 px-4 rounded-xl border-2 border-ink bg-surface text-sm font-bold text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/70"
                 />
               </div>
 

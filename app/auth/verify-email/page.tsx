@@ -46,12 +46,12 @@ export default function VerifyEmailPage() {
       <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard">
 
         <div className="mb-8 text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-foreground">
+          <h2 className="text-4xl font-bold tracking-tight">
             {status === "loading" && "Verifying..."}
             {status === "success" && "Email Verified!"}
             {status === "error" && "Verification Failed"}
           </h2>
-          <p className="text-base text-foreground/60 font-medium tracking-wider mt-2">
+          <p className="text-base opacity-90 font-medium tracking-wider mt-2">
             {status === "loading" && "Please wait while we verify your email."}
             {status === "success" && "Your account is now active. You can log in and start exploring."}
             {status === "error" && (

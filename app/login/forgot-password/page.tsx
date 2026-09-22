@@ -39,14 +39,14 @@ export default function ForgotPasswordPage() {
 
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 mb-6 text-sm font-bold text-foreground/60 hover:text-foreground transition-colors tracking-wider"
+          className="inline-flex items-center gap-2 mb-6 text-sm font-bold opacity-90 hover:opacity-100 transition-all tracking-wider"
         >
           <ChevronLeft className="h-4 w-4" /> Back to login
         </Link>
 
         <div className="mb-8 text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-foreground">Reset Password</h2>
-          <p className="text-base text-foreground/60 font-medium tracking-wider mt-2">
+          <h2 className="text-4xl font-bold tracking-tight">Reset Password</h2>
+          <p className="text-base opacity-90 font-medium tracking-wider mt-2">
             Enter your email to receive a recovery link
           </p>
         </div>
@@ -54,15 +54,15 @@ export default function ForgotPasswordPage() {
         {submitted ? (
           <div className="text-center space-y-6">
             <div className="bg-surface rounded-2xl border-2 border-ink p-6 shadow-hard-sm">
-              <p className="text-lg font-bold text-foreground tracking-tight mb-2">Check your inbox</p>
-              <p className="text-sm font-medium text-foreground/70">
-                We&apos;ve sent a password reset link to <span className="font-bold text-foreground">{email}</span>.
+              <p className="text-lg font-bold tracking-tight mb-2">Check your inbox</p>
+              <p className="text-sm font-medium opacity-90">
+                We&apos;ve sent a password reset link to <span className="font-bold">{email}</span>.
                 Please follow the link in that email to reset your password.
               </p>
             </div>
             <button
               onClick={() => setSubmitted(false)}
-              className="text-sm font-bold text-foreground underline underline-offset-4 hover:text-foreground/60 transition-colors"
+              className="text-sm font-bold underline underline-offset-4 hover:opacity-80 transition-all"
             >
               Didn&apos;t get the email? Try again
             </button>
@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleResetRequest} noValidate className="space-y-6">
             <div>
-              <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Email Address</label>
+              <label className="mb-2 block text-sm font-bold tracking-wider">Email Address</label>
               <input
                 type="email"
                 value={email}

@@ -150,7 +150,7 @@ export default function ContactPage() {
           {isSent ? (
             <div className="flex flex-col items-center justify-center h-full py-16 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent border-2 border-ink mb-6">
-                <CheckCircle className="h-10 w-10 text-foreground" strokeWidth={2} />
+                <CheckCircle className="h-10 w-10 text-accent-contrast" strokeWidth={2} />
               </div>
               <h3 className="text-2xl font-black tracking-tight text-foreground">Message Sent!</h3>
               <p className="mt-3 text-foreground/60 font-medium max-w-xs">

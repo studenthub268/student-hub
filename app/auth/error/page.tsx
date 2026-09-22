@@ -74,14 +74,14 @@ export default async function AuthErrorPage({
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink bg-amber-100">
             <AlertTriangle className="h-7 w-7 text-amber-600" strokeWidth={2} />
           </div>
-          <h2 className="text-4xl font-bold tracking-tight text-foreground">
+          <h2 className="text-4xl font-bold tracking-tight">
             {view.heading}
           </h2>
-          <p className="text-base text-foreground/60 font-medium tracking-wider mt-2">
+          <p className="text-base opacity-90 font-medium tracking-wider mt-2">
             {view.message}
           </p>
           {error && (
-            <p className="mt-3 text-xs font-medium tracking-wider text-foreground/60">
+            <p className="mt-3 text-xs font-medium tracking-wider opacity-90">
               Error code: {error}
             </p>
           )}

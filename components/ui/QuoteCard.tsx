@@ -43,7 +43,7 @@ export function QuoteCard() {
           <p className="text-sm sm:text-base font-medium text-foreground/70 text-center leading-snug italic max-w-[90%]">
             &ldquo;{quote.text}&rdquo;
           </p>
-          <span className="text-xs text-foreground/50 mt-2 font-semibold tracking-wider">
+          <span className="text-xs text-foreground/70 mt-2 font-semibold tracking-wider">
             &mdash; {quote.author}
           </span>
         </>
