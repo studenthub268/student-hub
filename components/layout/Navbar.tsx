@@ -54,7 +54,9 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 pb-4">
+    /* z-[60]: above the cookie card's z-50 (a same-tier sibling later in the
+       DOM would otherwise paint over the open menu's dimmed backdrop). */
+    <nav className="sticky top-4 z-[60] w-full px-4 sm:px-6 lg:px-8 pb-4">
       {/* z-[110] keeps the bar (its X / search buttons) tappable above the
           menu overlay's click-away catcher below. */}
       <div className="relative z-[110] mx-auto max-w-7xl">
@@ -116,13 +118,21 @@ export function Navbar() {
 
       </div>
 
-      {/* Mobile Menu — fixed popup over the page (not in-flow, so it can't
-          push layout); tapping anywhere outside it closes it. */}
+      {/* Mobile Menu — same popup presentation as SearchPopup: the page dims
+          and blurs behind a floating card that scales in. Fixed, so it can't
+          push layout; tapping the backdrop closes it.
+          z-[100] (below the bar's z-[110]) on purpose: the bar stays crisp and
+          the hamburger's X stays tappable, so the menu can be closed from
+          either the button or the backdrop. */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-[100]">
-          {/* Click-away catcher — transparent, sits behind the panel */}
-          <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-ink bg-surface/95 backdrop-blur-xl shadow-hard-lg scale-in origin-top">
+        <div className="md:hidden fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[5.5rem]">
+          <div className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            className="relative w-full max-w-xl max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-[2rem] border-2 border-ink bg-surface shadow-hard-lg scale-in"
+          >
             
             {/* Nav Links */}
             {NAV_LINKS.map((link, index) => (
