@@ -158,17 +158,19 @@ export default async function Home() {
 
       {/* Recent Resources — server-rendered with the page */}
       <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full border-t border-line mt-6">
-        {/* Heading and its action share one cluster (previously split by
-            justify-between, which pushed "Go to Browse" a full viewport
-            width away from the title it belongs to). */}
-        <div className="mb-12">
-          <h2 className="text-3xl sm:text-4xl font-medium tracking-tight">Recent Uploads</h2>
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <p className="text-foreground/60 font-medium">The latest materials shared by your community.</p>
-            <Link href="/browse" className="inline-flex items-center gap-2 font-bold tracking-wider text-xs hover:opacity-70 transition-opacity">
-              Go to Browse <MoveUpRight className="w-4 h-4" />
-            </Link>
+        {/* Heading left, action right. The two are tied together by sharing
+            this row (and by the link aligning to the heading block's baseline),
+            rather than by sitting next to each other. Always rendered — the
+            old `hidden sm:` meant phones had no path to Browse at all — and it
+            wraps under the heading on narrow widths instead of squeezing it. */}
+        <div className="mb-12 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-medium tracking-tight">Recent Uploads</h2>
+            <p className="mt-3 text-foreground/60 font-medium">The latest materials shared by your community.</p>
           </div>
+          <Link href="/browse" className="inline-flex items-center gap-2 font-bold tracking-wider text-xs hover:opacity-70 transition-opacity">
+            Go to Browse <MoveUpRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {recentResources.length === 0 ? (
