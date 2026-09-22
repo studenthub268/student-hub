@@ -4,7 +4,7 @@
   "description": "Study Smarter. Share More. — A peer-powered academic resource platform.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f0f",
+  "background_color": "#ffffff",
   "theme_color": "#0D9488",
   "orientation": "any",
   "icons": [

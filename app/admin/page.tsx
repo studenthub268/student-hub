@@ -428,7 +428,7 @@ export default function AdminPanel() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm font-bold">{b.ip}</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-red-100 text-red-700 border-red-300">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold border bg-red-100 text-red-700 border-red-300">
                           Attack
                         </span>
                       </div>
@@ -480,7 +480,7 @@ export default function AdminPanel() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-sm font-mono">{entry.ip}</p>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>{badgeLabel}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${badgeColor}`}>{badgeLabel}</span>
                         </div>
                         <p className="text-xs text-foreground/60 font-medium">{entry.reason}</p>
                         <p className="text-xs text-foreground/50 font-medium">By {entry.blockedBy} · {new Date(entry.blockedAt).toLocaleDateString()}</p>
@@ -571,8 +571,8 @@ export default function AdminPanel() {
               <div key={report.id} className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 rounded-xl border-2 border-red-100 bg-surface">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">Report</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-muted text-foreground border border-line">{report.reason}</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">Report</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-surface-muted text-foreground border border-line">{report.reason}</span>
                     </div>
                     <p className="font-bold text-sm mt-1">Resource: {reportedResource?.title || "Deleted"}</p>
                     <p className="text-xs text-foreground/60 font-medium mt-0.5">
@@ -679,15 +679,15 @@ export default function AdminPanel() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-bold text-sm truncate">{u.name || "Student"}</p>
                         {isUserAdmin && (isPermanent ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner · Admin</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner · Admin</span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/15 text-accent border border-accent/30">Admin</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-accent/15 text-accent border border-accent/30">Admin</span>
                         ))}
                         {!u.emailVerified && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200">Unverified</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">Unverified</span>
                         )}
                         {providerChips.map((p) => (
-                          <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-muted text-foreground border border-line">
+                          <span key={p} className="px-2 py-0.5 rounded-full text-xs font-bold bg-surface-muted text-foreground border border-line">
                             {p === "credentials" ? "Email" : p === "github" ? "GitHub" : p === "google" ? "Google" : p}
                           </span>
                         ))}
@@ -749,7 +749,7 @@ export default function AdminPanel() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-sm">{admin.email}</p>
                       {permanent && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner</span>
                       )}
                     </div>
                     <p className="text-xs text-foreground/60 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
@@ -824,7 +824,7 @@ export default function AdminPanel() {
                       <div key={s.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-sm font-bold">{s.email}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
                             s.reason === "bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
                           }`}>{s.reason}</span>
                         </div>
@@ -845,7 +845,7 @@ export default function AdminPanel() {
                     {emailStats.recentFailures.map((f) => (
                       <div key={f.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
                         <div className="flex items-center gap-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
                             f.eventType === "email.bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
                           }`}>{f.eventType === "email.bounced" ? "Bounce" : "Complaint"}</span>
                           <span className="text-sm font-medium">{f.to}</span>

@@ -45,7 +45,10 @@ async function getRecentResources() {
       .from(resources)
       .leftJoin(users, eq(resources.uploaderId, users.id))
       .orderBy(desc(resources.createdAt))
-      .limit(3);
+      // Six, not three: with only one or two uploads the section rendered a
+      // single lonely card against a wide empty row. A fuller grid (and the
+      // centred single-card layout below) keeps the section looking finished.
+      .limit(6);
   } catch {
     return [];
   }
@@ -85,9 +88,13 @@ export default async function Home() {
       <section className="px-6 sm:px-6 lg:px-8 py-8 sm:py-10 max-w-[1400px] mx-auto w-full overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
-          {/* Top Left: Massive Headline */}
-          <div className="lg:col-span-8 flex flex-col justify-center pb-6 lg:pb-0 relative">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.88] tracking-[-0.035em] uppercase">
+          {/* Top Left: Massive Headline.
+              justify-start (not center): the Welcome card's min-height made
+              the row taller than the headline block, so centring pushed the
+              H1 below the card's top edge and the card read as the page's
+              first element. Top-aligned, the value proposition leads. */}
+          <div className="lg:col-span-8 flex flex-col justify-start pb-6 lg:pb-0 relative">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold leading-[0.88] tracking-[-0.035em] uppercase">
               STUDY SMARTER.<br/>
               <span className="text-accent">SHARE MORE.</span>
             </h1>
@@ -96,7 +103,7 @@ export default async function Home() {
           {/* Top Right: Welcome Block (Button) */}
           <Link
             href="/browse"
-            className="lg:col-span-4 bg-ink on-ink rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between shadow-xl relative overflow-hidden group min-h-[280px] hover:scale-[1.02] transition-all hover:shadow-2xl border-2 border-transparent hover:border-accent"
+            className="lg:col-span-4 bg-ink on-ink rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between shadow-xl relative overflow-hidden group min-h-[240px] hover:scale-[1.02] transition-all hover:shadow-2xl border-2 border-transparent hover:border-accent"
           >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-800/40 via-ink to-ink opacity-50"></div>
             <div className="relative z-10 flex justify-between items-start">
@@ -113,10 +120,13 @@ export default async function Home() {
             </div>
           </Link>
 
-          {/* Bottom Left: Branding + Live Stats */}
+          {/* Bottom Left: Branding + Live Stats.
+              Both children stretch to an equal share of the column height, so
+              this stack's top and bottom edges line up with the teal block
+              beside it instead of leaving a ragged, short column. */}
           <div className="lg:col-span-4 flex flex-col gap-6 lg:gap-8">
-            <QuoteCard />
-            <LiveStats />
+            <div className="flex-1 min-h-36"><QuoteCard /></div>
+            <div className="flex-1 min-h-36"><LiveStats /></div>
           </div>
 
           {/* Bottom Right: Large Lime Accent Block */}
@@ -127,7 +137,7 @@ export default async function Home() {
               <Link href="/browse?type=quiz" className="border border-accent-contrast/40 text-accent-contrast px-4 py-1.5 rounded-full text-xs font-medium hover:bg-accent-contrast hover:text-accent transition-colors">Quizzes</Link>
             </div>
             <div className="mt-12 sm:mt-16 relative z-10">
-              <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal tracking-tight mb-6">Accessible</h2>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight mb-6">Accessible</h2>
               <div className="flex flex-col sm:flex-row justify-between items-end border-t border-line pt-6 gap-6">
                 <p className="max-w-md text-base font-medium text-accent-contrast/80 leading-relaxed">
                   Our platform adapts to your academic needs and provides a library that helps you ace your exams. Experience the future of studying today.
@@ -148,14 +158,17 @@ export default async function Home() {
 
       {/* Recent Resources — server-rendered with the page */}
       <section className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1400px] mx-auto w-full border-t border-line mt-6">
-        <div className="flex justify-between items-end mb-12">
-          <div className="space-y-2">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight">Recent Uploads</h2>
+        {/* Heading and its action share one cluster (previously split by
+            justify-between, which pushed "Go to Browse" a full viewport
+            width away from the title it belongs to). */}
+        <div className="mb-12">
+          <h2 className="text-3xl sm:text-4xl font-medium tracking-tight">Recent Uploads</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             <p className="text-foreground/60 font-medium">The latest materials shared by your community.</p>
+            <Link href="/browse" className="inline-flex items-center gap-2 font-bold tracking-wider text-xs hover:opacity-70 transition-opacity">
+              Go to Browse <MoveUpRight className="w-4 h-4" />
+            </Link>
           </div>
-          <Link href="/browse" className="hidden sm:inline-flex items-center gap-2 font-bold tracking-wider text-xs hover:opacity-70 transition-opacity">
-            Go to Browse <MoveUpRight className="w-4 h-4" />
-          </Link>
         </div>
 
         {recentResources.length === 0 ? (
@@ -163,7 +176,12 @@ export default async function Home() {
             <p className="text-foreground/60 font-medium text-sm">No resources found yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+          // One upload: centre the card at a comfortable width instead of
+          // pinning it to the left edge of a three-column grid.
+          <div className={recentResources.length === 1
+            ? "mx-auto w-full max-w-md"
+            : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"}>
+
             {recentResources.map((resource) => (
               <div key={resource.id} className="h-full">
                 <ResourceCard resource={resource} />

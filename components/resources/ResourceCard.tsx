@@ -24,7 +24,7 @@ export function ResourceCard({ resource }: ResourceCardProps) {
             </div>
           </div>
 
-          <h3 className="text-xl sm:text-2xl font-normal text-foreground mb-4 leading-tight line-clamp-3 group-hover:underline decoration-2 underline-offset-4">
+          <h3 className="text-lg sm:text-xl font-normal text-foreground mb-4 leading-tight line-clamp-3 group-hover:underline decoration-2 underline-offset-4">
             {resource.title}
           </h3>
 

@@ -1,23 +1,17 @@
 @import "tailwindcss";
 
-/* Class-based dark mode: `dark:` utilities respond to the .dark class on
-   <html> (set pre-paint by the inline script in app/layout.tsx), not the
-   OS media query — the user's explicit choice must win. */
-@custom-variant dark (&:where(.dark, .dark *));
-
 /* ---- Theme tokens ----
    All component colors resolve through these variables; utilities like
    bg-surface / border-ink / text-foreground map onto them via @theme below.
-   Dark mode = `dark` class on <html> (set before paint by the inline script
-   in app/layout.tsx; no flash). `color-scheme` also flips native widgets,
-   form controls and scrollbars. */
+   Single light theme by design — there is no dark-mode variant to keep in
+   sync, so every surface has exactly one value. */
 
 :root {
   color-scheme: light;
   --background: #ffffff;
   --foreground: #111111;
-  /* Inverse pair ("ink on paper"): used by text-on-ink elements so they
-     invert cleanly in dark mode (white text becomes near-black text). */
+  /* "Ink on paper" pair: the dark blocks (hero card, footer, primary
+     buttons) paint with --ink and their text with --background. */
   --ink: #111111;
   --surface: #ffffff;
   --surface-muted: #f4f4f5;
@@ -25,22 +19,6 @@
   --line-strong: rgba(0, 0, 0, 0.25);
   --accent: #0d9488;
   --accent-contrast: #0d3d38;
-}
-
-.dark {
-  color-scheme: dark;
-  /* Black-anchored neutrals: background pure black, surfaces near-black
-     gray steps — not a gray slab. */
-  --background: #050505;
-  --foreground: #e6e9e8;
-  --ink: #1a1a1a;
-  --surface: #0f0f0f;
-  --surface-muted: #181818;
-  --line: rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.2);
-  /* Deep teal: same hue as the brand, pulled way down for dark mode. */
-  --accent: #0b6e66;
-  --accent-contrast: #e8fffa;
 }
 
 @theme inline {
@@ -76,19 +54,14 @@ html {
   overscroll-behavior-y: none;
 }
 
-/* Text on ink-colored surfaces (hero cards, footer, primary buttons).
-   Light mode: background is white, ink black → white text. Dark mode: both
-   go dark, so text flips to the light foreground instead. */
+/* Text on ink-colored surfaces (hero cards, footer, primary buttons): the
+   ink is near-black, so the text is the page's near-white background. */
 .on-ink {
   color: var(--background);
 }
-.dark .on-ink {
-  color: var(--foreground);
-}
 
-/* Hard offset shadows, themed per mode. Defined once here instead of
-   shadow-[...] arbitrary values at every call site so dark mode can soften
-   them (black shadows vanish on dark ground; these glow). */
+/* Hard offset shadows. Defined once here instead of shadow-[...] arbitrary
+   values at every call site. */
 @utility shadow-hard-sm {
   box-shadow: 2px 2px 0px 0px var(--shadow-color);
 }
@@ -122,10 +95,6 @@ html {
 
 :root {
   --shadow-color: rgba(0, 0, 0, 1);
-}
-.dark {
-  /* Deep black shadow: depth on the raised dark surfaces, no glow. */
-  --shadow-color: rgba(0, 0, 0, 0.55);
 }
 
 /* Elements that carry color transitions already animate the flip smoothly;
@@ -179,6 +148,20 @@ html {
     opacity: 1;
   }
 }
+
+/* ---- Type scale ----
+   One ladder for the whole site; new markup picks the nearest rung instead
+   of inventing a size. No arbitrary text-[13px]-style values anywhere.
+
+     display   text-4xl sm:text-6xl lg:text-7xl   one per page (the H1)
+     section   text-3xl sm:text-4xl lg:text-5xl   section headings (H2)
+     title     text-lg sm:text-xl                 card titles (H3)
+     lead      text-base sm:text-lg               subtitles / intros
+     body      text-base                          default copy
+     small     text-sm                             dense UI, metadata
+     label     text-xs                             chips, badges, eyebrows
+
+   Rendered pages therefore show ~7 distinct sizes on desktop. */
 
 /* ---- Premium base ---- */
 /* NOTE: deliberately NO `scroll-behavior: smooth` on html. Next.js resets
@@ -239,14 +222,6 @@ html {
 
 ::-webkit-scrollbar-thumb:active {
   background-color: rgba(13, 148, 136, 0.85);
-}
-
-.dark * {
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.17);
 }
 
 /* ---- Themed toasts (react-hot-toast) — neo-brutalist to match the site.
@@ -334,10 +309,6 @@ html {
 :root {
   --shimmer-base: rgba(0, 0, 0, 0.04);
   --shimmer-sheen: rgba(0, 0, 0, 0.09);
-}
-.dark {
-  --shimmer-base: rgba(255, 255, 255, 0.05);
-  --shimmer-sheen: rgba(255, 255, 255, 0.11);
 }
 
 /* Escape hatch on loading skeletons: reveal only if loading drags on

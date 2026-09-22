@@ -136,10 +136,10 @@ export default function ContactPage() {
           </div>
 
           <div className="relative z-10 mt-12 flex gap-2">
-            <span className="px-3 py-1 bg-surface/10 rounded-full text-[10px] font-bold tracking-wider opacity-80">
+            <span className="px-3 py-1 bg-surface/10 rounded-full text-xs font-bold tracking-wider opacity-80">
               Student Developer
             </span>
-            <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-[10px] font-bold tracking-wider">
+            <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-xs font-bold tracking-wider">
               Open to Collaborate
             </span>
           </div>

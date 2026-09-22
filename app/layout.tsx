@@ -79,27 +79,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0D9488" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f0f0f" },
-  ],
+  themeColor: "#0D9488",
 };
-
-// Runs before first paint: reads the saved choice (localStorage `sh-theme`),
-// falls back to the OS preference, and sets the `dark` class on <html>.
-// Without this, a dark-theme visitor gets a white flash on every load.
-// Kept in sync with components/layout/ThemeToggle.tsx.
-const themeInitScript = `
-(function(){
-  try {
-    var t = localStorage.getItem('sh-theme');
-  } catch (e) {}
-  if (t !== 'light' && t !== 'dark') {
-    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-  if (t === 'dark') document.documentElement.classList.add('dark');
-})();
-`;
 
 export default function RootLayout({
   children,
@@ -107,14 +88,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} h-full antialiased`}
-      suppressHydrationWarning={true}
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
+    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
         <OfflineBanner />
         <VerificationBanner />

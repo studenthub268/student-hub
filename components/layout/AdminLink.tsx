@@ -82,7 +82,7 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
       >
         Admin
         {messageCount > 0 && (
-          <span className="ml-auto w-5 h-5 bg-red-500 text-background text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="ml-auto w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">
             {messageCount > 99 ? "99+" : messageCount}
           </span>
         )}
@@ -98,7 +98,7 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
     >
       Admin
       {messageCount > 0 && (
-        <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-background text-[10px] font-bold rounded-full flex items-center justify-center">
+        <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">
           {messageCount > 99 ? "99+" : messageCount}
         </span>
       )}

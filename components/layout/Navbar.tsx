@@ -6,7 +6,6 @@ import { Menu, X, ArrowLeft, Search } from "lucide-react";
 import NavbarSearch from "./NavbarSearch";
 import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
-import { ThemeToggle } from "./ThemeToggle";
 import SearchPopup from "./SearchPopup";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -142,9 +141,6 @@ export function Navbar() {
             {/* Admin Link (mobile) — inline with nav links; closes the menu on tap,
                 same as every other menu item */}
             <AdminLink dark onNavigate={() => setMobileOpen(false)} />
-
-            {/* Theme row — outside NavbarAuth so guests get it too */}
-            <ThemeToggle mobile />
 
             {/* Auth Section */}
             <NavbarAuth mobile onClose={() => setMobileOpen(false)} />

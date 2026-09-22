@@ -16,8 +16,10 @@ export function ContributeCta() {
       <div className="bg-ink on-ink rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 text-center relative overflow-hidden group">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-neutral-800/20 to-transparent opacity-50"></div>
         <div className="relative z-10">
-          <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter mb-6 italic uppercase">Ready to contribute?</h2>
-          <p className="text-xl opacity-60 font-medium mb-10 max-w-2xl mx-auto italic">
+          {/* Sentence case, not uppercase: a full sentence set in caps is
+              measurably slower to read and caps belong on short labels. */}
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tighter mb-6 italic">Ready to contribute?</h2>
+          <p className="text-base sm:text-lg opacity-60 font-medium mb-10 max-w-2xl mx-auto italic">
             Join the thousands of students already sharing their knowledge.
           </p>
           <Link href="/upload" className="inline-flex items-center gap-2 sm:gap-3 bg-accent text-accent-contrast border-2 border-ink px-6 sm:px-12 py-4 sm:py-5 rounded-full font-bold text-xs sm:text-sm tracking-wider hover:-translate-y-1 transition-all whitespace-nowrap">

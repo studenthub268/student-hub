@@ -117,7 +117,7 @@ export default function TrafficTab() {
             />
           ))}
         </div>
-        <div className="flex justify-between mt-2 text-[10px] font-bold text-foreground/60 tracking-wider">
+        <div className="flex justify-between mt-2 text-xs font-bold text-foreground/60 tracking-wider">
           <span>{dailySeries[0]?.day}</span>
           <span>Today</span>
         </div>

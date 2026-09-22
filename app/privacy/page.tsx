@@ -43,7 +43,7 @@ function C({ href, children }: { href: string; children: React.ReactNode }) {
 export default function PrivacyPage() {
   return (
     <div className="bg-surface min-h-screen">
-      <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-[15px] text-foreground/80">
+      <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-base text-foreground/80">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
           Student Hub
         </p>

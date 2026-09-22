@@ -10,6 +10,7 @@ import {
   requestNotificationPermission,
 } from "@/lib/notify";
 import { SUBJECTS, RESOURCE_TYPES, DEPARTMENTS } from "@/lib/constants";
+import { MAX_FILE_SIZE, MAX_FILE_SIZE_MB } from "@/lib/uploads";
 import { formatFileSize, getErrorMessage } from "@/lib/utils";
 import { uploadResource, checkDuplicateResources } from "@/lib/actions/resources";
 import Link from "next/link";
@@ -38,6 +39,17 @@ export default function UploadForm() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    // Reject oversized files at the drop, with the reason — the server would
+    // reject them anyway, and a silent no-op on drop looks like a broken page.
+    maxSize: MAX_FILE_SIZE,
+    onDropRejected: (rejections) => {
+      const tooLarge = rejections.some((r) => r.errors.some((e) => e.code === "file-too-large"));
+      toast.error(
+        tooLarge
+          ? `That file is over ${MAX_FILE_SIZE_MB}MB — please upload a smaller file.`
+          : "That file type isn't supported. Use PDF, PNG, JPG or DOCX."
+      );
+    },
     maxFiles: 1,
     accept: {
       'application/pdf': ['.pdf'],
@@ -60,21 +72,39 @@ export default function UploadForm() {
     new Promise<{ key: string; publicUrl: string; uploadId?: string }>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload");
+      // Bounded wait: without this a stalled connection leaves the button on
+      // "Uploading…" forever with no way for the user to know it died.
+      xhr.timeout = 120000;
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
           setUploadProgress(Math.min(99, Math.round((e.loaded / e.total) * 100)));
         }
       };
       xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText) as { key: string; publicUrl: string; uploadId?: string });
+          } catch {
+            reject(new Error("The server returned an unreadable response. Please try again."));
+          }
+          return;
+        }
+        // 413 comes from the hosting platform's body limit, not from the
+        // handler — its body is plain text, so parsing it would throw and the
+        // user would only see a generic "Upload failed".
+        if (xhr.status === 413) {
+          reject(new Error(`That file is too large to upload. Maximum size is ${MAX_FILE_SIZE_MB}MB.`));
+          return;
+        }
         try {
-          const data = JSON.parse(xhr.responseText) as { key: string; publicUrl: string; error?: string };
-          if (xhr.status >= 200 && xhr.status < 300) resolve(data);
-          else reject(new Error(data.error || "Failed to upload file"));
+          const data = JSON.parse(xhr.responseText) as { error?: string };
+          reject(new Error(data.error || "Failed to upload file"));
         } catch {
-          reject(new Error("Failed to upload file"));
+          reject(new Error(`Upload failed (server said ${xhr.status}). Please try again.`));
         }
       };
-      xhr.onerror = () => reject(new Error("Failed to upload file"));
+      xhr.onerror = () => reject(new Error("Upload failed — check your connection and try again."));
+      xhr.ontimeout = () => reject(new Error("The upload timed out. Please try again on a stronger connection."));
       xhr.send(formData);
     });
 
@@ -143,6 +173,13 @@ export default function UploadForm() {
 
     if (!subject || !type) {
       toast.error("Please select a subject and resource type");
+      return;
+    }
+
+    // Check size here too, not only in the dropzone: a file picked before its
+    // limit changed (or restored from a saved form) still reaches this path.
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error(`That file is over ${MAX_FILE_SIZE_MB}MB — please upload a smaller file.`);
       return;
     }
 
@@ -268,7 +305,7 @@ export default function UploadForm() {
               <p className="text-lg font-bold text-foreground">
                 Click to upload or drag and drop
               </p>
-              <p className="mt-2 text-sm font-medium text-foreground/60 tracking-wider">PDF, JPG, PNG, DOCX (up to 50MB)
+              <p className="mt-2 text-sm font-medium text-foreground/60 tracking-wider">PDF, JPG, PNG, DOCX (up to {MAX_FILE_SIZE_MB}MB)
               </p>
             </div>
           </div>

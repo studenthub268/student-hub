@@ -16,7 +16,7 @@ export default function Footer() {
                 className="w-8 h-8 rounded-full object-contain"
               />
             </div>
-            <span className="text-2xl font-black tracking-tighter group-hover:text-accent transition-colors">
+            <span className="text-lg font-black tracking-tighter group-hover:text-accent transition-colors">
               Student Hub
             </span>
           </div>
@@ -44,10 +44,10 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Student Hub. All rights reserved.
           </p>
           <div className="flex gap-2">
-            <span className="px-3 py-1 bg-surface/10 rounded-full text-[10px] font-bold tracking-wider opacity-80">
+            <span className="px-3 py-1 bg-surface/10 rounded-full text-xs font-bold tracking-wider opacity-80">
               Built by Students
             </span>
-            <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-[10px] font-bold tracking-wider">
+            <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-xs font-bold tracking-wider">
               For Students
             </span>
           </div>
