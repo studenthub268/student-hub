@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Heart, ArrowUpRight } from "lucide-react";
 import { Resource } from "@/lib/db/schema";
-import { formatFileSize } from "@/lib/utils";
+import { formatFileSize, formatFileType } from "@/lib/utils";
 
 interface ResourceCardProps {
   resource: Resource & { uploader?: { name: string | null } | null };
@@ -44,7 +44,7 @@ export function ResourceCard({ resource }: ResourceCardProps) {
             </div>
 
             <div className="flex items-center gap-2 bg-ink on-ink px-3 py-1.5 rounded-full text-xs tracking-wider">
-              <span className="uppercase">{resource.fileType?.split('/')[1] || 'FILE'}</span>
+              <span className="uppercase">{formatFileType(resource.fileType)}</span>
               <span className="opacity-50">•</span>
               <span>{formatFileSize(resource.fileSize ?? 0)}</span>
             </div>

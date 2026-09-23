@@ -45,10 +45,9 @@ async function getRecentResources() {
       .from(resources)
       .leftJoin(users, eq(resources.uploaderId, users.id))
       .orderBy(desc(resources.createdAt))
-      // Six, not three: with only one or two uploads the section rendered a
-      // single lonely card against a wide empty row. A fuller grid (and the
-      // centred single-card layout below) keeps the section looking finished.
-      .limit(6);
+      // Three: the home section is a teaser, not a feed — Browse owns the
+      // full list. Also matches the three-column desktop grid exactly.
+      .limit(3);
   } catch {
     return [];
   }
@@ -178,11 +177,15 @@ export default async function Home() {
             <p className="text-foreground/60 font-medium text-sm">No resources found yet</p>
           </div>
         ) : (
-          // One upload: centre the card at a comfortable width instead of
-          // pinning it to the left edge of a three-column grid.
-          <div className={recentResources.length === 1
-            ? "mx-auto w-full max-w-md"
-            : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"}>
+          // One or two uploads: centre the row at a comfortable width instead
+          // of pinning cards to the left edge of a three-column grid.
+          <div className={
+            recentResources.length === 1
+              ? "mx-auto w-full max-w-md"
+              : recentResources.length === 2
+                ? "mx-auto grid w-full max-w-2xl grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
+                : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
+          }>
 
             {recentResources.map((resource) => (
               <div key={resource.id} className="h-full">

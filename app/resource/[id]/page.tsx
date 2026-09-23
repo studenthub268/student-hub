@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { db } from "@/lib/db";
 import { resources, users, likes } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { unstable_cache } from "next/cache";
-import { ArrowLeft, User, Calendar, FileText, FileImage, File } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { getTypeConfig } from "@/lib/constants";
-import { formatFileSize } from "@/lib/utils";
+import { ResourceCard } from "@/components/resources/ResourceCard";
+import ResourcePreview from "./ResourcePreview";
 import ResourceActions from "./ResourceActions";
 
 // The page still runs per request (auth() reads cookies for the like state),
@@ -23,6 +23,7 @@ const queryResourceCached = (id: string) =>
           type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
           fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
           uploaderId: resources.uploaderId, professor: resources.professor,
+          department: resources.department,
           downloads: resources.downloads, likes: resources.likes, createdAt: resources.createdAt,
           uploader: { name: users.name },
         })
@@ -36,6 +37,43 @@ const queryResourceCached = (id: string) =>
 
 async function queryResource(id: string) {
   return queryResourceCached(id)();
+}
+
+/**
+ * "More like this" — same subject, newest first, current item excluded.
+ * Cached on its own key (and invalidated by the same revalidatePath calls as
+ * the main payload), so the extra section costs one cached query.
+ */
+const queryRelatedCached = (id: string, subject: string) =>
+  unstable_cache(
+    async () =>
+      db
+        .select({
+          id: resources.id, title: resources.title, description: resources.description,
+          type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
+          fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
+          uploaderId: resources.uploaderId, professor: resources.professor,
+          department: resources.department, downloads: resources.downloads, likes: resources.likes,
+          uploadKey: resources.uploadKey, createdAt: resources.createdAt,
+          uploader: { name: users.name },
+        })
+        .from(resources)
+        .leftJoin(users, eq(resources.uploaderId, users.id))
+        .where(and(eq(resources.subject, subject), ne(resources.id, id)))
+        .orderBy(desc(resources.createdAt))
+        .limit(3),
+    [`related-${id}`],
+    { revalidate: 300 }
+  );
+
+async function queryRelated(id: string, subject: string) {
+  try {
+    return await queryRelatedCached(id, subject)();
+  } catch {
+    // Decoration, not content: a failed related query must never take the
+    // whole page down with it.
+    return [];
+  }
 }
 
 // 404s must be decided before the response streams: the loading.tsx boundary
@@ -78,7 +116,6 @@ export default async function ResourceDetailPage({
   if (!UUID_RE.test(id)) notFound();
 
   let resource: Awaited<ReturnType<typeof queryResource>>[number] | null = null;
-  let hasLikedInitially = false;
 
   try {
     const rows = await queryResource(id);
@@ -91,6 +128,7 @@ export default async function ResourceDetailPage({
   if (!resource) notFound();
 
   const session = await auth();
+  let hasLikedInitially = false;
   if (session?.user) {
     try {
       const [like] = await db
@@ -105,141 +143,120 @@ export default async function ResourceDetailPage({
   }
 
   const typeConfig = getTypeConfig(resource.type);
+  const related = await queryRelated(id, resource.subject);
 
-  const getFileIcon = (fileType: string | null) => {
-    // No colour of its own: this icon is dropped both on a light preview pane
-    // and inside an accent-filled tile, so it inherits whichever context it
-    // lands in instead of hardcoding the dark body colour.
-    if (!fileType) return <File size={48} strokeWidth={1} />;
-    if (fileType.includes("pdf")) return <FileText size={48} strokeWidth={1} />;
-    if (fileType.includes("image")) return <FileImage size={48} strokeWidth={1} />;
-    return <File size={48} strokeWidth={1} />;
-  };
-
-  const isPDF = resource.fileType?.includes("pdf");
-  const isImage = resource.fileType?.includes("image");
+  const uploaderName = resource.uploader?.name || "Unknown";
+  const isOwner = Boolean(session?.user?.id) && session!.user!.id === resource.uploaderId;
 
   return (
-    <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-[1400px]">
-      <Link 
-        href="/browse" 
-        className="hidden md:inline-flex items-center text-sm font-medium text-foreground hover:opacity-70 mb-8 tracking-wider transition-opacity"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" strokeWidth={2} />
-        Back to Browse
-      </Link>
+    <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-14 sm:px-6 lg:px-8 lg:pb-12">
+      {/* Breadcrumb — always rendered, so phones keep a path back to the list. */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
+        <Link
+          href="/browse"
+          className="inline-flex items-center gap-1.5 text-foreground/60 transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
+          Back to Browse
+        </Link>
+        <span className="text-foreground/35" aria-hidden>/</span>
+        <span className="truncate text-foreground/60">{typeConfig.label}</span>
+      </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Details */}
-        <div className="lg:col-span-1 space-y-8">
-          <div className="rounded-[2rem] border-2 border-ink bg-surface p-8 shadow-hard">
-            <div className="inline-flex items-center rounded-full border border-ink px-4 py-1.5 text-xs font-semibold tracking-wider mb-6 bg-accent text-accent-contrast">
-              {typeConfig.label}
-            </div>
-            
-            <h1 className="text-4xl font-normal tracking-tight text-foreground mb-4 leading-tight">{resource.title}</h1>
-            <p className="inline-block bg-surface-muted rounded-full px-4 py-1 text-sm font-medium text-foreground mb-6 border border-line">{resource.subject}</p>
-            
-            {resource.description && (
-              <div className="prose prose-sm text-foreground/70 mb-8 border-t-2 border-line pt-6 font-medium leading-relaxed">
-                <p>{resource.description}</p>
-              </div>
-            )}
-            
-            <div className="flex flex-col gap-4 border-t-2 border-line pt-6 text-sm text-foreground font-medium">
-              <div className="flex items-center gap-3">
-                <div className="p-2 border border-ink rounded-full bg-surface-muted"><User size={16} strokeWidth={2} /></div>
-                <span>Uploaded by <span className="font-bold">{resource.uploader?.name || "Unknown"}</span></span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 border border-ink rounded-full bg-surface-muted"><Calendar size={16} strokeWidth={2} /></div>
-                <span>{new Date(resource.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
-              </div>
-              {resource.professor && (
-                <div className="flex items-center gap-3">
-                  <div className="p-2 border border-ink rounded-full bg-surface-muted"><FileText size={16} strokeWidth={2} /></div>
-                  <span>Professor: <span className="font-bold">{resource.professor}</span></span>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-8 border-t-2 border-line pt-6">
-              <ResourceActions 
-                resourceId={resource.id}
-                initialLikes={resource.likes || 0}
-                fileUrl={resource.fileUrl}
-                fileName={resource.title}
-                hasLikedInitially={hasLikedInitially}
-                uploaderId={resource.uploaderId}
-              />
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border-2 border-ink bg-surface p-8 shadow-hard">
-            <h3 className="text-xl font-normal text-foreground mb-6 tracking-tight">File Information</h3>
-            <div className="flex items-center gap-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-[1rem] border-2 border-ink bg-accent">
-                {getFileIcon(resource.fileType)}
-              </div>
-              <div>
-                <div className="font-bold text-foreground text-2xl tracking-tighter">
-                  {resource.fileType?.split('/')[1]?.toUpperCase() || "FILE"}
-                </div>
-                <div className="text-base text-foreground/60 font-medium tracking-wider mt-1">
-                  {resource.fileSize ? formatFileSize(resource.fileSize) : "Unknown size"}
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Compact header: identity and context only — everything actionable
+          lives in the workspace below. */}
+      <header className="mt-5 sm:mt-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
+            {typeConfig.label}
+          </span>
+          <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/70">
+            {resource.subject}
+          </span>
+          {resource.department && (
+            <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/70">
+              {resource.department}
+            </span>
+          )}
         </div>
 
-        {/* Right Column: Preview */}
-        <div className="lg:col-span-2">
-          <div className="rounded-[2rem] border-2 border-ink bg-surface shadow-hard overflow-hidden h-[60vh] sm:h-[70vh] lg:h-full lg:min-h-[800px] flex flex-col">
-            <div className="bg-ink border-b-2 border-ink p-4 px-6 flex justify-between items-center">
-              <span className="text-sm font-medium opacity-70 tracking-wider">Document Preview</span>
-              <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              </div>
-            </div>
-            
-            <div className="flex-1 min-h-0 bg-surface-muted relative p-4 sm:p-8">
-              {/* Anchored to the card box (not content-sized): a portrait photo
-                  would otherwise inflate h-full beyond the fixed card height and
-                  get cut off by the card's overflow-hidden. NOTE: must not carry
-                  `relative` — it beats `absolute` in the cascade and silently
-                  puts the frame back in flow. */}
-              <div className="absolute inset-4 sm:inset-8 border-2 border-ink border-dashed rounded-2xl bg-surface overflow-hidden shadow-inner">
-                {isPDF ? (
-                  <iframe 
-                    src={`${resource.fileUrl}#toolbar=0`} 
-                    className="w-full h-full border-0 absolute inset-0"
-                    title={`Preview of ${resource.title}`}
-                  />
-                ) : isImage ? (
-                  <div className="w-full h-full flex items-center justify-center p-8">
-                    <Image
-                      src={resource.fileUrl}
-                      alt={resource.title}
-                      width={1200}
-                      height={900}
-                      className="max-w-full max-h-full object-contain drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-ink"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-foreground">
-                    {getFileIcon(resource.fileType)}
-                    <p className="mt-6 text-xl font-medium tracking-tight">Preview not available</p>
-                    <p className="text-base mt-2 text-foreground/60 font-medium">Please download the file to view it.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <h1 className="mt-3.5 max-w-4xl text-2xl leading-tight font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+          {resource.title}
+        </h1>
+
+        {resource.description && (
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-foreground/60 sm:text-base">
+            {resource.description}
+          </p>
+        )}
+      </header>
+
+      {/* Workspace: large preview left, details-and-actions rail right.
+          On mobile the DOM order is header → preview → rail, so the document
+          leads and the actions follow it. */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:mt-7 lg:grid-cols-12 lg:gap-7">
+        <div className="min-w-0 lg:col-span-8">
+          <ResourcePreview
+            title={resource.title}
+            fileUrl={resource.fileUrl}
+            fileType={resource.fileType}
+            fileSize={resource.fileSize}
+          />
         </div>
+
+        <aside className="lg:col-span-4">
+          <div className="lg:sticky lg:top-24">
+            <ResourceActions
+              resourceId={resource.id}
+              title={resource.title}
+              fileUrl={resource.fileUrl}
+              fileType={resource.fileType}
+              fileSize={resource.fileSize}
+              initialLikes={resource.likes || 0}
+              hasLikedInitially={hasLikedInitially}
+              uploadedAt={new Date(resource.createdAt).toISOString()}
+              uploader={uploaderName}
+              professor={resource.professor}
+              isOwner={isOwner}
+            />
+          </div>
+        </aside>
       </div>
+
+      {related.length > 0 && (
+        <section className="mt-14 border-t border-line pt-10">
+          <div className="mb-7 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                More {resource.subject} resources
+              </h2>
+              <p className="mt-1.5 text-sm text-foreground/60">
+                Other materials shared for this subject.
+              </p>
+            </div>
+            <Link
+              href={`/browse?q=${encodeURIComponent(resource.subject)}`}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground"
+            >
+              Browse all <ArrowUpRight className="h-4 w-4" strokeWidth={2} aria-hidden />
+            </Link>
+          </div>
+
+          <div
+            className={
+              related.length === 1
+                ? "mx-auto w-full max-w-md"
+                : "grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3"
+            }
+          >
+            {related.map((item) => (
+              <div key={item.id} className="h-full">
+                <ResourceCard resource={item} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -37,6 +37,13 @@
      relied on being large. */
   --accent: #0b6f63;
   --accent-contrast: #f8f7f4;
+  /* Destructive / "liked" red. Same treatment as the accent: the Tailwind
+     default red-500 (#ef4444) is a hot, saturated surface — and light text on
+     it only reaches 3.3:1, so the liked-state label and the confirm-dialog
+     button were failing AA. This is the same hue pulled down to a dull brick,
+     which pairs with --background text at 6.6:1 and can also be used as TEXT
+     on the light surfaces ("Delete") at the same ratio. */
+  --danger: #a8261f;
 }
 
 @theme inline {
@@ -49,6 +56,7 @@
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
   --color-accent-contrast: var(--accent-contrast);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans), sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

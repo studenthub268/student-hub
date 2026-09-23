@@ -61,7 +61,7 @@ export default function ConfirmDialog({
         aria-label={title}
         className="relative w-full max-w-md rounded-[2rem] border-2 border-ink bg-surface p-8 shadow-hard-lg scale-in"
       >
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink bg-red-500 text-background">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink bg-danger text-background">
           <AlertTriangle className="h-6 w-6" strokeWidth={2} />
         </div>
         <h2 className="text-center text-xl font-black tracking-tight text-foreground">{title}</h2>
@@ -79,7 +79,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             disabled={busy}
             autoFocus
-            className="flex-1 rounded-full border-2 border-ink bg-red-500 px-5 py-3 text-sm font-bold tracking-wider text-background transition-all hover:-translate-y-0.5 hover:shadow-hard disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            className="flex-1 rounded-full border-2 border-ink bg-danger px-5 py-3 text-sm font-bold tracking-wider text-background transition-all hover:-translate-y-0.5 hover:shadow-hard disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             {busy ? busyLabel : confirmLabel}
           </button>

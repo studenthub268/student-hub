@@ -17,6 +17,34 @@ export function escapeLike(input: string): string {
   return input.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
 
+/**
+ * Short display label for a stored file ("PDF", "JPG", "DOCX").
+ *
+ * The old call sites rendered `fileType.split('/')[1].toUpperCase()`, which is
+ * fine for pdf/jpeg but turns a DOCX — an allowed upload type — into
+ * "VND.OPENXMLFORMATS-OFFICEDOCUMENT.WORD…". Known MIME types are mapped
+ * explicitly; anything else falls back to the last meaningful subtype segment.
+ */
+const MIME_LABELS: Record<string, string> = {
+  "application/pdf": "PDF",
+  "image/png": "PNG",
+  "image/jpeg": "JPG",
+  "image/jpg": "JPG",
+  "application/msword": "DOC",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+  "application/zip": "ZIP",
+  "text/plain": "TXT",
+};
+
+export function formatFileType(fileType: string | null | undefined): string {
+  if (!fileType) return "FILE";
+  const normalized = fileType.trim().toLowerCase();
+  const known = MIME_LABELS[normalized];
+  if (known) return known;
+  const subtype = normalized.split("/")[1];
+  return subtype?.split(/[.+-]/).pop()?.toUpperCase().slice(0, 8) || "FILE";
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
