@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Filter, ChevronDown } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowDownWideNarrow } from "lucide-react";
 import { SUBJECTS, RESOURCE_TYPES } from "@/lib/constants";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import type { Resource } from "@/lib/db/schema";
@@ -16,7 +16,14 @@ interface BrowseContentProps {
   typeCounts: Record<string, number>;
   subjectCounts: Record<string, number>;
   total: number;
+  sort: string;
 }
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest" },
+  { value: "liked", label: "Most liked" },
+  { value: "downloads", label: "Most downloaded" },
+] as const;
 
 interface FilterPillProps {
   label: string;
@@ -65,6 +72,7 @@ export default function BrowseContent({
   typeCounts,
   subjectCounts,
   total,
+  sort,
 }: BrowseContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -87,15 +95,17 @@ export default function BrowseContent({
 
   // Navigate with the new params — the server (single source of truth)
   // re-queries and streams back results + fresh facet counts.
-  const applyParams = (overrides: { type?: string; subject?: string }) => {
+  const applyParams = (overrides: { type?: string; subject?: string; sort?: string }) => {
     const next = {
       type: selectedType,
       subject: selectedSubject,
+      sort,
       ...overrides,
     };
     const params = new URLSearchParams();
     if (next.type && next.type !== "all") params.set("type", next.type);
     if (next.subject && next.subject !== "all") params.set("subject", next.subject);
+    if (next.sort && next.sort !== "newest") params.set("sort", next.sort);
     const qs = params.toString();
     startTransition(() => {
       router.replace(`/browse${qs ? `?${qs}` : ""}`, { scroll: false });
@@ -214,30 +224,55 @@ export default function BrowseContent({
 
       {/* Results */}
       <div>
-        <div className="mb-6 text-base text-foreground/60 font-medium">
-          {fromSearch ? (
-            <>
-              Showing {resources.length} result{resources.length !== 1 && "s"}
-              {searchContext && (
-                <> for <span className="font-bold text-foreground">“{searchContext}”</span></>
-              )}
-              <span className="text-foreground/50"> · </span>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-base text-foreground/60 font-medium">
+            {fromSearch ? (
+              <>
+                Showing {resources.length} result{resources.length !== 1 && "s"}
+                {searchContext && (
+                  <> for <span className="font-bold text-foreground">“{searchContext}”</span></>
+                )}
+                <span className="text-foreground/50"> · </span>
+                <button
+                  onClick={() =>
+                    startTransition(() => {
+                      setSelectedType("all");
+                      setSelectedSubject("all");
+                      router.push("/browse");
+                    })
+                  }
+                  className="underline underline-offset-2 hover:text-foreground transition-colors"
+                >
+                  Browse with filters
+                </button>
+              </>
+            ) : (
+              <>Showing {resources.length} resource{resources.length !== 1 && "s"}</>
+            )}
+          </div>
+
+          {/* Sort control — brutalist segmented buttons matching the pills.
+              Allow horizontal scroll of just this group on tiny screens so
+              the page itself never overflows. */}
+          <div className="-mx-4 max-w-full overflow-x-auto px-4 py-1 sm:mx-0 sm:px-0">
+            <div className="inline-flex items-center gap-2">
+            <ArrowDownWideNarrow className="h-4 w-4 text-foreground/50" strokeWidth={1.75} aria-hidden />
+            {SORT_OPTIONS.map((opt) => (
               <button
-                onClick={() =>
-                  startTransition(() => {
-                    setSelectedType("all");
-                    setSelectedSubject("all");
-                    router.push("/browse");
-                  })
-                }
-                className="underline underline-offset-2 hover:text-foreground transition-colors"
+                key={opt.value}
+                onClick={() => applyParams({ sort: opt.value })}
+                aria-pressed={sort === opt.value}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium border-2 border-ink transition-all ${
+                  sort === opt.value
+                    ? "bg-ink on-ink shadow-hard-sm"
+                    : "bg-surface hover:bg-surface-muted"
+                }`}
               >
-                Browse with filters
+                {opt.label}
               </button>
-            </>
-          ) : (
-            <>Showing {resources.length} resource{resources.length !== 1 && "s"}</>
-          )}
+            ))}
+            </div>
+          </div>
         </div>
 
         {resources.length > 0 ? (

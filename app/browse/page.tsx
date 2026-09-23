@@ -50,6 +50,15 @@ function searchPredicate(q?: string) {
   );
 }
 
+/** Whitelisted sort keys — mapped to orderBy clauses below. */
+const SORTS = {
+  newest: desc(resources.createdAt),
+  liked: desc(resources.likes),
+  downloads: desc(resources.downloads),
+} as const;
+
+export type SortKey = keyof typeof SORTS;
+
 export type FacetCounts = {
   typeCounts: Record<string, number>;
   subjectCounts: Record<string, number>;
@@ -95,10 +104,10 @@ async function getFacetCounts(q?: string): Promise<FacetCounts> {
 }
 
 /**
- * Single source of truth for filtering: the database. All three filters
- * (q, type, subject) are applied in SQL; the client only renders.
+ * Single source of truth for filtering: the database. All filters
+ * (q, type, subject, sort) are applied/handled in SQL; the client only renders.
  */
-async function getResources(q?: string, type?: string, subject?: string) {
+async function getResources(q?: string, type?: string, subject?: string, sort: SortKey = "newest") {
   try {
     const conditions = [];
 
@@ -114,7 +123,7 @@ async function getResources(q?: string, type?: string, subject?: string) {
       .from(resources)
       .leftJoin(users, eq(resources.uploaderId, users.id))
       .where(where)
-      .orderBy(desc(resources.createdAt))
+      .orderBy(SORTS[sort] ?? SORTS.newest)
       .limit(200);
   } catch (e) {
     console.error("Failed to load browse resources:", e);
@@ -125,13 +134,15 @@ async function getResources(q?: string, type?: string, subject?: string) {
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; type?: string; subject?: string }>;
+  searchParams: Promise<{ q?: string; type?: string; subject?: string; sort?: string }>;
 }) {
-  const { q, type, subject } = await searchParams;
+  const { q, type, subject, sort } = await searchParams;
+  // Unknown sort values fall back to newest — never trust the URL.
+  const sortKey: SortKey = typeof sort === "string" && sort in SORTS ? (sort as SortKey) : "newest";
 
   // q = keyword search (Enter in the popup): SQL searches title, description,
   // professor and subject. from=search keeps the chrome minimal on the client.
-  const [data, facets] = await Promise.all([getResources(q, type, subject), getFacetCounts(q)]);
+  const [data, facets] = await Promise.all([getResources(q, type, subject, sortKey), getFacetCounts(q)]);
 
   return (
     <Suspense fallback={<div className="container mx-auto p-12 text-center">Loading resources...</div>}>
@@ -140,6 +151,7 @@ export default async function BrowsePage({
         typeCounts={facets.typeCounts}
         subjectCounts={facets.subjectCounts}
         total={facets.total}
+        sort={sortKey}
       />
     </Suspense>
   );
