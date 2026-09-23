@@ -33,65 +33,82 @@ function C({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className="text-foreground underline decoration-foreground/30 underline-offset-2 hover:decoration-accent hover:text-accent"
+      className="font-bold text-accent underline decoration-accent/30 underline-offset-2 transition-colors hover:decoration-accent"
     >
       {children}
     </Link>
   );
 }
 
+function Bold({ children }: { children: React.ReactNode }) {
+  return <strong className="font-bold text-foreground">{children}</strong>;
+}
+
 export default function PrivacyPage() {
   return (
     <div className="bg-surface min-h-screen">
-      <div className="mx-auto max-w-2xl px-5 py-16 sm:py-20 text-base text-foreground/80">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
-          Student Hub
-        </p>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-          Privacy Policy
-        </h1>
-        <p className="mt-4 leading-relaxed">
-          Student Hub is a free platform where university students share study
-          material. This policy explains what data we collect, why, and the
-          control you have over it. The short version: we collect only what the
-          site needs to work, we never sell your data, and you can delete your
-          account and content yourself at any time.
-        </p>
-        <p className="mt-4 text-sm text-foreground/60">
-          Last updated {LAST_UPDATED} &nbsp;·&nbsp; Version {POLICY_VERSION}
-        </p>
+      <div className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20 text-base text-foreground/80">
+
+        {/* Hero header */}
+        <header>
+          <div className="rounded-[2rem] border-2 border-ink bg-ink on-ink p-8 sm:p-12 shadow-hard-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-800/40 via-ink to-ink opacity-50"></div>
+            <div className="relative z-10">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-60">
+                Student Hub · Legal
+              </p>
+              <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">
+                Privacy Policy
+              </h1>
+              <p className="mt-4 max-w-xl leading-relaxed opacity-80">
+                Student Hub is a free platform where university students share
+                study material. This policy explains what data we collect, why,
+                and the control you have over it. The short version: we collect
+                only what the site needs to work, we never sell your data, and
+                you can delete your account and content yourself at any time.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-background/30 px-3.5 py-1 text-xs font-bold tracking-wider opacity-90">
+                  Last updated {LAST_UPDATED}
+                </span>
+                <span className="rounded-full bg-accent px-3.5 py-1 text-xs font-bold tracking-wider text-accent-contrast">
+                  Version {POLICY_VERSION}
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
 
         <H id="data">1. Data we collect</H>
         <P>We collect the minimum needed to run the platform:</P>
         <ul className="list-disc pl-5 space-y-1.5">
           <LI>
-            <strong>Account data</strong> — your name, email address, and a
+            <Bold>Account data</Bold> — your name, email address, and a
             password stored only as a bcrypt hash; if you sign in with Google
             or GitHub, your name, verified email, and profile picture from the
             provider instead.
           </LI>
           <LI>
-            <strong>Content data</strong> — the resources you upload (file,
-            title, subject, type, description) and the likes and reports you
-            make.
+            <Bold>Content data</Bold> — the resources you upload (file, title,
+            subject, type, description) and the likes and reports you make.
           </LI>
           <LI>
-            <strong>Consent data</strong> — when you accepted the{" "}
+            <Bold>Consent data</Bold> — when you accepted the{" "}
             <C href="/terms">terms of service</C> and which policy version
             applied.
           </LI>
           <LI>
-            <strong>Security data</strong> — IP addresses, used for rate
-            limiting and abuse blocking, and logs of blocked attack attempts.
+            <Bold>Security data</Bold> — IP addresses, used for rate limiting
+            and abuse blocking, and logs of blocked attack attempts.
           </LI>
           <LI>
-            <strong>Email metadata</strong> — delivery events (sent, delivered,
+            <Bold>Email metadata</Bold> — delivery events (sent, delivered,
             bounced) so we can detect broken addresses and stop mailing them.
           </LI>
           <LI>
-            <strong>Aggregate analytics</strong> — anonymous daily page-view
-            counts per page (path only, referrer host only). No cookies, no
-            IP addresses, no user identifiers, nothing personal.
+            <Bold>Aggregate analytics</Bold> — anonymous daily page-view counts
+            per page (path only, referrer host only). No cookies, no IP
+            addresses, no user identifiers, nothing personal.
           </LI>
         </ul>
         <P>
@@ -123,20 +140,20 @@ export default function PrivacyPage() {
         <P>Your data is processed only by the services that make the platform work:</P>
         <ul className="list-disc pl-5 space-y-1.5">
           <LI>
-            <strong>Vercel</strong> — application hosting;
+            <Bold>Vercel</Bold> — application hosting;
           </LI>
           <LI>
-            <strong>Neon</strong> — hosted PostgreSQL database;
+            <Bold>Neon</Bold> — hosted PostgreSQL database;
           </LI>
           <LI>
-            <strong>Cloudflare R2</strong> — storage for uploaded files;
+            <Bold>Cloudflare R2</Bold> — storage for uploaded files;
           </LI>
           <LI>
-            <strong>Resend</strong> — transactional email delivery; and
+            <Bold>Resend</Bold> — transactional email delivery; and
           </LI>
           <LI>
-            <strong>Google and GitHub</strong> — if you choose their sign-in,
-            they authenticate you and share your basic profile with us.
+            <Bold>Google and GitHub</Bold> — if you choose their sign-in, they
+            authenticate you and share your basic profile with us.
           </LI>
         </ul>
         <P>
@@ -148,21 +165,21 @@ export default function PrivacyPage() {
         <P>You have the right to:</P>
         <ul className="list-disc pl-5 space-y-1.5">
           <LI>
-            <strong>Access</strong> — request a copy of the personal data we
-            hold about you;
+            <Bold>Access</Bold> — request a copy of the personal data we hold
+            about you;
           </LI>
           <LI>
-            <strong>Correction</strong> — fix inaccurate profile information;
+            <Bold>Correction</Bold> — fix inaccurate profile information;
           </LI>
           <LI>
-            <strong>Deletion</strong> — delete your account and data yourself,
+            <Bold>Deletion</Bold> — delete your account and data yourself,
             anytime, from the Danger Zone on your <C href="/profile">profile
             page</C>. This permanently removes your profile, uploads and their
             files, likes, and reports; security records such as blocked IPs are
             kept only as long as needed; and
           </LI>
           <LI>
-            <strong>Objection</strong> — object to processing by deleting your
+            <Bold>Objection</Bold> — object to processing by deleting your
             account or specific content.
           </LI>
         </ul>
@@ -199,7 +216,7 @@ export default function PrivacyPage() {
           yours.
         </P>
 
-        <div className="mt-14 pt-8 border-t border-line text-sm text-foreground/60">
+        <div className="mt-14 pt-8 border-t-2 border-ink text-sm font-medium">
           <C href="/terms">Read the Terms of Service</C>
           <span className="mx-2 text-foreground/60">·</span>
           <C href="/">Return to Student Hub</C>
