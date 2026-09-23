@@ -25,8 +25,8 @@ interface ResourceActionsProps {
 }
 
 /**
- * The rail's interactive card: file summary, stats, primary actions, and the
- * quiet utilities — plus the pinned mobile action bar and delete confirm.
+ * The rail's interactive card: file summary, meta, primary actions, and the
+ * utilities — all in the site's bold ink-bordered language.
  */
 export default function ResourceActions({
   resourceId,
@@ -114,104 +114,114 @@ export default function ResourceActions({
     month: "short", day: "numeric", year: "numeric",
   });
 
+  /* Meta row label: bold small-caps style label with a leading icon. */
+  const metaLabel = (icon: React.ReactNode, text: string) => (
+    <span className="flex shrink-0 items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-foreground/70">
+      {icon}
+      {text}
+    </span>
+  );
+
   return (
     <>
-      <div className="rounded-2xl border border-line bg-surface shadow-sm">
-        {/* File summary — one quiet row; the glyph column matches the meta
-            icons below (16px + same gap) so every left edge in the card
-            lines up. */}
-        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <FileGlyph fileType={fileType} size={16} className="shrink-0 text-accent" />
-            <p className="min-w-0 truncate text-sm font-semibold text-foreground">
+      <div className="rounded-[2rem] border-2 border-ink bg-surface shadow-hard">
+        {/* File summary — bold row; the glyph column matches the meta icons
+            below so every left edge in the card lines up. */}
+        <div className="flex items-center justify-between gap-3 border-b-2 border-ink px-5 py-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <FileGlyph fileType={fileType} size={18} className="shrink-0 text-foreground" strokeWidth={2} />
+            <p className="min-w-0 truncate text-sm font-bold uppercase tracking-wider text-foreground">
               {formatFileType(fileType)} file
             </p>
           </div>
-          <span className="shrink-0 text-xs font-medium text-foreground/60">
+          <span className="shrink-0 text-xs font-bold tabular-nums text-foreground/70">
             {fileSize ? formatFileSize(fileSize) : "—"}
           </span>
         </div>
 
-        {/* Uploader & course meta — moved here from the page header so the
-            workspace card is the single place that describes the file.
-            Labels share one left edge (16px icon + gap-3); values right-align. */}
-        <div className="space-y-2.5 border-b border-line px-5 py-4">
+        {/* Uploader & course meta — labels share one left edge (18px icon +
+            gap-2.5); values right-align in bold. */}
+        <div className="space-y-3 border-b-2 border-ink px-5 py-4">
           <div className="flex items-center justify-between gap-3">
-            <span className="flex shrink-0 items-center gap-3 text-sm text-foreground/60">
-              <User size={16} strokeWidth={1.75} className="shrink-0 text-foreground/45" aria-hidden />
-              Uploaded by
-            </span>
-            <span className="min-w-0 truncate text-sm font-medium text-foreground">{uploader}</span>
+            {metaLabel(
+              <User size={18} strokeWidth={2} className="shrink-0 text-foreground" aria-hidden />,
+              "Uploaded by",
+            )}
+            <span className="min-w-0 truncate text-sm font-bold text-foreground">{uploader}</span>
           </div>
           {professor && (
             <div className="flex items-center justify-between gap-3">
-              <span className="flex shrink-0 items-center gap-3 text-sm text-foreground/60">
-                <GraduationCap size={16} strokeWidth={1.75} className="shrink-0 text-foreground/45" aria-hidden />
-                Professor
-              </span>
-              <span className="min-w-0 truncate text-sm font-medium text-foreground">{professor}</span>
+              {metaLabel(
+                <GraduationCap size={18} strokeWidth={2} className="shrink-0 text-foreground" aria-hidden />,
+                "Professor",
+              )}
+              <span className="min-w-0 truncate text-sm font-bold text-foreground">{professor}</span>
             </div>
           )}
           <div className="flex items-center justify-between gap-3">
-            <span className="flex shrink-0 items-center gap-3 text-sm text-foreground/60">
-              <Calendar size={16} strokeWidth={1.75} className="shrink-0 text-foreground/45" aria-hidden />
-              Uploaded
-            </span>
-            <span className="text-sm font-medium text-foreground">{dateLabel}</span>
+            {metaLabel(
+              <Calendar size={18} strokeWidth={2} className="shrink-0 text-foreground" aria-hidden />,
+              "Uploaded",
+            )}
+            <span className="text-sm font-bold text-foreground">{dateLabel}</span>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="space-y-2.5 px-5 py-4">
+        <div className="space-y-3 px-5 py-4">
           <button
             onClick={handleDownload}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-contrast transition-colors hover:bg-accent/90 active:bg-accent"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-accent px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-accent-contrast shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard active:translate-y-0 active:shadow-hard-sm"
           >
-            <Download size={17} strokeWidth={2} aria-hidden />
+            <Download size={17} strokeWidth={2.5} aria-hidden />
             Download
           </button>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={handleLike}
               disabled={isLiking}
               aria-pressed={hasLiked}
-              aria-label={`${hasLiked ? "Remove your like from" : "Like"} this resource (${likes} likes)`}
-              className={`flex items-center justify-center gap-1.5 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+              className={`flex items-center justify-center gap-1.5 rounded-full border-2 border-ink px-4 py-2.5 text-sm font-bold transition-all hover:-translate-y-0.5 hover:shadow-hard-sm disabled:opacity-50 ${
                 hasLiked
-                  ? "border-danger/30 bg-danger/10 text-danger"
-                  : "border-line bg-surface text-foreground hover:bg-surface-muted"
+                  ? "bg-danger/10 text-danger"
+                  : "bg-surface text-foreground hover:bg-surface-muted"
               }`}
             >
               <Heart
                 size={15}
-                strokeWidth={2}
+                strokeWidth={2.25}
                 className={hasLiked ? "fill-danger" : ""}
                 aria-hidden
               />
               {hasLiked ? "Liked" : "Like"}
               <span
                 className={`min-w-4 tabular-nums ${
-                  hasLiked ? "text-danger/70" : "text-foreground/50"
+                  hasLiked ? "text-danger/80" : "text-foreground/60"
                 }`}
               >
                 {likes}
               </span>
+              {/* Accessible name is content + sr-only state so the visible
+                  label is always contained (WCAG 2.5.3 Label in Name). */}
+              <span className="sr-only">
+                {hasLiked ? " — active, select to remove your like" : " — select to like this resource"}
+              </span>
             </button>
             <button
               onClick={handleShare}
-              className="flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+              className="flex items-center justify-center gap-1.5 rounded-full border-2 border-ink bg-surface px-4 py-2.5 text-sm font-bold text-foreground transition-all hover:-translate-y-0.5 hover:bg-surface-muted hover:shadow-hard-sm"
             >
-              <Share2 size={15} strokeWidth={2} aria-hidden />
+              <Share2 size={15} strokeWidth={2.25} aria-hidden />
               Share
             </button>
           </div>
         </div>
 
         {/* Utilities */}
-        <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-3">
+        <div className="flex items-center justify-between gap-3 border-t-2 border-ink px-5 py-3.5">
           <button
             onClick={() => router.push("/report?resourceId=" + resourceId)}
-            className="text-xs font-medium text-foreground/60 transition-colors hover:text-foreground"
+            className="text-xs font-bold uppercase tracking-wider text-foreground/60 transition-colors hover:text-foreground"
           >
             Report issue
           </button>
@@ -219,9 +229,9 @@ export default function ResourceActions({
             <button
               onClick={() => setConfirmDelete(true)}
               disabled={isDeleting}
-              className="inline-flex items-center gap-1 text-xs font-medium text-danger transition-opacity hover:opacity-70 disabled:opacity-50"
+              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-danger transition-opacity hover:opacity-70 disabled:opacity-50"
             >
-              <Trash2 size={13} strokeWidth={2} aria-hidden />
+              <Trash2 size={13} strokeWidth={2.25} aria-hidden />
               {isDeleting ? "Deleting…" : "Delete"}
             </button>
           )}

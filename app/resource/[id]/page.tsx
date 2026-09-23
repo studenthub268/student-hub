@@ -151,41 +151,41 @@ export default async function ResourceDetailPage({
   return (
     <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-14 sm:px-6 lg:px-8 lg:pb-12">
       {/* Breadcrumb — always rendered, so phones keep a path back to the list. */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
         <Link
           href="/browse"
-          className="inline-flex items-center gap-1.5 text-foreground/60 transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-1.5 text-foreground/70 transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           Back to Browse
         </Link>
-        <span className="text-foreground/35" aria-hidden>/</span>
-        <span className="truncate text-foreground/60">{typeConfig.label}</span>
+        <span className="text-foreground/40" aria-hidden>/</span>
+        <span className="truncate text-foreground/70">{typeConfig.label}</span>
       </nav>
 
-      {/* Compact header: identity and context only — everything actionable
-          lives in the workspace below. */}
+      {/* Bold header: heavy title and ink-bordered chips match the site's
+          brutalist identity. */}
       <header className="mt-5 sm:mt-6">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
+          <span className="inline-flex items-center rounded-full border-2 border-ink bg-accent px-3.5 py-1 text-xs font-bold tracking-wider text-accent-contrast shadow-hard-sm">
             {typeConfig.label}
           </span>
-          <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/70">
+          <span className="rounded-full border-2 border-ink bg-surface px-3.5 py-1 text-xs font-bold tracking-wider">
             {resource.subject}
           </span>
           {resource.department && (
-            <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/70">
+            <span className="rounded-full border-2 border-ink bg-surface px-3.5 py-1 text-xs font-bold tracking-wider">
               {resource.department}
             </span>
           )}
         </div>
 
-        <h1 className="mt-3.5 max-w-4xl text-2xl leading-tight font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+        <h1 className="mt-4 max-w-4xl text-3xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
           {resource.title}
         </h1>
 
         {resource.description && (
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-foreground/60 sm:text-base">
+          <p className="mt-3.5 max-w-3xl text-base leading-relaxed text-foreground/70 sm:text-lg">
             {resource.description}
           </p>
         )}
@@ -224,21 +224,21 @@ export default async function ResourceDetailPage({
       </div>
 
       {related.length > 0 && (
-        <section className="mt-14 border-t border-line pt-10">
+        <section className="mt-14 border-t-2 border-ink pt-10">
           <div className="mb-7 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
             <div>
-              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
                 More {resource.subject} resources
               </h2>
-              <p className="mt-1.5 text-sm text-foreground/60">
+              <p className="mt-2 text-base font-medium text-foreground/60">
                 Other materials shared for this subject.
               </p>
             </div>
             <Link
               href={`/browse?q=${encodeURIComponent(resource.subject)}`}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-foreground transition-colors hover:text-accent"
             >
-              Browse all <ArrowUpRight className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Browse all <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </Link>
           </div>
 
