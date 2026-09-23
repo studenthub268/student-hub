@@ -30,6 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local dev-server logs (npm run dev output redirect)
+dev-server.log
+dev-server.err.log
+
 # env files (never commit real secrets; keep the example template)
 .env*
 !.env.example
