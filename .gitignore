@@ -30,9 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local dev-server logs (npm run dev output redirect)
+# local run logs (npm run dev/start output redirect)
 dev-server.log
 dev-server.err.log
+serve.log
+build.log
+
+# Lighthouse reports written by verification passes
+lh-*.json
 
 # env files (never commit real secrets; keep the example template)
 .env*
