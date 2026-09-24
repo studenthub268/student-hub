@@ -62,7 +62,7 @@ export default function TermsPage() {
                 Terms of Service
               </h1>
               <p className="mt-4 max-w-xl leading-relaxed opacity-80">
-                Student Hub is a free platform where university students share
+                Student Hub is a student-run platform where university students share
                 study material — notes, past papers, quizzes, and assignments.
                 These terms cover the rules of the platform; how we handle your
                 data is covered separately in the{" "}

@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const r = rows[0];
   const desc =
     r.description?.slice(0, 155) ||
-    `Free ${r.subject} ${String(r.type).toLowerCase()} shared by students on Student Hub — download instantly, no account needed.`;
+    `${r.subject} ${String(r.type).toLowerCase()} shared by students on Student Hub — download instantly, no account needed.`;
   return {
     title: r.title,
     description: desc,

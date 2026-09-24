@@ -43,10 +43,10 @@ export const metadata: Metadata = {
     apple: [{ url: "/icon-192.png?v=3" }],
   },
   title: "Student Hub — Study Smarter. Share More.",
-  description: "Free university notes, past papers and study resources shared by students. Peer-powered and always free — built for UET students.",
+  description: "University notes, past papers and study resources shared by students. Peer-powered and student-run — built for UET students.",
   openGraph: {
     title: "Student Hub — Study Smarter. Share More.",
-    description: "Free university notes, past papers and study resources shared by students. Peer-powered and always free — built for UET students.",
+    description: "University notes, past papers and study resources shared by students. Peer-powered and student-run — built for UET students.",
     url: "/",
     siteName: "Student Hub",
     images: [
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Student Hub — Study Smarter, Share More With Students",
-    description: "Access free notes, past papers and study materials uploaded by students. Join Student Hub — the peer-powered academic resource platform for every student.",
+    description: "Access notes, past papers and study materials uploaded by students. Join Student Hub — the peer-powered academic resource platform for every student.",
     images: ["/og-image.png"],
   },
   robots: {

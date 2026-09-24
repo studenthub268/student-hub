@@ -14,7 +14,7 @@ export const revalidate = 120;
 export const metadata: Metadata = {
   title: "Browse Study Resources — Notes & Past Papers",
   description:
-    "Search every uploaded note, past paper and study resource by keyword, subject and type. Free to download, no account needed.",
+    "Search every uploaded note, past paper and study resource by keyword, subject and type. No account needed to download.",
   alternates: { canonical: "/browse" },
 };
 

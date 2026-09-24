@@ -47,8 +47,8 @@ export default function Footer() {
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-background/60">
-              Free notes, past papers and study resources shared by students,
-              for students. Peer-powered and always free.
+              Notes, past papers and study resources shared by students,
+              for students. Peer-powered and student-run.
             </p>
             <div className="mt-5 flex items-center gap-2">
               <a

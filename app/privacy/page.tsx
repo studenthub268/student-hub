@@ -61,7 +61,7 @@ export default function PrivacyPage() {
                 Privacy Policy
               </h1>
               <p className="mt-4 max-w-xl leading-relaxed opacity-80">
-                Student Hub is a free platform where university students share
+                Student Hub is a student-run platform where university students share
                 study material. This policy explains what data we collect, why,
                 and the control you have over it. The short version: we collect
                 only what the site needs to work, we never sell your data, and

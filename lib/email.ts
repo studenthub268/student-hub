@@ -432,7 +432,7 @@ function welcomeHtml(greetingName: string, appUrl: string): string {
               <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
                 Your account is ready. Student Hub is a peer-powered library of
                 study material — notes, past papers, quizzes and more, shared by
-                students for students. Everything is free.
+                students for students.
               </p>
 
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
@@ -491,7 +491,7 @@ function welcomeText(greetingName: string, appUrl: string): string {
     "",
     "Your account is ready. Student Hub is a peer-powered library of study",
     "material — notes, past papers, quizzes and more, shared by students for",
-    "students. Everything is free.",
+    "students.",
     "",
     "- Browse & download: search by subject, department or professor",
     "- Upload & share: help classmates and build your library",

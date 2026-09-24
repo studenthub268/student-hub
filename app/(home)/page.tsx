@@ -13,9 +13,9 @@ import { desc, eq } from "drizzle-orm";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Student Hub — Free Study Notes & Past Papers by Students",
+  title: "Student Hub — Study Notes & Past Papers by Students",
   description:
-    "Download free university notes, past papers and study resources shared by students. Peer-powered, always free, searchable by subject and type — built for UET students.",
+    "Download university notes, past papers and study resources shared by students. Peer-powered and searchable by subject and type — built for UET students.",
   alternates: { canonical: "/" },
 };
 /** Recent uploads — rendered ON the server with the page (no client fetch
