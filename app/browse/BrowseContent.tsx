@@ -36,10 +36,13 @@ interface FilterPillProps {
 }
 
 function FilterPill({ label, active, count, disabled, pending, className, onClick }: FilterPillProps) {
+  // Selected state is otherwise colour-only (bg-accent), which says nothing to
+  // assistive tech; aria-pressed exposes it the way the sort pills already do.
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={active}
       className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border-2 border-ink transition-all text-left ${className || ""} ${
         active
           ? "bg-accent shadow-hard-sm"
