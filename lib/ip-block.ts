@@ -1,13 +1,14 @@
 import { db } from "@/lib/db";
 import { blockedIps } from "@/lib/db/schema";
 
-// Attack patterns to detect.
-// IMPORTANT: these run on EVERY request URL, and a match auto-blocks the
-// visitor's IP permanently — so they must be high-confidence shapes only.
-// A previous version matched bare characters (' -- # %27 %23), which exist in
-// every OAuth state/code (base64url) and in everyday searches like "don't",
-// silently locking real users (sometimes a whole campus NAT) out.
-const ATTACK_PATTERNS = [
+// Injection shapes, matched against the request URL.
+//
+// These REJECT the single request (403) but must never create a persistent
+// block: a crafted link makes any visitor's browser request them, so one
+// shared URL containing `<script` permanently banned the victim's IP — a
+// denial-of-service primitive handed to any attacker. URL hits are
+// deliberately non-blockable; see detectAttack and proxy.ts.
+const INJECTION_PATTERNS = [
   // SQL injection — structural shapes, not loose character classes
   /'\s*(or|and)\s+['\d][^&]*=/i, // quote-break tautology: ' OR 1=1, ' OR 'x'='x'
   /\bunion\s+select\b/i,
@@ -38,19 +39,16 @@ const ATTACK_PATTERNS = [
   /;\s*wget/i,
   /;\s*curl/i,
 
-  // Common scanners/bots
-  /sqlmap/i,
-  /nikto/i,
-  /nessus/i,
-  /dirbuster/i,
-  /gobuster/i,
-  /masscan/i,
-  /nmap/i,
-  /havij/i,
-  /w3af/i,
-  /acunetix/i,
-  /netsparker/i,
-  /openvas/i,
+];
+
+// Scanner/bot signatures. Matched against the USER-AGENT only, which is
+// exactly what makes them safe to auto-block: no browser ever sends these
+// strings, so an attacker cannot make a victim's browser send one. Matching
+// them against the URL (as this used to) meant a student searching "nmap" for
+// a networking assignment permanently banned their own IP.
+const SCANNER_PATTERNS = [
+  /sqlmap/i, /nikto/i, /nessus/i, /dirbuster/i, /gobuster/i, /masscan/i,
+  /nmap/i, /havij/i, /w3af/i, /acunetix/i, /netsparker/i, /openvas/i,
 ];
 
 // Rate limiting: max requests per time window.
@@ -123,19 +121,33 @@ export async function isIpBlocked(ip: string): Promise<boolean> {
   return blockedIpsCache.ips.has(ip);
 }
 
-export function detectAttack(url: string, userAgent: string): string | null {
-  // Decode once so encoded attacks (union%20select, %3Cscript%3E) are caught.
+export interface AttackVerdict {
+  reason: string;
+  /** True only for signals a victim's browser cannot be made to send. */
+  blockable: boolean;
+}
+
+export function detectAttack(url: string, userAgent: string): AttackVerdict | null {
+  // 1. Scanner signatures — user-agent only. A link cannot set the victim's
+  //    user-agent, so these are the one signal safe to persist as a block.
+  for (const pattern of SCANNER_PATTERNS) {
+    if (pattern.test(userAgent)) {
+      return { reason: `Scanner user-agent: ${pattern.source}`, blockable: true };
+    }
+  }
+
+  // 2. Injection shapes — URL only, never persisted. Decode once so encoded
+  //    attacks (union%20select, %3Cscript%3E) are still caught.
   let decoded = url;
   try {
     decoded = decodeURIComponent(url);
   } catch {
     // malformed encoding — scan the raw string
   }
-  const combined = `${decoded} ${userAgent}`;
 
-  for (const pattern of ATTACK_PATTERNS) {
-    if (pattern.test(combined)) {
-      return `Attack pattern detected: ${pattern.source}`;
+  for (const pattern of INJECTION_PATTERNS) {
+    if (pattern.test(decoded)) {
+      return { reason: `Attack pattern detected: ${pattern.source}`, blockable: false };
     }
   }
   return null;

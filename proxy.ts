@@ -52,25 +52,36 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  // 2. Detect attack patterns in URL and user agent
+  // 2. Detect attack patterns in URL and user agent.
+  // Only `blockable` verdicts (scanner user-agents — something a victim's
+  // browser cannot be made to send) write a PERSISTENT block. URL-based hits
+  // are rejected for this one request and nothing more, because a crafted link
+  // would otherwise let anyone permanently ban an arbitrary visitor's IP, and
+  // an ordinary search for "nmap" would ban the student typing it.
   const attack = detectAttack(pathname + request.nextUrl.search, userAgent);
   if (attack) {
-    try {
-      const { db } = await import("./lib/db");
-      const { blockedIps } = await import("./lib/db/schema");
-      await db.insert(blockedIps).values({
-        ip,
-        reason: `Auto-blocked: ${attack}`,
-        blockedBy: "system",
-      });
-      // Make the block effective immediately on this instance.
-      invalidateBlockedIpsCache();
-      // Make the lockout visible: log + notify admins (rate-limited).
-      notifyAutoBlock(ip, attack);
-    } catch {}
+    if (attack.blockable) {
+      try {
+        const { db } = await import("./lib/db");
+        const { blockedIps } = await import("./lib/db/schema");
+        await db.insert(blockedIps).values({
+          ip,
+          reason: `Auto-blocked: ${attack.reason}`,
+          blockedBy: "system",
+        });
+        // Make the block effective immediately on this instance.
+        invalidateBlockedIpsCache();
+        // Make the lockout visible: log + notify admins (rate-limited).
+        notifyAutoBlock(ip, attack.reason);
+      } catch {}
+    }
 
     return new NextResponse(
-      `Access Denied — Suspicious activity detected. Your IP (${escapedIp}) has been blocked. Contact us via the contact page to request unblocking.`,
+      attack.blockable
+        ? `Access Denied — Suspicious activity detected. Your IP (${escapedIp}) has been blocked. Contact us via the contact page to request unblocking.`
+        // Not a block: say so, rather than telling a normal visitor their IP
+        // has been banned when a stray character in their URL tripped a filter.
+        : `Access Denied — That request was rejected. If this was a mistake, go back and try again.`,
       { status: 403, headers: { "Content-Type": "text/html" } }
     );
   }
