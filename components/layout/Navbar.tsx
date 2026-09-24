@@ -69,12 +69,13 @@ export function Navbar() {
       <div className="relative z-[110] mx-auto max-w-7xl">
       <div className={`nav-shell flex h-14 items-center justify-between gap-3 rounded-2xl border-2 border-ink ${scrolled ? "bg-surface/95" : "bg-surface/70"} backdrop-blur-xl shadow-hard px-3 sm:px-4 lg:px-5`}>
 
-        {/* Logo + Mobile Back Button */}
+        {/* Logo + Back Button (phones + tablets), which the desktop nav header
+            does not need at lg+. */}
         <div className="flex items-center gap-2 min-w-0">
           {pathname !== "/" && (
             <button
               onClick={() => router.back()}
-              className="md:hidden flex items-center justify-center h-9 w-9 shrink-0 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
+              className="lg:hidden flex items-center justify-center h-9 w-9 shrink-0 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -88,10 +89,12 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Desktop Nav Links — the current section is marked, so users always
-            know where they are (the old all-equal links made Browse vs Home
-            indistinguishable once you left the homepage). */}
-        <nav aria-label="Primary" className="hidden md:flex items-center rounded-full border-2 border-ink/10 bg-surface-muted/60 p-1">
+        {/* Desktop Nav Links (lg+ only) — the current section is marked, so
+            users always know where they are (the old all-equal links made
+            Browse vs Home indistinguishable once you left the homepage).
+            Tablets (md–lg) can't fit this pill alongside the wordmark, the
+            search pill and the auth button — they get the menu instead. */}
+        <nav aria-label="Primary" className="hidden lg:flex items-center rounded-full border-2 border-ink/10 bg-surface-muted/60 p-1">
           {NAV_LINKS.map((link) => {
             const active = isActive(pathname, link.href);
             return (
@@ -113,24 +116,25 @@ export function Navbar() {
           <AdminLink active={isActive(pathname, "/admin")} />
         </nav>
 
-        {/* Right: Search + Admin + Auth (desktop) + Search + Hamburger (mobile) */}
+        {/* Right: search (pill from md, icon on phones) + auth (md+) + menu */}
         <div className="flex items-center space-x-3">
-          <div className="hidden lg:block"><NavbarSearch onOpenSearch={openSearch} /></div>
-          {/* Below lg (mobile + the md–lg dead zone): a compact icon search in
-              the navbar itself instead of a bar inside the hamburger menu. */}
+          <div className="hidden md:block"><NavbarSearch onOpenSearch={openSearch} /></div>
+          {/* Phones only: from md up there is room for the real search pill. */}
           <button
             onClick={openSearch}
             aria-label="Search"
-            className={`${ICON_BTN} lg:hidden`}
+            className={`${ICON_BTN} md:hidden`}
           >
             <Search className="h-5 w-5" />
           </button>
+          {/* Auth rides the bar from md up (phones keep it in the menu below,
+              where there is no room for the button). */}
           <div className="hidden md:block"><NavbarAuth /></div>
 
           {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className={`${ICON_BTN} md:hidden`}
+            className={`${ICON_BTN} lg:hidden`}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -140,14 +144,15 @@ export function Navbar() {
 
       </div>
 
-      {/* Mobile Menu — same popup presentation as SearchPopup: the page dims
+      {/* Menu popup (phones + tablets — everything below lg) — same popup
+          presentation as SearchPopup: the page dims
           and blurs behind a floating card that scales in. Fixed, so it can't
           push layout; tapping the backdrop closes it.
           z-[100] (below the bar's z-[110]) on purpose: the bar stays crisp and
           the hamburger's X stays tappable, so the menu can be closed from
           either the button or the backdrop. */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[5.5rem]">
+        <div className="lg:hidden fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[5.5rem]">
           <div className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
           <div
             role="dialog"
@@ -155,11 +160,10 @@ export function Navbar() {
             aria-label="Menu"
             className="relative w-full max-w-xl max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-[2rem] border-2 border-ink bg-surface shadow-hard-lg scale-in"
           >
-            
             {/* Nav Links — icon rows with the current page highlighted.
                 Mobile-first: 48px touch rows, icon anchors the eye, the
                 accent row unambiguously says "you are here". */}
-            {NAV_LINKS.map(({ href, label, icon: Icon }, index) => {
+            {NAV_LINKS.map(({ href, label, icon: Icon }) => {
               const active = isActive(pathname, href);
               return (
                 <Link
@@ -167,9 +171,7 @@ export function Navbar() {
                   href={href}
                   onClick={() => setMobileOpen(false)}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-4 px-6 py-4 text-base font-bold transition-colors ${
-                    index < NAV_LINKS.length ? "border-b border-line" : ""
-                  } ${
+                  className={`flex items-center gap-4 px-6 py-4 text-base font-bold transition-colors border-b border-line ${
                     active
                       ? "bg-accent text-accent-contrast"
                       : "text-foreground hover:bg-accent hover:text-accent-contrast"
@@ -185,8 +187,11 @@ export function Navbar() {
                 same as every other menu item */}
             <AdminLink dark onNavigate={() => setMobileOpen(false)} />
 
-            {/* Auth Section */}
-            <NavbarAuth mobile onClose={() => setMobileOpen(false)} />
+            {/* Auth Section — phones only: from md up the bar already shows
+                the same button/avatar, so the menu stays links-only. */}
+            <div className="md:hidden">
+              <NavbarAuth mobile onClose={() => setMobileOpen(false)} />
+            </div>
           </div>
         </div>
       )}

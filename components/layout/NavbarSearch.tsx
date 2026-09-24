@@ -7,17 +7,16 @@ import { Search } from "lucide-react";
  * Navbar (outside the mobile menu subtree) so closing the menu can never
  * unmount the open popup.
  *
- * One shape: the compact desktop pill (≥lg). On smaller screens the navbar
- * shows a round Search icon button instead (see Navbar.tsx).
+ * One shape: the search pill (≥md). On phones the navbar shows a round
+ * Search icon button instead (see Navbar.tsx).
  */
 export default function NavbarSearch({
   onOpenSearch,
 }: {
-  onOpenSearch?: () => void;
+  onOpenSearch: () => void;
 }) {
-
-  // The old /find page is gone — this component only renders as a trigger
-  // (desktop pill / mobile full-width bar) that opens the popup.
+  // Pure trigger: the old /find page is gone, so this never handles input
+  // itself — it only opens the popup owned by the Navbar.
   return (
     <div
       role="search"
@@ -33,7 +32,7 @@ export default function NavbarSearch({
         placeholder="Search…"
         tabIndex={-1}
         aria-hidden
-        className="h-10 w-40 md:w-56 rounded-full border-2 border-ink bg-surface/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-foreground/60 transition-colors group-hover:bg-surface"
+        className="h-10 w-56 rounded-full border-2 border-ink bg-surface/70 backdrop-blur-md pl-9 pr-4 text-sm outline-none cursor-pointer placeholder:text-foreground/60 transition-colors group-hover:bg-surface"
       />
     </div>
   );
