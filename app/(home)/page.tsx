@@ -131,9 +131,13 @@ export default async function Home() {
           {/* Bottom Right: Large Lime Accent Block */}
           <div className="lg:col-span-8 bg-accent text-accent-contrast rounded-[2rem] p-8 sm:p-10 flex flex-col justify-between relative group overflow-hidden shadow-sm border-2 border-line hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <div className="flex flex-wrap gap-2 relative z-10">
-              <Link href="/browse?type=notes" className="bg-ink on-ink px-4 py-1.5 rounded-full text-xs font-medium hover:bg-ink/80 transition-colors">Study Materials</Link>
-              <Link href="/browse?type=past-paper" className="border border-accent-contrast/40 text-accent-contrast px-4 py-1.5 rounded-full text-xs font-medium hover:bg-accent-contrast hover:text-accent transition-colors">Past Papers</Link>
-              <Link href="/browse?type=quiz" className="border border-accent-contrast/40 text-accent-contrast px-4 py-1.5 rounded-full text-xs font-medium hover:bg-accent-contrast hover:text-accent transition-colors">Quizzes</Link>
+              {/* prefetch={false}: App Router eagerly prefetches every in-view
+                  /browse variant, so three filter links became six RSC
+                  requests (~600ms each on throttled mobile) competing with
+                  the LCP resource. The plain /browse links still prefetch. */}
+              <Link prefetch={false} href="/browse?type=notes" className="bg-ink on-ink px-4 py-1.5 rounded-full text-xs font-medium hover:bg-ink/80 transition-colors">Study Materials</Link>
+              <Link prefetch={false} href="/browse?type=past-paper" className="border border-accent-contrast/40 text-accent-contrast px-4 py-1.5 rounded-full text-xs font-medium hover:bg-accent-contrast hover:text-accent transition-colors">Past Papers</Link>
+              <Link prefetch={false} href="/browse?type=quiz" className="border border-accent-contrast/40 text-accent-contrast px-4 py-1.5 rounded-full text-xs font-medium hover:bg-accent-contrast hover:text-accent transition-colors">Quizzes</Link>
             </div>
             <div className="mt-12 sm:mt-16 relative z-10">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight mb-6">Accessible</h2>

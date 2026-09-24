@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { ExternalLink, File, FileImage, FileText, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -35,7 +35,6 @@ export default function ResourcePreview({
   fileSize,
 }: ResourcePreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const isPDF = fileType?.includes("pdf") ?? false;
@@ -46,11 +45,15 @@ export default function ResourcePreview({
   const sizeLabel = fileSize ? formatFileSize(fileSize) : null;
   const fileName = withExtension(title, fileUrl);
 
-  /* iPhone Safari has no Element.requestFullscreen — feature-detect after
-     mount instead of guessing from a breakpoint. */
-  useEffect(() => {
-    setFullscreenSupported(Boolean(document.fullscreenEnabled));
-  }, []);
+  /* iPhone Safari has no Element.requestFullscreen — feature-detect instead
+     of guessing from a breakpoint. useSyncExternalStore reads it without an
+     effect (and returns false during the server render, where there is no
+     `document`). */
+  const fullscreenSupported = useSyncExternalStore(
+    () => () => {},
+    () => Boolean(document.fullscreenEnabled),
+    () => false
+  );
 
   const handleFullscreen = () => {
     const el = document.getElementById("preview-stage");
@@ -277,7 +280,6 @@ function ImageLightbox({
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onPointerDown = (e: React.PointerEvent) => {

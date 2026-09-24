@@ -26,12 +26,6 @@ function swRegistration(): ServiceWorker | null {
   return navigator.serviceWorker.controller;
 }
 
-/** "granted" | "denied" | "default" — "default" on browsers without the API. */
-export function notificationPermission(): NotificationPermission | "unsupported" {
-  if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
-  return Notification.permission;
-}
-
 /**
  * Requests notification permission. iOS Safari only allows the request
  * inside a user gesture (tap), so call this from a click handler — e.g. the
@@ -45,15 +39,6 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   } catch {
     return Notification.permission;
   }
-}
-
-/**
- * True when the OS notification path can fire right now. Used to decide
- * whether to attach the SW `getNotifications` close-on-focus behavior.
- */
-export function nativeNotificationsActive(): boolean {
-  if (typeof window === "undefined" || !("Notification" in window)) return false;
-  return Notification.permission === "granted" && swRegistration() !== null;
 }
 
 /**
