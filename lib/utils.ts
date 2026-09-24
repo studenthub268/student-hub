@@ -73,5 +73,12 @@ export function getErrorMessage(error: unknown, fallback = "Something went wrong
   if (!message || message.length > SAFE_MESSAGE_MAX_LENGTH) return fallback;
   // Digest-style internal errors (Next.js server actions) carry hashes.
   if (/^[a-f0-9]{16,}$/i.test(message.trim())) return fallback;
+  // Framework internals. A rejected server action surfaces on the client as
+  // React's minified error ("Minified React error #441; visit
+  // https://react.dev/errors/441…"), which is short and hash-free, so it used
+  // to sail straight through into a user-facing toast.
+  if (/minified react error|react\.dev\/errors|server components render|internal server error/i.test(message)) {
+    return fallback;
+  }
   return message;
 }

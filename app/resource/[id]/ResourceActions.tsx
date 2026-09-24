@@ -22,6 +22,7 @@ interface ResourceActionsProps {
   uploader: string;
   professor: string | null;
   isOwner: boolean;
+  isSignedIn: boolean;
 }
 
 /**
@@ -40,6 +41,7 @@ export default function ResourceActions({
   uploader,
   professor,
   isOwner,
+  isSignedIn,
 }: ResourceActionsProps) {
   const router = useRouter();
   const [likes, setLikes] = useState(initialLikes);
@@ -52,6 +54,14 @@ export default function ResourceActions({
   /* ---------------- Like (optimistic toggle + server action) ---------------- */
 
   const handleLike = async () => {
+    // A guest used to fire the action anyway, so the server rejected it and
+    // the client surfaced React's minified "error #441" toast. Send them to
+    // sign in with a path back instead — matches the proxy's redirect shape.
+    if (!isSignedIn) {
+      router.push(`/login?redirectedFrom=${encodeURIComponent(`/resource/${resourceId}`)}`);
+      return;
+    }
+
     // Ref, not the `isLiking` state: state lands a render later, so a fast
     // double-tap used to pass the guard twice and fire two toggles.
     if (likingRef.current) return;

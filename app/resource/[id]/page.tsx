@@ -218,6 +218,7 @@ export default async function ResourceDetailPage({
               uploader={uploaderName}
               professor={resource.professor}
               isOwner={isOwner}
+              isSignedIn={Boolean(session?.user)}
             />
           </div>
         </aside>
