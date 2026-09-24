@@ -49,7 +49,15 @@ export async function checkRateLimit(key: string, limit: number, windowSeconds: 
       COALESCE(old_count, -1) AS old_count
     FROM upsert
     LEFT JOIN old_state ON true
-  `);
+  `).catch((error) => {
+    // Fail OPEN: this one limiter guards likes, uploads, downloads, search
+    // suggestions and the contact form, so a transient error on the
+    // rate_limits table must not take all of those down with it. A brief
+    // window of unmetered writes beats "liking is broken".
+    console.error("[rate-limit] check failed; allowing the request:", error);
+    return null;
+  });
+  if (!result) return true;
 
   const row = result.rows[0] as { new_count: number; old_count: number };
 

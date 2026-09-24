@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Download, GraduationCap, Heart, Share2, Trash2, User } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -45,21 +45,32 @@ export default function ResourceActions({
   const [likes, setLikes] = useState(initialLikes);
   const [hasLiked, setHasLiked] = useState(hasLikedInitially);
   const [isLiking, setIsLiking] = useState(false);
+  const likingRef = useRef(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   /* ---------------- Like (optimistic toggle + server action) ---------------- */
 
   const handleLike = async () => {
-    if (isLiking) return;
+    // Ref, not the `isLiking` state: state lands a render later, so a fast
+    // double-tap used to pass the guard twice and fire two toggles.
+    if (likingRef.current) return;
+    likingRef.current = true;
     setIsLiking(true);
     try {
-      await toggleLike(resourceId, hasLiked);
-      setLikes((prev) => (hasLiked ? prev - 1 : prev + 1));
+      const result = await toggleLike(resourceId, hasLiked);
       setHasLiked(!hasLiked);
+      // Only move the counter when the server actually flipped the row.
+      // `changed: false` means the database was already in the target state
+      // (stale tab, repeated call), and counting it would drift the number
+      // away from the real one. Floor at 0 to match SQL's greatest(x-1, 0).
+      if (result?.changed) {
+        setLikes((prev) => (hasLiked ? Math.max(0, prev - 1) : prev + 1));
+      }
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to update like status"));
     } finally {
+      likingRef.current = false;
       setIsLiking(false);
     }
   };
@@ -84,8 +95,11 @@ export default function ResourceActions({
       try {
         await navigator.share({ title, url });
         return;
-      } catch {
-        /* user dismissed the sheet — fall through to copy */
+      } catch (error) {
+        // AbortError = the user dismissed OUR sheet. Don't then copy the link
+        // and report success for something they just cancelled.
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        /* otherwise fall through to copy */
       }
     }
     try {

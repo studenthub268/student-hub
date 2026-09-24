@@ -57,20 +57,34 @@ export default function SearchPopup({ open, onClose }: SearchPopupProps) {
     return () => clearTimeout(t);
   }, [open]);
 
-  // Debounced live results from the server action
+  // Debounced live results from the server action. `ignore` is the
+  // stale-response guard: typing "cal" then "calc" leaves the first request
+  // still in flight, and without it a slow early reply lands AFTER the newer
+  // one and overwrites the visible suggestions with results for a prefix the
+  // user has already typed past.
   useEffect(() => {
     if (!open) return;
+    let ignore = false;
     async function fetchSuggestions() {
       if (query.trim().length < 2) {
         setResourceSuggestions([]);
         return;
       }
-      const data = await searchResourceSuggestions(query);
-      if (data) setResourceSuggestions(data);
-      setActiveIndex(-1);
+      try {
+        const data = await searchResourceSuggestions(query);
+        if (ignore) return;
+        if (data) setResourceSuggestions(data);
+        setActiveIndex(-1);
+      } catch {
+        // A typeahead must never surface an error; keep the last results.
+        if (!ignore) setActiveIndex(-1);
+      }
     }
     const timeoutId = setTimeout(fetchSuggestions, 250);
-    return () => clearTimeout(timeoutId);
+    return () => {
+      ignore = true;
+      clearTimeout(timeoutId);
+    };
   }, [query, open]);
 
   // Esc / arrow-key navigation; body scroll locked while open. Arrow keys
