@@ -251,11 +251,30 @@ export default function BrowseContent({
             )}
           </div>
 
-          {/* Sort control — brutalist segmented buttons matching the pills.
-              Allow horizontal scroll of just this group on tiny screens so
-              the page itself never overflows. */}
-          <div className="-mx-4 max-w-full overflow-x-auto px-4 py-1 sm:mx-0 sm:px-0">
-            <div className="inline-flex items-center gap-2">
+          {/* Sort control — a single bordered select on phones (nothing can
+              overflow, one tap to change), the full segmented pill row from
+              sm up. */}
+          <div className="relative sm:mx-0 sm:px-0">
+            {/* Phone: compact select styled as an ink pill. */}
+            <div className="flex items-center gap-1.5 sm:hidden">
+              <ArrowDownWideNarrow className="h-4 w-4 shrink-0 text-foreground/50" strokeWidth={1.75} aria-hidden />
+              <select
+                value={sort}
+                onChange={(e) => applyParams({ sort: e.target.value })}
+                aria-label="Sort resources"
+                className="w-full max-w-[13rem] rounded-full border-2 border-ink bg-ink on-ink px-3.5 py-2 text-sm font-bold shadow-hard-sm appearance-none pr-8"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-surface text-foreground font-medium">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none -ml-7 h-4 w-4 shrink-0 on-ink" strokeWidth={2.5} aria-hidden />
+            </div>
+
+            {/* sm+: the full segmented row (fits; no scrolling needed). */}
+            <div className="hidden sm:flex items-center gap-2">
             <ArrowDownWideNarrow className="h-4 w-4 text-foreground/50" strokeWidth={1.75} aria-hidden />
             {SORT_OPTIONS.map((opt) => (
               <button

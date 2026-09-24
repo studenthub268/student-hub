@@ -2,8 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Shield } from "lucide-react";
 
-export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: () => void }) {
+export function AdminLink({
+  dark,
+  onNavigate,
+  active,
+}: {
+  dark?: boolean;
+  onNavigate?: () => void;
+  active?: boolean;
+}) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
 
@@ -72,14 +81,20 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
 
   if (!isAdmin) return null;
 
-  // Mobile menu variant (full-width row, matches NAV_LINKS styling)
+  // Mobile menu variant (full-width icon row, matches NAV_LINKS styling)
   if (dark) {
     return (
       <Link
         href="/admin"
         onClick={onNavigate}
-        className="flex items-center px-6 py-4 text-base font-bold text-foreground hover:bg-accent hover:text-accent-contrast transition-colors"
+        aria-current={active ? "page" : undefined}
+        className={`flex items-center gap-4 px-6 py-4 text-base font-bold transition-colors rounded-b-2xl ${
+          active
+            ? "bg-accent text-accent-contrast"
+            : "text-foreground hover:bg-accent hover:text-accent-contrast"
+        }`}
       >
+        <Shield className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
         Admin
         {messageCount > 0 && (
           <span className="ml-auto w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">
@@ -90,15 +105,21 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
     );
   }
 
-  // Desktop navbar variant — plain text, same styling as Home/Browse/Upload/Contact
+  // Desktop navbar variant — pill row member, same shape as
+  // Home/Browse/Upload/Contact.
   return (
     <Link
       href="/admin"
-      className="text-sm font-medium text-foreground hover:text-foreground/60 transition-colors relative"
+      aria-current={active ? "page" : undefined}
+      className={`relative px-3.5 py-1.5 text-sm rounded-full transition-all lg:px-4 ${
+        active
+          ? "bg-ink on-ink font-bold shadow-hard-sm"
+          : "font-medium text-foreground/70 hover:text-foreground hover:bg-surface"
+      }`}
     >
       Admin
       {messageCount > 0 && (
-        <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">
+        <span className="absolute -top-2 -right-1.5 w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">
           {messageCount > 99 ? "99+" : messageCount}
         </span>
       )}

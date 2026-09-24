@@ -146,19 +146,22 @@ html {
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
-/* ---- Offline banner ----
-   Slides down when the probe loses connectivity; the pulsing amber dot
-   says "still trying" without extra words. Both animations are killed by
-   the prefers-reduced-motion clamp at the bottom of this file. */
+/* ---- Offline pill ----
+   Settles down from under the navbar when the probe loses connectivity; the
+   pulsing amber ring says "still trying" without extra words. Both
+   animations are killed by the prefers-reduced-motion clamp at the bottom
+   of this file. */
 .offline-banner {
-  animation: banner-drop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: banner-drop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes banner-drop {
   from {
-    transform: translateY(-100%);
+    transform: translateY(-1.5rem);
+    opacity: 0;
   }
   to {
     transform: translateY(0);
+    opacity: 1;
   }
 }
 .offline-dot {
@@ -168,9 +171,11 @@ html {
   0%,
   100% {
     opacity: 1;
+    transform: scale(1);
   }
   50% {
     opacity: 0.25;
+    transform: scale(1.25);
   }
 }
 

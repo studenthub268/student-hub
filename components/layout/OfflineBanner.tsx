@@ -106,23 +106,32 @@ export function OfflineBanner() {
   if (!offline) return null;
 
   return (
+    /* Sticky pill, not a full-width bar: it sits under the floating navbar
+       (same z-plane, same rounded ink-card language) instead of shoving the
+       whole page down. Sticky keeps it visible while scrolling — on mobile
+       the scrolled-away bar was exactly when users needed the "why is
+       nothing loading" explanation. Animated via .offline-banner (slide+
+       settle), dot via .offline-dot; both are killed by the
+       prefers-reduced-motion clamp in globals.css. */
     <div
       role="status"
       aria-live="polite"
-      className="offline-banner border-b border-line-strong bg-ink px-4 py-2.5 text-center text-sm on-ink"
+      className="sticky top-[4.75rem] sm:top-[5.25rem] lg:top-24 z-[60] flex justify-center px-4 pointer-events-none"
     >
-      <span className="inline-flex flex-wrap items-center justify-center gap-2.5">
-        <WifiOff className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
-        <span
-          className="offline-dot h-2 w-2 shrink-0 rounded-full bg-amber-400"
-          aria-hidden="true"
-        />
-        <span className="font-semibold tracking-tight">
-          You&apos;re offline —{" "}
-          <span className="opacity-70">showing saved pages.</span> Reconnect to
-          load the latest content.
+      <div className="offline-banner pointer-events-auto flex max-w-md items-center gap-2.5 rounded-full border-2 border-ink bg-ink on-ink py-2 pl-3 pr-4 shadow-hard">
+        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-400/15" aria-hidden="true">
+          <WifiOff className="h-3.5 w-3.5 text-amber-400" />
+          {/* Pulsing ring: "still trying" without extra words. */}
+          <span className="offline-dot absolute inset-0 rounded-full border-2 border-amber-400/60" />
         </span>
-      </span>
+        <span className="text-sm font-semibold tracking-tight">
+          You&apos;re offline
+          <span className="hidden font-medium opacity-70 sm:inline">
+            {" "}— showing saved pages. Reconnect for the latest.
+          </span>
+          <span className="font-medium opacity-70 sm:hidden"> — saved pages only</span>
+        </span>
+      </div>
     </div>
   );
 }
