@@ -224,11 +224,38 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages — STALE-WHILE-REVALIDATE: a cached page renders instantly (instant
-  // cold start from the home-screen icon; no multi-second network wait), and
-  // the in-flight network refresh updates the cache so the next open is
-  // current. First-ever visits (nothing cached) go straight to the network,
-  // with the /offline fallback when unreachable.
+  // NEVER serve cached copies of private/auth pages. A /profile or /upload
+  // page cached while signed in keeps working after sign-out (showing the
+  // previous user's data), and /login cached while signed out keeps showing
+  // the login form after sign-in. The server redirects these per-request —
+  // a cached copy bypasses that, so they stay network-only.
+  const PRIVATE_PATHS = [
+    "/profile",
+    "/upload",
+    "/admin",
+    "/login",
+    "/signup",
+  ];
+  if (
+    request.mode === "navigate" &&
+    (PRIVATE_PATHS.some((p) => url.pathname === p || url.pathname.startsWith(p + "/")))
+  ) {
+    return;
+  }
+
+  // Pages — STALE-WHILE-REVALIDATE for PUBLIC pages only: a cached page
+  // renders instantly (instant cold start from the home-screen icon; no
+  // multi-second network wait), and the in-flight network refresh updates
+  // the cache so the next open is current. First-ever visits (nothing
+  // cached) go straight to the network, with the /offline fallback when
+  // unreachable.
+  // Signed-in navigations also skip the stale copy: the cookie travels with
+  // the fetch, so the network response reflects the CURRENT session, while a
+  // cache entry may have been stored while signed out (guest shell + CTA
+  // painted over a valid session — the "am I logged in or not" bug).
+  if (request.mode === "navigate" && request.headers.get("cookie")) {
+    return;
+  }
   event.respondWith(
     caches.open(DYNAMIC_CACHE).then((cache) =>
       cache.match(request).then((cached) => {

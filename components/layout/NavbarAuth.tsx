@@ -16,8 +16,9 @@ interface SessionUser { id: string; name?: string | null; email?: string | null;
 // Module-level session cache shared by every NavbarAuth instance (desktop +
 // mobile menu). Without it, opening the hamburger re-fetches the session and
 // briefly renders the guest "Get Started" view before the profile appears.
-let cachedUser: SessionUser | null = null;
-let sessionPromise: Promise<SessionUser | null> | null = null;
+// user: known session user; null: confirmed guest; undefined: not yet known.
+let cachedUser: SessionUser | null | undefined = undefined;
+let sessionPromise: Promise<SessionUser | null | undefined> | null = null;
 let restored = false;
 
 // Restore the last-known session synchronously at module load, so the first
@@ -37,33 +38,71 @@ function restoreLocal() {
 }
 restoreLocal();
 
-function fetchSession(): Promise<SessionUser | null> {
+// How many consecutive transient failures to ride out before concluding the
+// user is signed out. A single offline blip, rate-limit 429 or serverless
+// hiccup used to flip the navbar (and the home CTA) to the guest view while
+// the session cookie stayed perfectly valid — every privileged action still
+// worked, only the UI claimed otherwise. Retrying keeps the last-known state
+// (or the unknown state) until the network gives a REAL answer.
+const MAX_TRANSIENT_RETRIES = 3;
+const RETRY_DELAY_MS = 1500;
+
+// Fetch the session, resolving to the user, null (confirmed guest) — or
+// undefined when the network could not be trusted either way (kept distinct
+// from null so callers never render a false "signed out").
+function fetchSession(): Promise<SessionUser | null | undefined> {
   if (!sessionPromise) {
-    sessionPromise = fetch("/api/auth/session")
-      .then((res) => res.json())
-      .then((session) => {
-        cachedUser = session?.user ?? null;
+    sessionPromise = (async () => {
+      for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt++) {
         try {
-          if (cachedUser) localStorage.setItem("sh-session", JSON.stringify(cachedUser));
-          else localStorage.removeItem("sh-session");
+          const res = await fetch("/api/auth/session");
+          // 429 = our own rate limit answered instead of the session.
+          // Retry like any other transient failure — treating it as a
+          // sign-out would log the UI out for every user behind a
+          // shared IP once 30 requests/min are exhausted.
+          if (res.status === 429 || res.status >= 500) {
+            throw new Error(`transient: ${res.status}`);
+          }
+          const session = await res.json();
+          cachedUser = session?.user ?? null;
+          try {
+            if (cachedUser) localStorage.setItem("sh-session", JSON.stringify(cachedUser));
+            else localStorage.removeItem("sh-session");
+          } catch {
+            /* storage unavailable (private mode) — in-memory cache only */
+          }
+          return cachedUser as SessionUser | null;
         } catch {
-          /* storage unavailable (private mode) — in-memory cache only */
+          // Network/JSON/5xx/429 failure: retry, then report "unknown".
+          // Deliberately do NOT clear localStorage here — the cookie is
+          // likely still valid; the endpoint just failed to answer.
+          if (attempt < MAX_TRANSIENT_RETRIES) {
+            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+          }
         }
-        return cachedUser;
-      })
-      .catch(() => null);
+      }
+      return undefined;
+    })().finally(() => {
+      // Allow a later fetch to re-run (e.g. after sign-in elsewhere in the
+      // app). The resolved value stays cached in cachedUser above.
+      sessionPromise = null;
+    });
   }
   return sessionPromise;
 }
 
 // Shared hook: session state for any client component (undefined = not yet
-// known, null = guest). Deduped through the module cache above.
+// known or temporarily unverifiable, null = confirmed guest, user = signed
+// in). Deduped through the module cache above.
 export function useSessionUser(): SessionUser | null | undefined {
   const [user, setUser] = useState<SessionUser | null | undefined>(cachedUser);
   useEffect(() => {
     let mounted = true;
     fetchSession().then((u) => {
-      if (mounted) setUser(u);
+      // undefined (transient failure): keep whatever we already show —
+      // the localStorage restore or a previous successful fetch. Never
+      // overwrite a known state with "unknown".
+      if (mounted && u !== undefined) setUser(u);
     });
     return () => {
       mounted = false;
@@ -73,12 +112,14 @@ export function useSessionUser(): SessionUser | null | undefined {
 }
 
 export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
-  const [user, setUser] = useState<SessionUser | null>(cachedUser);
+  const [user, setUser] = useState<SessionUser | null | undefined>(cachedUser);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchSession().then((u) => setUser(u));
+    fetchSession().then((u) => {
+      if (u !== undefined) setUser(u);
+    });
   }, []);
 
   useEffect(() => {
