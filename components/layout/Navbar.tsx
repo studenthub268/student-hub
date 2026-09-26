@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, ArrowLeft, Search, Home, Compass, Upload, Mail } from "lucide-react";
+import { Menu, X, ArrowLeft, Search } from "lucide-react";
 import NavbarSearch from "./NavbarSearch";
 import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
@@ -10,19 +10,12 @@ import SearchPopup from "./SearchPopup";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// Icons ride along so the mobile menu rows read as a nav, not a text list.
 const NAV_LINKS = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/browse", label: "Browse", icon: Compass },
-  { href: "/upload", label: "Upload", icon: Upload },
-  { href: "/contact", label: "Contact", icon: Mail },
+  { href: "/", label: "Home" },
+  { href: "/browse", label: "Browse" },
+  { href: "/upload", label: "Upload" },
+  { href: "/contact", label: "Contact" },
 ];
-
-// Active route matching: exact for /, prefix for everything else so
-// /browse?type=notes and /resource/xyz keep Browse highlighted.
-function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
-}
 
 // Shared shape for the square icon buttons (search + hamburger + theme).
 const ICON_BTN =
@@ -61,21 +54,20 @@ export function Navbar() {
   }, []);
 
   return (
-    /* z-[60]: above the cookie card's z-50 (a same-tier sibling later in the
-       DOM would otherwise paint over the open menu's dimmed backdrop). */
+    // z-[60]: above the cookie card's z-50 (a same-tier sibling later in the
+    // DOM would otherwise paint over the open menu).
     <nav className="sticky top-4 z-[60] w-full px-4 sm:px-6 lg:px-8 pb-4">
       {/* z-[110] keeps the bar (its X / search buttons) tappable above the
           menu overlay's click-away catcher below. */}
       <div className="relative z-[110] mx-auto max-w-7xl">
-      <div className={`nav-shell flex h-14 items-center justify-between gap-3 rounded-2xl border-2 border-ink ${scrolled ? "bg-surface/95" : "bg-surface/70"} backdrop-blur-xl shadow-hard px-3 sm:px-4 lg:px-5`}>
+      <div className={`nav-shell flex h-14 items-center justify-between rounded-2xl border-2 border-ink ${scrolled ? "bg-surface/95" : "bg-surface/70"} backdrop-blur-xl shadow-hard px-4 sm:px-6`}>
 
-        {/* Logo + Back Button (phones + tablets), which the desktop nav header
-            does not need at lg+. */}
-        <div className="flex items-center gap-2 min-w-0">
+        {/* Logo + Mobile Back Button */}
+        <div className="flex items-center gap-2">
           {pathname !== "/" && (
             <button
               onClick={() => router.back()}
-              className="lg:hidden flex items-center justify-center h-9 w-9 shrink-0 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
+              className="md:hidden p-2 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -85,56 +77,38 @@ export function Navbar() {
             <Image src="/logo.png" alt="Student Hub Logo" width={64} height={64} className="w-8 h-8 rounded-full object-contain shrink-0" priority />
             {/* text-base below sm: at ~320px viewports a text-xl nowrap wordmark
                 overflows into the search/hamburger buttons */}
-            <span className="text-base sm:text-xl font-bold tracking-tighter text-foreground group-hover:opacity-80 whitespace-nowrap">Student Hub</span>
+            <span className="text-base sm:text-xl font-bold tracking-tighter text-foreground ml-1 group-hover:opacity-80 whitespace-nowrap">Student Hub</span>
           </Link>
         </div>
 
-        {/* Desktop Nav Links (lg+ only) — the current section is marked, so
-            users always know where they are (the old all-equal links made
-            Browse vs Home indistinguishable once you left the homepage).
-            Tablets (md–lg) can't fit this pill alongside the wordmark, the
-            search pill and the auth button — they get the menu instead. */}
-        <nav aria-label="Primary" className="hidden lg:flex items-center rounded-full border-2 border-ink/10 bg-surface-muted/60 p-1">
-          {NAV_LINKS.map((link) => {
-            const active = isActive(pathname, link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                prefetch
-                aria-current={active ? "page" : undefined}
-                className={`px-3.5 py-1.5 text-sm rounded-full transition-all lg:px-4 ${
-                  active
-                    ? "bg-ink on-ink font-bold shadow-hard-sm"
-                    : "font-medium text-foreground/70 hover:text-foreground hover:bg-surface"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-          <AdminLink active={isActive(pathname, "/admin")} />
-        </nav>
+        {/* Desktop Nav Links */}
+        <div className="hidden md:flex items-center md:space-x-5 lg:space-x-8">
+          {NAV_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} prefetch className="text-sm font-medium text-foreground hover:text-foreground/60 transition-colors">
+              {link.label}
+            </Link>
+          ))}
+          <AdminLink />
+        </div>
 
-        {/* Right: search (pill from md, icon on phones) + auth (md+) + menu */}
+        {/* Right: Search + Admin + Auth (desktop) + Search + Hamburger (mobile) */}
         <div className="flex items-center space-x-3">
-          <div className="hidden md:block"><NavbarSearch onOpenSearch={openSearch} /></div>
-          {/* Phones only: from md up there is room for the real search pill. */}
+          <div className="hidden lg:block"><NavbarSearch onOpenSearch={openSearch} /></div>
+          {/* Below lg (mobile + the md–lg dead zone): a compact icon search in
+              the navbar itself instead of a bar inside the hamburger menu. */}
           <button
             onClick={openSearch}
             aria-label="Search"
-            className={`${ICON_BTN} md:hidden`}
+            className={`${ICON_BTN} lg:hidden`}
           >
             <Search className="h-5 w-5" />
           </button>
-          {/* Auth rides the bar from md up (phones keep it in the menu below,
-              where there is no room for the button). */}
           <div className="hidden md:block"><NavbarAuth /></div>
 
           {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className={`${ICON_BTN} lg:hidden`}
+            className={`${ICON_BTN} md:hidden`}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -144,54 +118,34 @@ export function Navbar() {
 
       </div>
 
-      {/* Menu popup (phones + tablets — everything below lg) — same popup
-          presentation as SearchPopup: the page dims
-          and blurs behind a floating card that scales in. Fixed, so it can't
-          push layout; tapping the backdrop closes it.
-          z-[100] (below the bar's z-[110]) on purpose: the bar stays crisp and
-          the hamburger's X stays tappable, so the menu can be closed from
-          either the button or the backdrop. */}
+      {/* Mobile Menu — fixed popup over the page (not in-flow, so it can't
+          push layout); tapping anywhere outside it closes it. */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[5.5rem]">
-          <div className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu"
-            className="relative w-full max-w-xl max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-[2rem] border-2 border-ink bg-surface shadow-hard-lg scale-in"
-          >
-            {/* Nav Links — icon rows with the current page highlighted.
-                Mobile-first: 48px touch rows, icon anchors the eye, the
-                accent row unambiguously says "you are here". */}
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-              const active = isActive(pathname, href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-4 px-6 py-4 text-base font-bold transition-colors border-b border-line ${
-                    active
-                      ? "bg-accent text-accent-contrast"
-                      : "text-foreground hover:bg-accent hover:text-accent-contrast"
-                  }`}
-                >
-                  <Icon className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-                  {label}
-                </Link>
-              );
-            })}
+        <div className="md:hidden fixed inset-0 z-[100]">
+          {/* Click-away catcher — transparent, sits behind the panel */}
+          <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
+          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-ink bg-surface/95 backdrop-blur-xl shadow-hard-lg scale-in origin-top">
+            
+            {/* Nav Links */}
+            {NAV_LINKS.map((link, index) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center px-6 py-4 text-base font-bold text-foreground hover:bg-accent hover:text-accent-contrast transition-colors ${
+                  index < NAV_LINKS.length - 1 ? "border-b border-line" : ""
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
 
             {/* Admin Link (mobile) — inline with nav links; closes the menu on tap,
                 same as every other menu item */}
             <AdminLink dark onNavigate={() => setMobileOpen(false)} />
 
-            {/* Auth Section — phones only: from md up the bar already shows
-                the same button/avatar, so the menu stays links-only. */}
-            <div className="md:hidden">
-              <NavbarAuth mobile onClose={() => setMobileOpen(false)} />
-            </div>
+            {/* Auth Section */}
+            <NavbarAuth mobile onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
