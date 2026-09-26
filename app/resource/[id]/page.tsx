@@ -150,8 +150,11 @@ export default async function ResourceDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-14 sm:px-6 lg:px-8 lg:pb-12">
-      {/* Breadcrumb — always rendered, so phones keep a path back to the list. */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
+      {/* Breadcrumb — hidden on phones: the navbar already shows a back
+          button there, and two back affordances stacked read as clutter
+          (and disagree on destination). Desktop keeps it since the navbar
+          hides its back button at md+. */}
+      <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
         <Link
           href="/browse"
           className="inline-flex items-center gap-1.5 text-foreground/70 transition-colors hover:text-foreground"

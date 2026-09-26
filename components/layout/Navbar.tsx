@@ -8,7 +8,7 @@ import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
 import SearchPopup from "./SearchPopup";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -28,6 +28,32 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  // True back: history.back() so the user lands wherever they came from —
+  // but ONLY within the app. Two cases must fall back to home instead:
+  //   1. Full-page arrival from Google / a shared link — the previous history
+  //      entry is off-site, and back() would just leave the site.
+  //   2. A fresh tab — nothing to go back to at all.
+  // document.referrer CANNOT make this call: it only updates on full page
+  // loads, so after a client-side navigation it is stale (empty), and the
+  // referrer check alone sent in-app users home instead of back (caught in
+  // live testing). Instead, flag only when the path CHANGES within this
+  // tab's lifetime — a full-page arrival directly on /resource/x (Google,
+  // shared link) never sees a change, so its first effect run (prev ===
+  // null) correctly leaves the flag false and Back falls back to home.
+  const prevPathRef = useRef<string | null>(null);
+  const internalNavRef = useRef(false);
+  useEffect(() => {
+    if (prevPathRef.current !== null && prevPathRef.current !== pathname) {
+      internalNavRef.current = true;
+    }
+    prevPathRef.current = pathname;
+  }, [pathname]);
+
+  const goBack = () => {
+    if (internalNavRef.current && window.history.length > 1) router.back();
+    else router.push("/");
+  };
 
   const openSearch = () => {
     setMobileOpen(false);
@@ -66,7 +92,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {pathname !== "/" && (
             <button
-              onClick={() => router.back()}
+              onClick={goBack}
               className="md:hidden p-2 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
               aria-label="Go back"
             >

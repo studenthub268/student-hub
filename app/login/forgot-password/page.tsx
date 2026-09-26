@@ -37,9 +37,11 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 bg-surface selection:bg-accent">
       <div className="mx-auto w-full max-w-md rounded-[2rem] border-2 border-ink bg-accent p-8 sm:p-10 shadow-hard">
 
+        {/* Hidden on phones: the navbar back button already covers it there
+            (md+ is where the navbar hides its own back button). */}
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 mb-6 text-sm font-bold opacity-90 hover:opacity-100 transition-all tracking-wider"
+          className="hidden md:inline-flex items-center gap-2 mb-6 text-sm font-bold opacity-90 hover:opacity-100 transition-all tracking-wider"
         >
           <ChevronLeft className="h-4 w-4" /> Back to login
         </Link>
