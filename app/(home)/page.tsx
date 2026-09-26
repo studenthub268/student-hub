@@ -46,7 +46,8 @@ async function getRecentResources() {
       .leftJoin(users, eq(resources.uploaderId, users.id))
       .orderBy(desc(resources.createdAt))
       // Three: the home section is a teaser, not a feed — Browse owns the
-      // full list. Also matches the three-column desktop grid exactly.
+      // full list. Matches the 3-up desktop row; on tablet the same three
+      // split 2+1 (two cards on the first row, one below).
       .limit(3);
   } catch {
     return [];
@@ -210,7 +211,7 @@ export default async function Home() {
               ? "mx-auto w-full max-w-md"
               : recentResources.length === 2
                 ? "mx-auto grid w-full max-w-2xl grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
-                : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
+                : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
           }>
 
             {recentResources.map((resource) => (
