@@ -5,7 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { VerificationBanner } from "@/components/layout/VerificationBanner";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import Footer from "@/components/layout/Footer";
-import { Toaster } from "react-hot-toast";
+import { LazyToaster } from "@/components/LazyToaster";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { DeployWatcher } from "@/components/DeployWatcher";
@@ -95,14 +95,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            className: "sh-toast sh-toast-default",
-            success: { className: "sh-toast sh-toast-success" },
-            error: { className: "sh-toast sh-toast-error" },
-          }}
-        />
+        <LazyToaster />
         <CookieConsent />
         <Analytics />
         <ServiceWorkerRegister />

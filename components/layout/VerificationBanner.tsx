@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 import { MailWarning } from "lucide-react";
 import { resendVerificationEmail } from "@/lib/actions/auth";
 import { VERIFIED_STATUS_CACHE_KEY } from "@/lib/constants";

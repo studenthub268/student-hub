@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { WifiOff } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 
 /**
  * Offline banner — styled like the verification banner (top bar).

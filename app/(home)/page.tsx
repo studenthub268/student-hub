@@ -53,6 +53,15 @@ async function getRecentResources() {
   }
 }
 
+// Minute-resolution rotation seed for the quote card. A module-scope helper
+// (not inline in the component) keeps the react-hooks purity rule happy: the
+// clock read happens inside an opaque function, and ISR re-renders the page
+// at most once a minute — exactly the rotation cadence we want, with zero
+// client JS.
+function quoteSeed() {
+  return Math.floor(Date.now() / 60_000);
+}
+
 export default async function Home() {
   // No auth() here: it forced dynamic rendering, so every request re-ran the
   // DB query and streamed the whole document late (Lighthouse Speed Index 40
@@ -60,6 +69,7 @@ export default async function Home() {
   // the final CTA renders for guests in the static HTML — ContributeCta hides
   // it client-side for signed-in users without making the page dynamic.
   const recentResources = await getRecentResources();
+  const seed = quoteSeed();
 
   // JSON-LD: WebSite + SearchAction lets Google show a search box directly in
   // sitelinks for the brand query.
@@ -124,7 +134,7 @@ export default async function Home() {
               this stack's top and bottom edges line up with the teal block
               beside it instead of leaving a ragged, short column. */}
           <div className="lg:col-span-4 flex flex-col gap-6 lg:gap-8">
-            <div className="flex-1 min-h-36"><QuoteCard /></div>
+            <div className="flex-1 min-h-36"><QuoteCard seed={seed} /></div>
             <div className="flex-1 min-h-36"><LiveStats /></div>
           </div>
 

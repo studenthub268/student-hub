@@ -6,7 +6,7 @@ import { DEPLOY_VERSION } from "@/lib/generated/deploy-version";
 /**
  * DeployWatcher — keeps open pages fresh without giving up the cache.
  *
- * Every 60s (plus on tab focus) it pings /api/version, which returns the id
+ * Every 5min (plus promptly on tab focus) it pings /api/version, which returns the id
  * of the build that is currently deployed. If it differs from the id this
  * page was built with, the page reloads ONCE (session-guarded, never in a
  * loop, never while the user is mid-typing or offline). Combined with the
@@ -46,7 +46,10 @@ export function DeployWatcher() {
       }
     };
 
-    const interval = setInterval(check, 60_000);
+    // 5min floor: a hidden background tab gains nothing from a 60s poll, and
+    // the focus path below already delivers a fresh check the moment the user
+    // actually returns — which is the only moment the result can matter.
+    const interval = setInterval(check, 300_000);
     const onFocus = () => setTimeout(check, 800); // small delay so focus isn't stolen mid-interaction
     window.addEventListener("focus", onFocus);
 

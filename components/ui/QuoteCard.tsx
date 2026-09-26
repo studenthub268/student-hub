@@ -1,8 +1,4 @@
-"use client";
-
-import { useSyncExternalStore } from "react";
-
-const quotes = [
+const QUOTES = [
   { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
   { text: "The function of education is to teach one to think intensively and to think critically.", author: "Martin Luther King Jr." },
   { text: "You must concentrate on gaining knowledge and education. It is your foremost responsibility.", author: "Muhammad Ali Jinnah" },
@@ -13,41 +9,30 @@ const quotes = [
   { text: "Education is what remains after one has forgotten what one has learned in school.", author: "Albert Einstein" },
   { text: "The more that you read, the more things you will know.", author: "Dr. Seuss" },
   { text: "I have never let my schooling interfere with my education.", author: "Mark Twain" },
-];
+] as const;
 
-type Quote = (typeof quotes)[number];
-
-// Server snapshot: null (no flash of wrong content)
-const getServerSnapshot = (): Quote | null => null;
-
-// Client snapshot: random quote chosen once, memoized
-let clientQuote: Quote | null = null;
-const getClientSnapshot = (): Quote | null => {
-  if (!clientQuote) clientQuote = quotes[Math.floor(Math.random() * quotes.length)];
-  return clientQuote;
-};
-
-export function QuoteCard() {
-  const quote = useSyncExternalStore(
-    () => () => {}, // no subscriptions needed
-    getClientSnapshot,
-    getServerSnapshot,
-  );
+/**
+ * Server component: the quote is picked once at build/revalidate time and
+ * baked into the cached HTML. No hydration JS, no flash of empty card.
+ *
+ * Rotation without Math.random()/Date.now() (both impure in render): the
+ * index comes from `new Date()` passed in as a seed — the page re-renders
+ * at most once per ISR window (revalidate=60), so a minute-resolution seed
+ * rotates the quote naturally as the cache rolls while keeping any single
+ * render pure and deterministic.
+ */
+export function QuoteCard({ seed = 0 }: { seed?: number } = {}) {
+  const index = seed % QUOTES.length;
+  const quote = QUOTES[index];
 
   return (
-    // min-h, not fixed h-36: long quotes at narrow widths need to grow,
-    // a fixed height clipped them
     <div className="bg-gradient-to-br from-surface-muted to-surface-muted/60 rounded-[2rem] p-6 min-h-36 flex flex-col items-center justify-center relative overflow-hidden border-2 border-line">
-      {quote ? (
-        <>
-          <p className="text-sm sm:text-base font-medium text-foreground/70 text-center leading-snug italic max-w-[90%]">
-            &ldquo;{quote.text}&rdquo;
-          </p>
-          <span className="text-xs text-foreground/70 mt-2 font-semibold tracking-wider">
-            &mdash; {quote.author}
-          </span>
-        </>
-      ) : null}
+      <p className="text-sm sm:text-base font-medium text-foreground/70 text-center leading-snug italic max-w-[90%]">
+        &ldquo;{quote.text}&rdquo;
+      </p>
+      <span className="text-xs text-foreground/70 mt-2 font-semibold tracking-wider">
+        &mdash; {quote.author}
+      </span>
     </div>
   );
 }
