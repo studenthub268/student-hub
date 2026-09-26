@@ -84,7 +84,10 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
         <Shield className="h-4 w-4" strokeWidth={2} aria-hidden />
         Admin
         {messageCount > 0 && (
-          <span className="ml-auto w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">
+          <span
+            className="ml-auto w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center"
+            aria-label={`${messageCount} unread message${messageCount === 1 ? "" : "s"}`}
+          >
             {messageCount > 99 ? "99+" : messageCount}
           </span>
         )}
@@ -100,7 +103,10 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
     >
       Admin
       {messageCount > 0 && (
-        <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">
+        <span
+          className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center"
+          aria-label={`${messageCount} unread message${messageCount === 1 ? "" : "s"}`}
+        >
           {messageCount > 99 ? "99+" : messageCount}
         </span>
       )}
