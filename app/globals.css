@@ -217,14 +217,9 @@ html {
    scroll. Instant jumps also keep native back/forward position restoration
    working, which the reduced-motion block below assumed anyway. */
 
-/* Keyboard focus that matches the brand (accessibility = premium).
-   NOTE: no border-radius here — it would override the element's own radius
-   (capsule search pill snapped to a 4px box on focus). The outline itself
-   follows the element's corners automatically. */
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
+/* Keyboard focus: browsers' default focus ring only — the custom teal
+   outline read as a "selected" highlight on controls (sort select, filter
+   pills) and was mistaken for a bug. No rule here means the UA default. */
 
 /* Below-the-fold sections: skip rendering work until scrolled near.
    Big win for long pages on slow devices. */
