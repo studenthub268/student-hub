@@ -181,8 +181,20 @@ export default async function Home() {
             <h2 className="text-3xl sm:text-4xl font-medium tracking-tight">Recent Uploads</h2>
             <p className="mt-3 text-foreground/60 font-medium">The latest materials shared by your community.</p>
           </div>
-          <Link href="/browse" className="inline-flex items-center gap-2 font-bold tracking-wider text-xs hover:opacity-70 transition-opacity">
-            Go to Browse <MoveUpRight className="w-4 h-4" />
+          {/* Ink pill matching the site's button language (border-2 border-ink,
+              hard shadow, arrow chip) — the old bare text link read as a stray
+              caption rather than the section's call to action. */}
+          <Link
+            href="/browse"
+            className="group inline-flex items-center gap-2.5 rounded-full border-2 border-ink bg-surface py-2 pl-5 pr-2 text-xs font-bold tracking-wider shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard active:translate-y-0 active:shadow-none"
+          >
+            Go to Browse
+            <span
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-ink on-ink transition-transform duration-300 group-hover:rotate-45"
+              aria-hidden
+            >
+              <MoveUpRight className="h-3 w-3" strokeWidth={2.5} />
+            </span>
           </Link>
         </div>
 
