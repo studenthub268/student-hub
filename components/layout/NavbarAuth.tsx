@@ -9,6 +9,8 @@ import { Avatar } from "@/components/ui/Avatar";
 interface NavbarAuthProps {
   mobile?: boolean;
   onClose?: () => void;
+  /** Mobile only: which slice of the account UI to render in the menu. */
+  section?: "header" | "footer";
 }
 
 interface SessionUser { id: string; name?: string | null; email?: string | null; image?: string | null }
@@ -111,7 +113,7 @@ export function useSessionUser(): SessionUser | null | undefined {
   return user;
 }
 
-export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
+export default function NavbarAuth({ mobile, onClose, section = "footer" }: NavbarAuthProps) {
   const [user, setUser] = useState<SessionUser | null | undefined>(cachedUser);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -150,9 +152,9 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
   };
 
   if (!user) {
-    // Mobile: a single icon row in the same shape as every other menu row —
-    // the old full-width accent block broke the menu's uniform rhythm.
+    // Guests have no identity to show at the top — only the footer row.
     if (mobile) {
+      if (section === "header") return null;
       return (
         <div className="border-t-2 border-ink">
           <Link
@@ -177,36 +179,28 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
   }
 
   if (mobile) {
-    // Mirrors the desktop dropdown's layout: avatar header on a muted band,
-    // icon rows for profile shortcuts, ink-divided Sign Out at the bottom.
-    // (The main nav links live above this block in the hamburger menu; the
-    // rows here are the account-specific shortcuts.)
-    return (
-      <div className="border-t-2 border-ink">
+    // The menu renders this component twice: `header` (profile identity) sits
+    // at the TOP of the menu panel, `footer` (Sign Out) at the bottom. The
+    // old inline "My Profile / Upload Resource / Browse Resources" rows were
+    // removed — each duplicated something the menu already shows (the header
+    // links to /profile; Upload and Browse are nav links above).
+    if (section === "header") {
+      return (
         <Link href="/profile" onClick={onClose} className="group flex items-center gap-3 px-5 py-4 bg-surface-muted border-b-2 border-ink">
           <Avatar image={user.image} name={user.name} email={user.email} size={40} />
-          <div className="overflow-hidden flex-1">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-foreground truncate">{user.name || "Student"}</p>
             <p className="text-xs text-foreground/60 truncate mt-0.5">{user.email}</p>
           </div>
-          <ChevronRight className="h-4 w-4 text-foreground/60 transition-transform group-hover:translate-x-0.5" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-foreground/60 transition-transform group-hover:translate-x-0.5" aria-hidden />
         </Link>
-        <div className="py-1">
-          <Link href="/profile" onClick={onClose} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
-            <User className="h-4 w-4" /> My Profile
-          </Link>
-          <Link href="/upload" onClick={onClose} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
-            <Upload className="h-4 w-4" /> Upload Resource
-          </Link>
-          <Link href="/browse" onClick={onClose} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
-            <BookOpen className="h-4 w-4" /> Browse Resources
-          </Link>
-        </div>
-        <div className="border-t-2 border-ink">
-          <button onClick={handleSignOut} className="flex w-full items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">
-            <LogOut className="h-4 w-4" /> Sign Out
-          </button>
-        </div>
+      );
+    }
+    return (
+      <div className="border-t-2 border-ink">
+        <button onClick={handleSignOut} className="flex w-full items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">
+          <LogOut className="h-4 w-4" aria-hidden /> Sign Out
+        </button>
       </div>
     );
   }

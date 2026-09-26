@@ -161,7 +161,10 @@ export function Navbar() {
           {/* Click-away catcher — transparent, sits behind the panel */}
           <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
           <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-ink bg-surface/95 backdrop-blur-xl shadow-hard-lg scale-in origin-top">
-            
+            {/* Profile identity — the very first thing in the menu (only when
+                signed in; guests get nothing here). */}
+            <NavbarAuth mobile section="header" onClose={() => setMobileOpen(false)} />
+
             {/* Nav Links — icon rows, same row shape as the account section
                 below, so the whole menu reads as one surface. */}
             {NAV_LINKS.map((link, index) => {
@@ -185,8 +188,9 @@ export function Navbar() {
                 same as every other menu item */}
             <AdminLink dark onNavigate={() => setMobileOpen(false)} />
 
-            {/* Auth Section */}
-            <NavbarAuth mobile onClose={() => setMobileOpen(false)} />
+            {/* Auth footer — Sign Out only (guests: Get Started row). The
+                profile identity lives at the top of the menu. */}
+            <NavbarAuth mobile section="footer" onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
