@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Upload, Heart, Calendar, FileText, ArrowRight } from "lucide-react";
+import { Upload, Heart, Calendar, ArrowRight, FileText, Download } from "lucide-react";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Resource, User } from "@/lib/db/schema";
@@ -10,6 +10,18 @@ interface ProfileContentProps {
   profile: User | null;
   resources: Resource[];
   totalLikes: number;
+}
+
+function formatBytes(bytes: number | null): string {
+  if (!bytes) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(v >= 100 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 export default function ProfileContent({
@@ -25,60 +37,76 @@ export default function ProfileContent({
       })
     : "Unknown";
 
+  const totalDownloads = resources.reduce((sum, r) => sum + (r.downloads || 0), 0);
+
+  const stats = [
+    { icon: FileText, value: resources.length, label: "Uploads" },
+    { icon: Heart, value: totalLikes, label: "Likes Received" },
+    { icon: Download, value: totalDownloads, label: "Downloads" },
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 max-w-[1400px]">
-      {/* Profile Header */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-        {/* Avatar + Info */}
-        <div className="lg:col-span-1">
-          <div className="rounded-[2rem] border-2 border-ink bg-accent p-8 shadow-hard text-center">
-            <div className="mx-auto w-fit rounded-full border-4 border-ink">
-              <Avatar image={profile?.image} name={profile?.name} email={profile?.email} size={88} />
+    <div className="container mx-auto px-4 py-10 sm:px-6 lg:px-8 max-w-[1400px]">
+      {/* Identity bar — one wide card instead of the old three separate
+          boxes: avatar and name on the left, stat chips inline on the
+          right. Reads as a single profile strip; on phones everything
+          stacks but keeps the same compact rhythm. */}
+      <div className="rounded-[2rem] border-2 border-ink bg-surface shadow-hard overflow-hidden mb-12">
+        <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          {/* Identity */}
+          <div className="flex items-center gap-5 min-w-0">
+            <div className="shrink-0 rounded-full border-4 border-ink bg-accent">
+              <Avatar image={profile?.image} name={profile?.name} email={profile?.email} size={72} />
             </div>
-            <h1 className="mt-6 text-2xl font-black tracking-tight">
-              {profile?.name || "Student"}
-            </h1>
-            <p className="mt-1 text-sm font-medium opacity-90 break-all">
-              {profile?.email}
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold tracking-wider opacity-90">
-              <Calendar className="h-3.5 w-3.5" />
-              Joined {joinDate}
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground truncate">
+                {profile?.name || "Student"}
+              </h1>
+              <p className="mt-0.5 text-sm font-medium text-foreground/60 truncate">
+                {profile?.email}
+              </p>
+              <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-foreground/60">
+                <Calendar className="h-3.5 w-3.5" aria-hidden />
+                Joined {joinDate}
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Stats */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard flex flex-col items-center justify-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent border-2 border-ink mb-4">
-              <FileText className="h-6 w-6 text-accent-contrast" strokeWidth={2} />
-            </div>
-            <span className="text-4xl font-black tracking-tighter text-foreground">{resources.length}</span>
-            <span className="text-xs font-bold tracking-wider text-foreground/60 mt-1">Uploads</span>
-          </div>
-
-          <div className="rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard flex flex-col items-center justify-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent border-2 border-ink mb-4">
-              <Heart className="h-6 w-6 text-accent-contrast" strokeWidth={2} />
-            </div>
-            <span className="text-4xl font-black tracking-tighter text-foreground">{totalLikes}</span>
-            <span className="text-xs font-bold tracking-wider text-foreground/60 mt-1">Likes Received</span>
+          {/* Stats — hairline-divided columns, big numeral first, label under. */}
+          <div className="grid grid-cols-3 divide-x divide-line border-t-2 border-line pt-6 lg:border-t-0 lg:border-l-2 lg:border-line lg:pt-0 lg:pl-10">
+            {stats.map(({ icon: Icon, value, label }) => (
+              <div key={label} className="flex flex-col items-center px-4 sm:px-8 text-center">
+                <span className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground tabular-nums">
+                  {value}
+                </span>
+                <span className="mt-1 inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-wider text-foreground/60 whitespace-nowrap">
+                  <Icon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  {label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* User's Resources */}
       <div>
-        <div className="flex justify-between items-end mb-8">
-          <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-foreground">
-            My Uploads
-          </h2>
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-foreground">
+              My Uploads
+            </h2>
+            <p className="mt-2 text-sm font-medium text-foreground/60">
+              {resources.length > 0
+                ? `Total size ${formatBytes(resources.reduce((s, r) => s + (r.fileSize || 0), 0))}`
+                : "Nothing shared yet."}
+            </p>
+          </div>
           <Link
             href="/upload"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border-2 border-ink bg-accent px-5 py-2.5 text-sm font-bold tracking-wider hover:-translate-y-1 hover:shadow-hard-accent transition-all"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-ink bg-ink on-ink px-5 py-2.5 text-sm font-bold tracking-wider shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard active:translate-y-0 active:shadow-none"
           >
-            <Upload className="h-4 w-4" />
+            <Upload className="h-4 w-4" aria-hidden />
             Upload New
           </Link>
         </div>
@@ -102,9 +130,9 @@ export default function ProfileContent({
             </p>
             <Link
               href="/upload"
-              className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-ink bg-ink on-ink px-6 py-3 text-sm font-bold tracking-wider hover:-translate-y-1 hover:shadow-hard-accent transition-all"
+              className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-ink bg-ink on-ink px-6 py-3 text-sm font-bold tracking-wider hover:-translate-y-0.5 hover:shadow-hard transition-all"
             >
-              Upload Your First Resource <ArrowRight className="h-4 w-4" />
+              Upload Your First Resource <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
         )}
