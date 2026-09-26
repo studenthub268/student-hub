@@ -54,9 +54,9 @@ export default function ProfileContent({
       <div className="rounded-[2rem] border-2 border-ink bg-surface shadow-hard overflow-hidden mb-12">
         <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
           {/* Identity */}
-          <div className="flex items-center gap-5 min-w-0">
+          <div className="flex items-center gap-4 sm:gap-5 min-w-0">
             <div className="shrink-0 rounded-full border-4 border-ink bg-accent">
-              <Avatar image={profile?.image} name={profile?.name} email={profile?.email} size={72} />
+              <Avatar image={profile?.image} name={profile?.name} email={profile?.email} size={64} />
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground truncate">
@@ -65,23 +65,26 @@ export default function ProfileContent({
               <p className="mt-0.5 text-sm font-medium text-foreground/60 truncate">
                 {profile?.email}
               </p>
-              <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-foreground/60">
-                <Calendar className="h-3.5 w-3.5" aria-hidden />
-                Joined {joinDate}
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-bold tracking-wider text-foreground/60">
+                <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span className="truncate">Joined {joinDate}</span>
               </p>
             </div>
           </div>
 
-          {/* Stats — hairline-divided columns, big numeral first, label under. */}
+          {/* Stats — hairline-divided columns, big numeral first, label under.
+              px scales down on phones so three columns fit a 360px card; the
+              "Likes Received" label drops its icon below xs, where the icon
+              + text was what forced the wrap/overflow. */}
           <div className="grid grid-cols-3 divide-x divide-line border-t-2 border-line pt-6 lg:border-t-0 lg:border-l-2 lg:border-line lg:pt-0 lg:pl-10">
             {stats.map(({ icon: Icon, value, label }) => (
-              <div key={label} className="flex flex-col items-center px-4 sm:px-8 text-center">
+              <div key={label} className="flex flex-col items-center px-1.5 sm:px-8 text-center min-w-0">
                 <span className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground tabular-nums">
                   {value}
                 </span>
-                <span className="mt-1 inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-wider text-foreground/60 whitespace-nowrap">
-                  <Icon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                  {label}
+                <span className="mt-1 inline-flex items-center justify-center gap-1 text-[11px] sm:text-xs font-bold tracking-wider text-foreground/60 min-w-0">
+                  <Icon className="hidden h-3.5 w-3.5 shrink-0 sm:inline" strokeWidth={2} aria-hidden />
+                  <span className="truncate">{label}</span>
                 </span>
               </div>
             ))}
