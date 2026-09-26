@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Shield } from "lucide-react";
 
 export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: () => void }) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -78,8 +79,9 @@ export function AdminLink({ dark, onNavigate }: { dark?: boolean; onNavigate?: (
       <Link
         href="/admin"
         onClick={onNavigate}
-        className="flex items-center px-6 py-4 text-base font-bold text-foreground hover:bg-accent hover:text-accent-contrast transition-colors"
+        className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors"
       >
+        <Shield className="h-4 w-4" strokeWidth={2} aria-hidden />
         Admin
         {messageCount > 0 && (
           <span className="ml-auto w-5 h-5 bg-red-500 text-background text-xs font-bold rounded-full flex items-center justify-center">

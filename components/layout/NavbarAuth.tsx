@@ -159,23 +159,37 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
   }
 
   if (mobile) {
+    // Mirrors the desktop dropdown's layout: avatar header on a muted band,
+    // icon rows for profile shortcuts, ink-divided Sign Out at the bottom.
+    // (The main nav links live above this block in the hamburger menu; the
+    // rows here are the account-specific shortcuts.)
     return (
-      <>
-        {/* Profile header — the whole card is the link to the profile page.
-            Everything else (upload/browse/contact) already lives in the main
-            menu list above, so no duplicate rows here — just Sign Out. */}
-        <Link href="/profile" onClick={onClose} className="group flex items-center gap-3 px-6 py-4 bg-accent border-b border-line hover:bg-accent/80 transition-colors">
-          <Avatar image={user.image} name={user.name} email={user.email} size={36} />
+      <div className="border-t-2 border-ink">
+        <Link href="/profile" onClick={onClose} className="group flex items-center gap-3 px-5 py-4 bg-surface-muted border-b-2 border-ink">
+          <Avatar image={user.image} name={user.name} email={user.email} size={40} />
           <div className="overflow-hidden flex-1">
             <p className="text-sm font-bold text-foreground truncate">{user.name || "Student"}</p>
-            <p className="text-xs text-foreground/60 truncate">{user.email}</p>
+            <p className="text-xs text-foreground/60 truncate mt-0.5">{user.email}</p>
           </div>
           <ChevronRight className="h-4 w-4 text-foreground/60 transition-transform group-hover:translate-x-0.5" />
         </Link>
-        <button onClick={handleSignOut} className="flex w-full items-center gap-3 px-6 py-4 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors rounded-b-2xl">
-          <LogOut className="h-4 w-4" /> Sign Out
-        </button>
-      </>
+        <div className="py-1">
+          <Link href="/profile" onClick={onClose} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
+            <User className="h-4 w-4" /> My Profile
+          </Link>
+          <Link href="/upload" onClick={onClose} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
+            <Upload className="h-4 w-4" /> Upload Resource
+          </Link>
+          <Link href="/browse" onClick={onClose} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
+            <BookOpen className="h-4 w-4" /> Browse Resources
+          </Link>
+        </div>
+        <div className="border-t-2 border-ink">
+          <button onClick={handleSignOut} className="flex w-full items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">
+            <LogOut className="h-4 w-4" /> Sign Out
+          </button>
+        </div>
+      </div>
     );
   }
 

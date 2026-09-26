@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, ArrowLeft, Search } from "lucide-react";
+import { Menu, X, ArrowLeft, Search, Home, Compass, Upload, Mail } from "lucide-react";
 import NavbarSearch from "./NavbarSearch";
 import NavbarAuth from "./NavbarAuth";
 import { AdminLink } from "./AdminLink";
@@ -16,6 +16,16 @@ const NAV_LINKS = [
   { href: "/upload", label: "Upload" },
   { href: "/contact", label: "Contact" },
 ];
+
+// Menu row icons — the hamburger rows carry the same icon+label shape as
+// the account section (NavbarAuth mobile), so both halves of the menu read
+// identically.
+const NAV_ICONS: Record<string, typeof Home> = {
+  "/": Home,
+  "/browse": Compass,
+  "/upload": Upload,
+  "/contact": Mail,
+};
 
 // Shared shape for the square icon buttons (search + hamburger + theme).
 const ICON_BTN =
@@ -152,19 +162,24 @@ export function Navbar() {
           <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
           <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-ink bg-surface/95 backdrop-blur-xl shadow-hard-lg scale-in origin-top">
             
-            {/* Nav Links */}
-            {NAV_LINKS.map((link, index) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center px-6 py-4 text-base font-bold text-foreground hover:bg-accent hover:text-accent-contrast transition-colors ${
-                  index < NAV_LINKS.length - 1 ? "border-b border-line" : ""
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {/* Nav Links — icon rows, same row shape as the account section
+                below, so the whole menu reads as one surface. */}
+            {NAV_LINKS.map((link, index) => {
+              const Icon = NAV_ICONS[link.href];
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors ${
+                    index < NAV_LINKS.length - 1 ? "border-b border-line" : ""
+                  }`}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  {link.label}
+                </Link>
+              );
+            })}
 
             {/* Admin Link (mobile) — inline with nav links; closes the menu on tap,
                 same as every other menu item */}
