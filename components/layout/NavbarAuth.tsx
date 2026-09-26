@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { User, LogOut, Upload, BookOpen, ChevronRight } from "lucide-react";
+import { User, LogOut, LogIn, Upload, BookOpen, ChevronRight } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
 interface NavbarAuthProps {
@@ -150,9 +150,27 @@ export default function NavbarAuth({ mobile, onClose }: NavbarAuthProps) {
   };
 
   if (!user) {
+    // Mobile: a single icon row in the same shape as every other menu row —
+    // the old full-width accent block broke the menu's uniform rhythm.
+    if (mobile) {
+      return (
+        <div className="border-t-2 border-ink">
+          <Link
+            href="/login"
+            onClick={onClose}
+            className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors"
+          >
+            <LogIn className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Get Started
+          </Link>
+        </div>
+      );
+    }
     return (
-      <Link href="/login" onClick={onClose}
-        className={mobile ? "flex items-center justify-center px-6 py-4 text-base font-bold text-accent-contrast bg-accent hover:bg-accent/80 transition-colors rounded-b-2xl" : "rounded-full bg-ink on-ink px-6 py-2.5 text-sm font-medium transition-transform hover:bg-ink hover:scale-105 active:scale-95"}>
+      <Link
+        href="/login"
+        className="rounded-full bg-ink on-ink px-6 py-2.5 text-sm font-medium transition-transform hover:bg-ink hover:scale-105 active:scale-95"
+      >
         Get Started
       </Link>
     );
