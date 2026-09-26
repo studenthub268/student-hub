@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { User, LogOut, LogIn, Upload, BookOpen, ChevronRight } from "lucide-react";
+import { User, LogOut, LogIn, ChevronRight } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
 interface NavbarAuthProps {
@@ -215,27 +215,29 @@ export default function NavbarAuth({ mobile, onClose, section = "footer" }: Navb
       </button>
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-ink bg-surface shadow-hard overflow-hidden z-[9999]">
-          <div className="flex items-center gap-3 px-5 py-4 border-b-2 border-ink bg-surface-muted">
+          {/* The whole header links to the profile (it IS the profile entry —
+              no separate "My Profile" row duplicating it). Upload/Browse live
+              in the navbar directly above, so they're not repeated here. */}
+          <Link
+            href="/profile"
+            onClick={() => setShowDropdown(false)}
+            className="group flex items-center gap-3 px-5 py-4 border-b-2 border-ink bg-surface-muted transition-colors hover:bg-line/40"
+          >
             <Avatar image={user.image} name={user.name} email={user.email} size={40} />
-            <div className="overflow-hidden">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-foreground truncate">{user.name || "Student"}</p>
               <p className="text-xs text-foreground/60 truncate mt-0.5">{user.email}</p>
             </div>
-          </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-foreground/60 transition-transform group-hover:translate-x-0.5" aria-hidden />
+          </Link>
           <div className="py-1">
             <Link href="/profile" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
-              <User className="h-4 w-4" /> My Profile
-            </Link>
-            <Link href="/upload" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
-              <Upload className="h-4 w-4" /> Upload Resource
-            </Link>
-            <Link href="/browse" onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-contrast transition-colors">
-              <BookOpen className="h-4 w-4" /> Browse Resources
+              <User className="h-4 w-4" aria-hidden /> My Profile
             </Link>
           </div>
           <div className="border-t-2 border-ink">
             <button onClick={handleSignOut} className="flex w-full items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">
-              <LogOut className="h-4 w-4" /> Sign Out
+              <LogOut className="h-4 w-4" aria-hidden /> Sign Out
             </button>
           </div>
         </div>
