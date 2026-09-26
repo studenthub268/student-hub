@@ -107,24 +107,24 @@ export function OfflineBanner() {
 
   if (!offline) return null;
 
-  // Sticky pill, not a full-width bar: it sits under the floating navbar
-  // (same z-plane, same rounded ink-card language) instead of shoving the
-  // whole page down. Sticky keeps it visible while scrolling — on mobile
-  // the scrolled-away bar was exactly when users needed the "why is
-  // nothing loading" explanation. Animated via .offline-banner (slide+
-  // settle), dot via .offline-dot; both are killed by the
-  // prefers-reduced-motion clamp in globals.css.
+  // Fixed pill, not a full-width bar: the navbar is sticky top-4 at every
+  // scroll position, so a FIXED banner at a constant offset below it stays
+  // glued to the bar whether the page is scrolled or at the top. (Sticky was
+  // wrong here twice over: this component mounts ABOVE <Navbar /> in the
+  // layout, so at scrollY=0 its in-flow position was the very top of the
+  // document — overlapping the navbar — and once scrolled it pinned to its
+  // own offset. Fixed removes scroll from the equation entirely.)
   //
-  // top-[6.25rem]: exactly clears the navbar. The bar's bottom edge lands at
-  // top-4 (16px) + h-14 (56px) + pb-4 (16px) = 88px, plus the 4px hard
-  // shadow it casts → 92px to clear; 6.25rem (100px) leaves a small breathing
-  // gap. The old 4.75/5.25rem offsets predate the restored navbar height and
-  // let the pill tuck underneath the bar, clipping its text.
+  // top-[5.75rem] = 92px: navbar bottom edge is top-4 (16px) + h-14 (56px)
+  // = 72px, plus its 4px hard shadow → 76px visual bottom; 92px leaves a
+  // 16px gap matching the page's spacing rhythm. Animated via .offline-
+  // banner (slide+settle), dot via .offline-dot; both are killed by the
+  // prefers-reduced-motion clamp in globals.css.
   return (
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-[6.25rem] z-[60] flex justify-center px-4 pointer-events-none"
+      className="fixed inset-x-0 top-[5.75rem] z-[60] flex justify-center px-4 pointer-events-none"
     >
       <div className="offline-banner pointer-events-auto flex max-w-md items-center gap-2.5 rounded-full border-2 border-ink bg-ink on-ink py-2 pl-3 pr-4 shadow-hard">
         <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-400/15" aria-hidden="true">
