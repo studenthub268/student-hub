@@ -20,7 +20,6 @@ import {
   ShieldCheck,
   ShieldOff,
   Users,
-  UserCog,
   Globe,
   Trash2,
   Plus,
@@ -36,6 +35,8 @@ import {
   Ban,
   Lock,
   Eye,
+  ArrowRight,
+  Inbox,
 } from "lucide-react";
 import Link from "next/link";
 import { getErrorMessage } from "@/lib/utils";
@@ -47,15 +48,15 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import dynamic from "next/dynamic";
 
 // Lazy-loaded: the Traffic tab pulls its own data via getTrafficData, so the
-// other six tabs never pay for its JS or query until they open it.
+// other tabs never pay for its JS or query until they open it.
 const TrafficTab = dynamic(() => import("./TrafficTab"));
 
-type Tab = "security" | "resources" | "reports" | "messages" | "users" | "admins" | "email" | "traffic";
+type Tab = "overview" | "moderation" | "security" | "users" | "diagnostics";
 
 // sessionStorage cache so revisits within the same tab render instantly and
 // revalidate in the background. Stale-while-revalidate: cached data shows
 // immediately, fresh data replaces it when the server responds.
-const ADMIN_CACHE_KEY = "admin-panel-cache-v2";
+const ADMIN_CACHE_KEY = "admin-panel-cache-v3";
 const ADMIN_CACHE_TTL_MS = 60_000;
 
 type AdminPanelData = {
@@ -154,7 +155,7 @@ export default function AdminPanel() {
   const [newIpReason, setNewIpReason] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [loading, setLoading] = useState(!initialCache);
-  const [activeTab, setActiveTab] = useState<Tab>("security");
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [editingResource, setEditingResource] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "", subject: "", type: "", professor: "", department: "" });
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
@@ -296,17 +297,6 @@ export default function AdminPanel() {
     }
   };
 
-  const handleRemoveAdmin = async (email: string) => {
-    try {
-      await removeAdminEmail(email);
-      toast.success(`Removed ${email}`);
-      loadData();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
-  };
-
-  // ---- User Management ----
   const handlePromoteUser = async (email: string) => {
     try {
       await addAdminEmail(email);
@@ -362,22 +352,29 @@ export default function AdminPanel() {
     );
   }
 
-  const tabs: { key: Tab; label: string; icon: LucideIcon; count?: number }[] = [
-    { key: "security", label: "Security", icon: Shield, count: blockedIps.length },
-    { key: "resources", label: "Resources", icon: FileText, count: resourcesList.length },
-    { key: "reports", label: "Reports", icon: Flag, count: reportsList.length },
-    { key: "messages", label: "Messages", icon: Mail, count: messagesList.length },
-    { key: "users", label: "Users", icon: UserCog, count: usersList.length },
-    { key: "admins", label: "Admins", icon: ShieldCheck, count: adminEmails.length },
-    { key: "email", label: "Email", icon: Mail, count: emailStats?.totals?.bounced || 0 },
-    { key: "traffic", label: "Traffic", icon: Eye },
+  // Attention items drive the Overview: anything an admin must act on.
+  const attentionReports = reportsList.length;
+  const attentionMessages = messagesList.length;
+  const attentionAutoBlocks = autoBlocks.length;
+  const highBounce = emailStats ? Number(emailStats.totals.bounceRate) > 5 : false;
+
+  const tabs: { key: Tab; label: string; icon: LucideIcon; count?: number; alert?: boolean }[] = [
+    { key: "overview", label: "Overview", icon: Shield },
+    { key: "moderation", label: "Moderation", icon: FileText, count: resourcesList.length },
+    { key: "security", label: "Security", icon: ShieldOff, count: blockedIps.length, alert: attentionAutoBlocks > 0 },
+    { key: "users", label: "Users", icon: Users, count: usersList.length },
+    { key: "diagnostics", label: "Diagnostics", icon: Eye, alert: highBounce },
   ];
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Admin Panel</h1>
-        <p className="text-foreground/60 font-medium">Manage security, resources, messages, and admin access.</p>
+        <p className="text-foreground/60 font-medium">
+          {attentionReports + attentionMessages + attentionAutoBlocks > 0
+            ? `${attentionReports + attentionMessages + attentionAutoBlocks} item${attentionReports + attentionMessages + attentionAutoBlocks === 1 ? "" : "s"} need attention.`
+            : "All clear — nothing needs attention."}
+        </p>
       </div>
 
       {/* Tabs */}
@@ -391,10 +388,10 @@ export default function AdminPanel() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm tracking-wider transition-all ${
                 activeTab === tab.key
                   ? "bg-ink on-ink"
-                  : "bg-surface-muted text-foreground hover:bg-surface-muted"
+                  : "bg-surface-muted text-foreground hover:bg-line/60"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4" aria-hidden />
               {tab.label}
               {tab.count !== undefined && (
                 <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
@@ -403,19 +400,259 @@ export default function AdminPanel() {
                   {tab.count}
                 </span>
               )}
+              {tab.alert && activeTab !== tab.key && (
+                <span className="ml-0.5 w-2 h-2 rounded-full bg-red-500" aria-label="needs attention" />
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* ===== SECURITY TAB ===== */}
+      {/* ===== OVERVIEW ===== */}
+      {activeTab === "overview" && (
+        <div className="space-y-6">
+          {/* Attention cards — each jumps straight to the queue it summarizes */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { key: "moderation" as const, label: "Reports", count: attentionReports, icon: Flag, desc: "Resources flagged by students" },
+              { key: "moderation" as const, label: "Messages", count: attentionMessages, icon: Inbox, desc: "Contact form submissions" },
+              { key: "security" as const, label: "Auto-blocks", count: attentionAutoBlocks, icon: AlertTriangle, desc: "System blocks, last 7 days" },
+            ].map(({ key, label, count, icon: Icon, desc }) => (
+              <button
+                key={label}
+                onClick={() => setActiveTab(key)}
+                className={`text-left rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard ${count > 0 ? "" : "opacity-60"}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-ink ${count > 0 ? "bg-accent text-accent-contrast" : "bg-surface-muted text-foreground"}`}>
+                    <Icon className="h-5 w-5" aria-hidden />
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-foreground/40" aria-hidden />
+                </div>
+                <p className="mt-4 text-3xl font-black tracking-tighter tabular-nums">{count}</p>
+                <p className="text-sm font-bold tracking-wider">{label}</p>
+                <p className="text-xs font-medium text-foreground/60 mt-0.5">{desc}</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Latest items preview — the top of each queue without leaving Overview */}
+          {attentionReports > 0 && (
+            <div className="rounded-2xl border-2 border-line bg-surface p-6">
+              <h3 className="font-bold mb-3 flex items-center gap-2"><Flag className="h-4 w-4 text-red-500" aria-hidden /> Latest report</h3>
+              {(() => {
+                const r = reportsList[0];
+                return (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold truncate">{r.resource?.title || "Deleted resource"}</p>
+                      <p className="text-xs text-foreground/60 font-medium">{r.reason} · by {r.reporter?.name || "Unknown"}</p>
+                    </div>
+                    <button onClick={() => setActiveTab("moderation")} className="shrink-0 text-xs font-bold text-accent hover:underline">Review</button>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {attentionMessages > 0 && (
+            <div className="rounded-2xl border-2 border-line bg-surface p-6">
+              <h3 className="font-bold mb-3 flex items-center gap-2"><Inbox className="h-4 w-4 text-accent" aria-hidden /> Latest message</h3>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold truncate">{messagesList[0].name}</p>
+                  <p className="text-xs text-foreground/60 font-medium truncate">{messagesList[0].message}</p>
+                </div>
+                <button onClick={() => setActiveTab("moderation")} className="shrink-0 text-xs font-bold text-accent hover:underline">Read</button>
+              </div>
+            </div>
+          )}
+
+          {/* Quick stats row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label: "Resources", value: resourcesList.length },
+              { label: "Users", value: usersList.length },
+              { label: "Admins", value: adminEmails.length },
+              { label: "Blocked IPs", value: blockedIps.length },
+            ].map((s) => (
+              <div key={s.label} className="rounded-2xl border-2 border-line bg-surface-muted p-4 text-center">
+                <p className="text-2xl font-black tracking-tighter tabular-nums">{s.value}</p>
+                <p className="text-xs font-bold tracking-wider text-foreground/60 mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== MODERATION (resources + reports + messages) ===== */}
+      {activeTab === "moderation" && (
+        <div className="space-y-10">
+          {/* Reports first — they block content quality */}
+          <section>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Flag className="h-4 w-4 text-red-500" aria-hidden /> Reports ({reportsList.length})
+            </h3>
+            <div className="space-y-3">
+              {reportsList.length === 0 ? (
+                <p className="text-sm text-foreground/60 font-medium p-4 rounded-xl bg-surface-muted">No open reports.</p>
+              ) : (
+                reportsList.map((report) => {
+                  const reportedResource = report.resource;
+                  return (
+                    <div key={report.id} className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 rounded-xl border-2 border-red-100 bg-surface">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">{report.reason}</span>
+                          <span className="text-xs text-foreground/60 font-medium">{new Date(report.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="font-bold text-sm mt-1">{reportedResource?.title || "Deleted"}</p>
+                        <p className="text-xs text-foreground/60 font-medium mt-0.5">
+                          by {report.reporter?.name || "Unknown"} ({report.reporter?.email})
+                        </p>
+                        {report.description && (
+                          <p className="text-xs text-foreground/60 font-medium mt-2 p-3 bg-surface-muted rounded-lg">{report.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                        {reportedResource?.id && (
+                          <Link href={`/resource/${reportedResource.id}`} target="_blank" className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors" aria-label="Open resource">
+                            <ExternalLink className="w-4 h-4" aria-hidden />
+                          </Link>
+                        )}
+                        {reportedResource?.id && (
+                          <button
+                            onClick={() => handleDeleteReportedResource(report.id, reportedResource!.id, reportedResource!.title)}
+                            className="p-2 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                            title="Delete resource & dismiss report"
+                            aria-label="Delete resource and dismiss report"
+                          >
+                            <Ban className="w-4 h-4" aria-hidden />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteReport(report.id)}
+                          className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors"
+                          title="Dismiss report only"
+                          aria-label="Dismiss report"
+                        >
+                          <Trash2 className="w-4 h-4" aria-hidden />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Inbox className="h-4 w-4 text-accent" aria-hidden /> Messages ({messagesList.length})
+            </h3>
+            <div className="space-y-3">
+              {messagesList.length === 0 ? (
+                <p className="text-sm text-foreground/60 font-medium p-4 rounded-xl bg-surface-muted">No messages.</p>
+              ) : (
+                messagesList.map((msg) => (
+                  <div key={msg.id} className="p-4 rounded-xl border-2 border-line bg-surface">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedMessage(expandedMessage === msg.id ? null : msg.id)}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                            <Mail className="w-4 h-4 text-accent" aria-hidden />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm">{msg.name}</p>
+                            <p className="text-xs text-foreground/60 font-medium">{msg.email}</p>
+                          </div>
+                        </div>
+                        {expandedMessage !== msg.id && (
+                          <p className="text-xs text-foreground/60 font-medium mt-2 ml-11 truncate">{msg.message}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                        <span className="text-xs text-foreground/70 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                        {expandedMessage === msg.id ? <ChevronUp className="w-4 h-4 text-foreground/50" aria-hidden /> : <ChevronDown className="w-4 h-4 text-foreground/50" aria-hidden />}
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors" aria-label="Delete message">
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden />
+                        </button>
+                      </div>
+                    </div>
+                    {expandedMessage === msg.id && (
+                      <div className="mt-4 ml-11 p-4 bg-surface-muted rounded-xl">
+                        <p className="text-sm font-medium text-foreground/70 whitespace-pre-wrap">{msg.message}</p>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <FileText className="h-4 w-4" aria-hidden /> All resources ({resourcesList.length})
+            </h3>
+            <div className="space-y-3">
+              {resourcesList.length === 0 ? (
+                <p className="text-sm text-foreground/60 font-medium p-4 rounded-xl bg-surface-muted">No resources yet.</p>
+              ) : (
+                resourcesList.map((res) => (
+                  <div key={res.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
+                    {editingResource === res.id ? (
+                      <div className="space-y-3 w-full">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-bold text-sm">Editing resource</h4>
+                          <button onClick={() => setEditingResource(null)} className="p-1 hover:bg-surface-muted rounded-lg" aria-label="Cancel edit"><X className="w-4 h-4" aria-hidden /></button>
+                        </div>
+                        <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Title" />
+                        <input value={editForm.subject} onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Subject" />
+                        <input value={editForm.professor} onChange={(e) => setEditForm({ ...editForm, professor: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Professor" />
+                        <input value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Department" />
+                        <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full h-20 px-3 py-2 rounded-lg border-2 border-line text-sm font-medium focus:outline-none resize-none" placeholder="Description" />
+                        <div className="flex gap-2">
+                          <button onClick={() => handleSaveEdit(res.id)} className="px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs tracking-wider">Save</button>
+                          <button onClick={() => setEditingResource(null)} className="px-4 py-2 rounded-full bg-surface-muted font-bold text-xs tracking-wider">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm truncate">{res.title}</p>
+                          <p className="text-xs text-foreground/60 font-medium mt-0.5">
+                            {res.subject} · {res.type} · {res.uploader?.name || "Anonymous"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                          <Link href={`/resource/${res.id}`} target="_blank" className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors" aria-label="Open resource">
+                            <ExternalLink className="w-4 h-4" aria-hidden />
+                          </Link>
+                          <button onClick={() => startEdit(res)} className="p-2 rounded-lg border-2 border-line hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all" aria-label="Edit resource">
+                            <Edit3 className="w-4 h-4" aria-hidden />
+                          </button>
+                          <button onClick={() => handleDeleteResource(res.id, res.title)} className="p-2 rounded-lg border-2 border-line hover:bg-red-500 hover:text-white hover:border-red-500 transition-all" aria-label="Delete resource">
+                            <Trash2 className="w-4 h-4" aria-hidden />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ===== SECURITY ===== */}
       {activeTab === "security" && (
         <div className="space-y-6">
           {/* Auto-block alert banner — system blocks from the last 7 days */}
           {autoBlocks.length > 0 && (
             <div className="rounded-2xl border-2 border-red-300 bg-red-50 p-6">
               <h3 className="font-black text-lg text-red-700 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
+                <AlertTriangle className="w-5 h-5" aria-hidden />
                 {autoBlocks.length} IP{autoBlocks.length > 1 ? "s" : ""} auto-blocked by the system (last 7 days)
               </h3>
               <p className="text-sm font-medium text-red-600/80 mt-1">
@@ -434,17 +671,12 @@ export default function AdminPanel() {
                       </div>
                       <p className="text-xs text-red-600/70 font-medium truncate">{b.reason}</p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-xs text-red-400 font-medium">
-                        {new Date(b.blockedAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      <button
-                        onClick={() => handleUnblockIp(b.ip)}
-                        className="px-3 py-1.5 rounded-full border-2 border-red-300 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
-                      >
-                        Unblock
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleUnblockIp(b.ip)}
+                      className="shrink-0 px-3 py-1.5 rounded-full border-2 border-red-300 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
+                    >
+                      Unblock
+                    </button>
                   </div>
                 ))}
               </div>
@@ -462,7 +694,7 @@ export default function AdminPanel() {
 
           {blockedIps.length === 0 ? (
             <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
-              <Globe className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+              <Globe className="w-12 h-12 mx-auto text-foreground/40 mb-4" aria-hidden />
               <p className="text-foreground/60 font-medium">No blocked IPs</p>
             </div>
           ) : (
@@ -475,7 +707,7 @@ export default function AdminPanel() {
                   <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-red-50 border border-red-200 flex items-center justify-center">
-                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                        <AlertTriangle className="w-5 h-5 text-red-500" aria-hidden />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -487,7 +719,7 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     <button onClick={() => handleUnblockIp(entry.ip)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
-                      <Trash2 className="w-4 h-4" /> Unblock
+                      <Trash2 className="w-4 h-4" aria-hidden /> Unblock
                     </button>
                   </div>
                 );
@@ -497,373 +729,148 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {/* ===== RESOURCES TAB ===== */}
-      {activeTab === "resources" && (
-        <div className="space-y-3">
-          {resourcesList.length === 0 ? (
-            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
-              <FileText className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
-              <p className="text-foreground/60 font-medium">No resources yet</p>
-            </div>
-          ) : (
-            resourcesList.map((res) => (
-                  <div key={res.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
-                {editingResource === res.id ? (
-                  /* Edit mode */
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-sm">Editing resource</h4>
-                      <button onClick={() => setEditingResource(null)} className="p-1 hover:bg-surface-muted rounded-lg"><X className="w-4 h-4" /></button>
-                    </div>
-                    <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Title" />
-                    <input value={editForm.subject} onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Subject" />
-                    <input value={editForm.professor} onChange={(e) => setEditForm({ ...editForm, professor: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Professor" />
-                    <input value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Department" />
-                    <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full h-20 px-3 py-2 rounded-lg border-2 border-line text-sm font-medium focus:outline-none resize-none" placeholder="Description" />
-                    <div className="flex gap-2">
-                      <button onClick={() => handleSaveEdit(res.id)} className="px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs tracking-wider">Save</button>
-                      <button onClick={() => setEditingResource(null)} className="px-4 py-2 rounded-full bg-surface-muted font-bold text-xs tracking-wider">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  /* View mode */
-                  <div className="flex items-center justify-between w-full">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-sm truncate">{res.title}</p>
-                      <p className="text-xs text-foreground/60 font-medium mt-0.5">
-                        {res.subject} · {res.type} · {res.uploader?.name || "Anonymous"}
-                      </p>
-                      <p className="text-xs text-foreground/70 font-medium">
-                        {res.likes} likes · {new Date(res.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
-                      <Link href={`/resource/${res.id}`} target="_blank" className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors">
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
-                      <button onClick={() => startEdit(res)} className="p-2 rounded-lg border-2 border-line hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDeleteResource(res.id, res.title)} className="p-2 rounded-lg border-2 border-line hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* ===== REPORTS TAB ===== */}
-      {activeTab === "reports" && (
-        <div className="space-y-3">
-          {reportsList.length === 0 ? (
-            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
-              <Flag className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
-              <p className="text-foreground/60 font-medium">No reports yet</p>
-            </div>
-          ) : (
-            reportsList.map((report) => {
-              const reportedResource = report.resource;
-              return (
-              <div key={report.id} className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 rounded-xl border-2 border-red-100 bg-surface">
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">Report</span>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-surface-muted text-foreground border border-line">{report.reason}</span>
-                    </div>
-                    <p className="font-bold text-sm mt-1">Resource: {reportedResource?.title || "Deleted"}</p>
-                    <p className="text-xs text-foreground/60 font-medium mt-0.5">
-                      Reported by {report.reporter?.name || "Unknown"} ({report.reporter?.email})
-                    </p>
-                    <p className="text-xs text-foreground/60 font-medium mt-0.5">{new Date(report.createdAt).toLocaleDateString()}</p>
-                    {report.description && (
-                      <p className="text-xs text-foreground/60 font-medium mt-2 p-3 bg-surface-muted rounded-lg">{report.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
-                    {reportedResource?.id && (
-                      <Link href={`/resource/${reportedResource.id}`} target="_blank" className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors">
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
-                    )}
-                    {reportedResource?.id && (
-                      <button
-                        onClick={() => handleDeleteReportedResource(report.id, reportedResource!.id, reportedResource!.title)}
-                        className="p-2 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
-                        title="Delete resource & dismiss report"
-                      >
-                        <Ban className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDeleteReport(report.id)}
-                      className="p-2 rounded-lg border-2 border-line hover:bg-surface-muted transition-colors"
-                      title="Dismiss report only"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-              </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {/* ===== MESSAGES TAB ===== */}
-      {activeTab === "messages" && (
-        <div className="space-y-3">
-          {messagesList.length === 0 ? (
-            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
-              <Mail className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
-              <p className="text-foreground/60 font-medium">No messages yet</p>
-            </div>
-          ) : (
-            messagesList.map((msg) => (
-              <div key={msg.id} className="p-4 rounded-xl border-2 border-line bg-surface">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedMessage(expandedMessage === msg.id ? null : msg.id)}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-4 h-4 text-accent" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm">{msg.name}</p>
-                        <p className="text-xs text-foreground/60 font-medium">{msg.email}</p>
-                      </div>
-                    </div>
-                    {expandedMessage !== msg.id && (
-                      <p className="text-xs text-foreground/60 font-medium mt-2 ml-11 truncate">{msg.message}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
-                    <span className="text-xs text-foreground/70 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
-                    {expandedMessage === msg.id ? <ChevronUp className="w-4 h-4 text-foreground/50" /> : <ChevronDown className="w-4 h-4 text-foreground/50" />}
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                {expandedMessage === msg.id && (
-                  <div className="mt-4 ml-11 p-4 bg-surface-muted rounded-xl">
-                    <p className="text-sm font-medium text-foreground/70 whitespace-pre-wrap">{msg.message}</p>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* ===== USERS TAB ===== */}
+      {/* ===== USERS (includes admin management) ===== */}
       {activeTab === "users" && (
-        <div className="space-y-3">
-          {usersList.length === 0 ? (
-            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
-              <Users className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
-              <p className="text-foreground/60 font-medium">No users yet</p>
-            </div>
-          ) : (
-            usersList.map((u) => {
-              const isUserAdmin = adminEmails.some((a) => a.email.toLowerCase() === u.email.toLowerCase());
-              const isPermanent = isPermanentAdmin(u.email);
-              const providerChips = u.providers.length > 0 ? u.providers : ["credentials"];
-              return (
-                <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar image={u.image} name={u.name} email={u.email} size={40} />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-sm truncate">{u.name || "Student"}</p>
-                        {isUserAdmin && (isPermanent ? (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner · Admin</span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-accent/15 text-accent border border-accent/30">Admin</span>
-                        ))}
-                        {!u.emailVerified && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">Unverified</span>
-                        )}
-                        {providerChips.map((p) => (
-                          <span key={p} className="px-2 py-0.5 rounded-full text-xs font-bold bg-surface-muted text-foreground border border-line">
-                            {p === "credentials" ? "Email" : p === "github" ? "GitHub" : p === "google" ? "Google" : p}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-xs text-foreground/60 font-medium truncate">{u.email}</p>
-                      <p className="text-xs text-foreground/70 font-medium">
-                        {u.resourceCount} resource{u.resourceCount === 1 ? "" : "s"} · Joined {new Date(u.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
-                    {isUserAdmin ? (
-                      isPermanent ? (
-                        <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-foreground/60">
-                          <Lock className="w-3.5 h-3.5" /> Permanent
-                        </span>
-                      ) : (
-                        <button onClick={() => handleDemoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-surface-muted transition-all">
-                          <ShieldOff className="w-4 h-4" /> Remove Admin
-                        </button>
-                      )
-                    ) : (
-                      <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
-                        <ShieldCheck className="w-4 h-4" /> Make Admin
-                      </button>
-                    )}
-                    {!isPermanent && (
-                      <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
-                        <Trash2 className="w-4 h-4" /> Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {/* ===== ADMINS TAB ===== */}
-      {activeTab === "admins" && (
         <div className="space-y-6">
           <form onSubmit={handleAddAdmin} noValidate className="bg-surface-muted rounded-2xl p-6 border-2 border-line">
-            <h3 className="font-bold text-lg mb-4">Add admin</h3>
+            <h3 className="font-bold text-lg mb-4">Add admin by email</h3>
             <div className="flex flex-col sm:flex-row gap-3">
               <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="Email address" className="w-full sm:w-auto sm:flex-1 h-12 sm:h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base sm:text-sm font-medium focus:outline-none focus:shadow-hard-sm transition-all" />
               <button type="submit" className="w-full sm:w-auto h-12 sm:h-14 px-6 rounded-full bg-ink on-ink font-bold text-sm tracking-wider hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
-                <Plus className="w-4 h-4" /> Add Admin
+                <Plus className="w-4 h-4" aria-hidden /> Add Admin
               </button>
             </div>
           </form>
 
           <div className="space-y-3">
-            {adminEmails.map((admin) => {
-              const permanent = isPermanentAdmin(admin.email);
-              return (
-                <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-sm">{admin.email}</p>
-                      {permanent && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner</span>
+            {usersList.length === 0 ? (
+              <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
+                <Users className="w-12 h-12 mx-auto text-foreground/40 mb-4" aria-hidden />
+                <p className="text-foreground/60 font-medium">No users yet</p>
+              </div>
+            ) : (
+              usersList.map((u) => {
+                const isUserAdmin = adminEmails.some((a) => a.email.toLowerCase() === u.email.toLowerCase());
+                const isPermanent = isPermanentAdmin(u.email);
+                const providerChips = u.providers.length > 0 ? u.providers : ["credentials"];
+                return (
+                  <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar image={u.image} name={u.name} email={u.email} size={40} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-sm truncate">{u.name || "Student"}</p>
+                          {isUserAdmin && (isPermanent ? (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">Owner · Admin</span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-accent/15 text-accent border border-accent/30">Admin</span>
+                          ))}
+                          {!u.emailVerified && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">Unverified</span>
+                          )}
+                          {providerChips.map((p) => (
+                            <span key={p} className="px-2 py-0.5 rounded-full text-xs font-bold bg-surface-muted text-foreground border border-line">
+                              {p === "credentials" ? "Email" : p === "github" ? "GitHub" : p === "google" ? "Google" : p}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-xs text-foreground/60 font-medium truncate">{u.email}</p>
+                        <p className="text-xs text-foreground/70 font-medium">
+                          {u.resourceCount} resource{u.resourceCount === 1 ? "" : "s"} · Joined {new Date(u.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                      {isUserAdmin ? (
+                        isPermanent ? (
+                          <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-foreground/60">
+                            <Lock className="w-3.5 h-3.5" aria-hidden /> Permanent
+                          </span>
+                        ) : (
+                          <button onClick={() => handleDemoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-surface-muted transition-all">
+                            <ShieldOff className="w-4 h-4" aria-hidden /> Remove Admin
+                          </button>
+                        )
+                      ) : (
+                        <button onClick={() => handlePromoteUser(u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-accent hover:text-accent-contrast hover:border-accent transition-all">
+                          <ShieldCheck className="w-4 h-4" aria-hidden /> Make Admin
+                        </button>
+                      )}
+                      {!isPermanent && (
+                        <button onClick={() => handleDeleteUser(u.id, u.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-300 text-red-600 text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                          <Trash2 className="w-4 h-4" aria-hidden /> Delete
+                        </button>
                       )}
                     </div>
-                    <p className="text-xs text-foreground/60 font-medium">Added {new Date(admin.addedAt).toLocaleDateString()}</p>
                   </div>
-                  {permanent ? (
-                    <span className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-foreground/60">
-                      <Lock className="w-3.5 h-3.5" /> Permanent
-                    </span>
-                  ) : (
-                    <button onClick={() => handleRemoveAdmin(admin.email)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-ink text-sm font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
-                      <Trash2 className="w-4 h-4" /> Remove
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
 
-      {/* ===== EMAIL TAB ===== */}
-      {activeTab === "email" && (
-        <div className="space-y-6">
-          {!emailStats ? (
-            <div className="text-center py-16 bg-surface-muted rounded-2xl border-2 border-dashed border-line">
-              <Mail className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
-              <p className="text-foreground/60 font-medium">Email tracking not configured. Add RESEND_WEBHOOK_SECRET to enable.</p>
-            </div>
-          ) : (
-            <>
-              {/* Metric cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {[
-                  { label: "Sent", value: emailStats.totals.sent, color: "bg-blue-50 border-blue-200" },
-                  { label: "Delivered", value: emailStats.totals.delivered, color: "bg-green-50 border-green-200" },
-                  { label: "Bounced", value: emailStats.totals.bounced, color: "bg-red-50 border-red-200" },
-                  { label: "Complaints", value: emailStats.totals.complained, color: "bg-orange-50 border-orange-200" },
-                  { label: "Opened", value: emailStats.totals.opened, color: "bg-purple-50 border-purple-200" },
-                  { label: "Clicked", value: emailStats.totals.clicked, color: "bg-cyan-50 border-cyan-200" },
-                ].map((m) => (
-                  <div key={m.label} className={`rounded-2xl border-2 p-5 ${m.color}`}>
-                    <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">{m.label}</p>
-                    <p className="text-3xl font-black tracking-tight mt-1">{m.value}</p>
-                  </div>
-                ))}
-              </div>
+      {/* ===== DIAGNOSTICS (email health + traffic) ===== */}
+      {activeTab === "diagnostics" && (
+        <div className="space-y-10">
+          <section>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Mail className="h-4 w-4" aria-hidden /> Email health
+            </h3>
+            {!emailStats ? (
+              <p className="text-sm text-foreground/60 font-medium p-4 rounded-xl bg-surface-muted">
+                Email tracking not configured. Add RESEND_WEBHOOK_SECRET to enable.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {[
+                    { label: "Sent", value: emailStats.totals.sent, color: "bg-blue-50 border-blue-200" },
+                    { label: "Delivered", value: emailStats.totals.delivered, color: "bg-green-50 border-green-200" },
+                    { label: "Bounced", value: emailStats.totals.bounced, color: "bg-red-50 border-red-200" },
+                    { label: "Complaints", value: emailStats.totals.complained, color: "bg-orange-50 border-orange-200" },
+                    { label: "Opened", value: emailStats.totals.opened, color: "bg-purple-50 border-purple-200" },
+                    { label: "Clicked", value: emailStats.totals.clicked, color: "bg-cyan-50 border-cyan-200" },
+                  ].map((m) => (
+                    <div key={m.label} className={`rounded-2xl border-2 p-5 ${m.color}`}>
+                      <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">{m.label}</p>
+                      <p className="text-3xl font-black tracking-tight mt-1">{m.value}</p>
+                    </div>
+                  ))}
+                </div>
 
-              {/* Rate cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-2xl border-2 border-line bg-surface p-5">
-                  <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">Delivery Rate</p>
-                  <p className="text-3xl font-black tracking-tight mt-1">{emailStats.totals.deliveryRate}%</p>
-                </div>
-                <div className="rounded-2xl border-2 border-line bg-surface p-5">
-                  <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">Bounce Rate</p>
-                  <p className={`text-3xl font-black tracking-tight mt-1 ${Number(emailStats.totals.bounceRate) > 5 ? "text-red-600" : ""}`}>{emailStats.totals.bounceRate}%</p>
-                </div>
-                <div className="rounded-2xl border-2 border-line bg-surface p-5">
-                  <p className="text-xs font-bold text-foreground/60 tracking-wider uppercase">Open Rate</p>
-                  <p className="text-3xl font-black tracking-tight mt-1">{emailStats.totals.openRate}%</p>
-                </div>
-              </div>
-
-              {/* Suppressed emails */}
-              <div className="rounded-2xl border-2 border-line bg-surface p-6">
-                <h3 className="font-bold text-lg mb-4">Suppressed Emails ({emailStats.suppressedCount})</h3>
-                {emailStats.recentSuppressions.length === 0 ? (
-                  <p className="text-foreground/60 font-medium text-sm">No suppressed addresses</p>
-                ) : (
-                  <div className="space-y-2">
-                    {emailStats.recentSuppressions.map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-sm font-bold">{s.email}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
-                            s.reason === "bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
-                          }`}>{s.reason}</span>
+                <div className="rounded-2xl border-2 border-line bg-surface p-6">
+                  <h4 className="font-bold mb-3">Recent failures (last 30 days)</h4>
+                  {emailStats.recentFailures.length === 0 ? (
+                    <p className="text-foreground/60 font-medium text-sm">No failures recorded</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {emailStats.recentFailures.map((f) => (
+                        <div key={f.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
+                              f.eventType === "email.bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
+                            }`}>{f.eventType === "email.bounced" ? "Bounce" : "Complaint"}</span>
+                            <span className="text-sm font-medium">{f.to}</span>
+                          </div>
+                          <span className="text-xs text-foreground/60 font-medium">{new Date(f.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <span className="text-xs text-foreground/60 font-medium">{new Date(s.suppressedAt).toLocaleDateString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+          </section>
 
-              {/* Recent failures */}
-              <div className="rounded-2xl border-2 border-line bg-surface p-6">
-                <h3 className="font-bold text-lg mb-4">Recent Failures (last 30 days)</h3>
-                {emailStats.recentFailures.length === 0 ? (
-                  <p className="text-foreground/60 font-medium text-sm">No failures recorded</p>
-                ) : (
-                  <div className="space-y-2">
-                    {emailStats.recentFailures.map((f) => (
-                      <div key={f.id} className="flex items-center justify-between py-2 border-b border-line last:border-0">
-                        <div className="flex items-center gap-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
-                            f.eventType === "email.bounced" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"
-                          }`}>{f.eventType === "email.bounced" ? "Bounce" : "Complaint"}</span>
-                          <span className="text-sm font-medium">{f.to}</span>
-                          {f.subject && <span className="text-xs text-foreground/60 font-medium truncate max-w-[200px]">{f.subject}</span>}
-                        </div>
-                        <span className="text-xs text-foreground/60 font-medium">{new Date(f.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+          <section>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Eye className="h-4 w-4" aria-hidden /> Traffic
+            </h3>
+            <TrafficTab />
+          </section>
         </div>
       )}
-
-      {/* ===== TRAFFIC TAB ===== */}
-      {activeTab === "traffic" && <TrafficTab />}
 
       <ConfirmDialog
         open={confirmState !== null}
