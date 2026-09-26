@@ -96,24 +96,28 @@ export function Navbar() {
       {/* z-[110] keeps the bar (its X / search buttons) tappable above the
           menu overlay's click-away catcher below. */}
       <div className="relative z-[110] mx-auto max-w-7xl">
-      <div className={`nav-shell flex h-14 items-center justify-between rounded-2xl border-2 border-ink ${scrolled ? "bg-surface/95" : "bg-surface/70"} backdrop-blur-xl shadow-hard px-4 sm:px-6`}>
+      <div className={`nav-shell flex h-14 items-center justify-between gap-2 rounded-2xl border-2 border-ink ${scrolled ? "bg-surface/95" : "bg-surface/70"} backdrop-blur-xl shadow-hard px-3 sm:px-6`}>
 
-        {/* Logo + Mobile Back Button */}
-        <div className="flex items-center gap-2">
+        {/* Logo + Mobile Back Button. Everything here can shrink except the
+            logo mark: at 320px with the back button showing, the bar has
+            ~245px and the wordmark is what gives (ellipsis), not the buttons. */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           {pathname !== "/" && (
             <button
               onClick={goBack}
-              className="md:hidden p-2 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
+              className="md:hidden p-1.5 sm:p-2 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
               aria-label="Go back"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
             </button>
           )}
-          <Link href="/" prefetch className="flex items-center gap-2 group shrink-0 min-w-0">
+          <Link href="/" prefetch className="flex items-center gap-1.5 sm:gap-2 group min-w-0">
             <Image src="/logo.png" alt="Student Hub Logo" width={64} height={64} className="w-8 h-8 rounded-full object-contain shrink-0" priority />
             {/* text-base below sm: at ~320px viewports a text-xl nowrap wordmark
-                overflows into the search/hamburger buttons */}
-            <span className="text-base sm:text-xl font-bold tracking-tighter text-foreground ml-1 group-hover:opacity-80 whitespace-nowrap">Student Hub</span>
+                overflows into the search/hamburger buttons; min-w-0 + truncate
+                let it yield the last few pixels with an ellipsis instead of
+                clipping under the buttons. */}
+            <span className="text-base sm:text-xl font-bold tracking-tighter text-foreground group-hover:opacity-80 truncate">Student Hub</span>
           </Link>
         </div>
 
@@ -128,7 +132,7 @@ export function Navbar() {
         </div>
 
         {/* Right: Search + Admin + Auth (desktop) + Search + Hamburger (mobile) */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2 sm:space-x-3 shrink-0">
           <div className="hidden lg:block"><NavbarSearch onOpenSearch={openSearch} /></div>
           {/* Below lg (mobile + the md–lg dead zone): a compact icon search in
               the navbar itself instead of a bar inside the hamburger menu. */}
