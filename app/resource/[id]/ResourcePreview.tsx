@@ -39,7 +39,6 @@ export default function ResourcePreview({
 
   const isPDF = fileType?.includes("pdf") ?? false;
   const isImage = fileType?.includes("image") ?? false;
-  const previewable = isPDF || isImage;
 
   const formatLabel = formatFileType(fileType);
   const sizeLabel = fileSize ? formatFileSize(fileSize) : null;
@@ -65,6 +64,18 @@ export default function ResourcePreview({
         toast.error("Fullscreen isn't available here");
       });
     }
+  };
+
+  /* The expand button matches the picture's own behavior: for images it
+     opens the same zoomable lightbox (which also works on iPhone, where
+     native fullscreen doesn't exist — previously the button vanished
+     there); PDFs keep native fullscreen since the lightbox is image-only. */
+  const handleExpand = () => {
+    if (isImage) {
+      setLightboxOpen(true);
+      return;
+    }
+    handleFullscreen();
   };
 
   useEffect(() => {
@@ -111,13 +122,21 @@ export default function ResourcePreview({
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {previewable && fullscreenSupported && (
+            {/* Images: always shown — the lightbox needs no fullscreen API.
+                PDFs: only where the fullscreen API exists. */}
+            {(isImage || fullscreenSupported) && (
               <button
-                onClick={handleFullscreen}
+                onClick={handleExpand}
                 className={iconBtn}
-                aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+                aria-label={
+                  isImage
+                    ? "Open image in a larger view"
+                    : isFullscreen
+                      ? "Exit fullscreen"
+                      : "View fullscreen"
+                }
               >
-                {isFullscreen
+                {!isImage && isFullscreen
                   ? <Minimize2 size={15} strokeWidth={2.25} aria-hidden />
                   : <Maximize2 size={15} strokeWidth={2.25} aria-hidden />}
               </button>
