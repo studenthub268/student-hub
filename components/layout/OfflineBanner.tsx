@@ -5,7 +5,9 @@ import { WifiOff } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 /**
- * Offline banner — styled like the verification banner (top bar).
+ * Offline banner — an ink pill in the navbar's own card language (border-2
+ * border-ink, rounded, hard shadow), floating just below the bar. The amber
+ * icon/ring matches the verification banner's warning accent.
  *
  * Detection is ACTIVE, not just passive:
  *  - the browser's `offline`/`online` events fire instantly on interface
@@ -105,18 +107,24 @@ export function OfflineBanner() {
 
   if (!offline) return null;
 
+  // Sticky pill, not a full-width bar: it sits under the floating navbar
+  // (same z-plane, same rounded ink-card language) instead of shoving the
+  // whole page down. Sticky keeps it visible while scrolling — on mobile
+  // the scrolled-away bar was exactly when users needed the "why is
+  // nothing loading" explanation. Animated via .offline-banner (slide+
+  // settle), dot via .offline-dot; both are killed by the
+  // prefers-reduced-motion clamp in globals.css.
+  //
+  // top-[6.25rem]: exactly clears the navbar. The bar's bottom edge lands at
+  // top-4 (16px) + h-14 (56px) + pb-4 (16px) = 88px, plus the 4px hard
+  // shadow it casts → 92px to clear; 6.25rem (100px) leaves a small breathing
+  // gap. The old 4.75/5.25rem offsets predate the restored navbar height and
+  // let the pill tuck underneath the bar, clipping its text.
   return (
-    /* Sticky pill, not a full-width bar: it sits under the floating navbar
-       (same z-plane, same rounded ink-card language) instead of shoving the
-       whole page down. Sticky keeps it visible while scrolling — on mobile
-       the scrolled-away bar was exactly when users needed the "why is
-       nothing loading" explanation. Animated via .offline-banner (slide+
-       settle), dot via .offline-dot; both are killed by the
-       prefers-reduced-motion clamp in globals.css. */
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-[4.75rem] sm:top-[5.25rem] lg:top-24 z-[60] flex justify-center px-4 pointer-events-none"
+      className="sticky top-[6.25rem] z-[60] flex justify-center px-4 pointer-events-none"
     >
       <div className="offline-banner pointer-events-auto flex max-w-md items-center gap-2.5 rounded-full border-2 border-ink bg-ink on-ink py-2 pl-3 pr-4 shadow-hard">
         <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-400/15" aria-hidden="true">
