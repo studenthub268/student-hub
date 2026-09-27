@@ -243,6 +243,35 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Pages containing SERVER ACTIONS (contact form) are network-first: the
+  // action ID is baked into the page HTML, and a cached page from build N
+  // submitted against build N+1 dies with "Server Action was not found" —
+  // a real user lost a typed message exactly this way. The stale copy is
+  // still refreshed in the background via the normal SWR path when offline
+  // (see the network.catch fallback below → /offline).
+  const ACTION_PAGES = ["/contact"];
+  if (
+    request.mode === "navigate" &&
+    ACTION_PAGES.some((p) => url.pathname === p || url.pathname.startsWith(p + "/"))
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok && response.type === "basic") {
+            const clone = response.clone();
+            caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches
+            .match(request)
+            .then((cached) => cached || caches.match("/offline"))
+        )
+    );
+    return;
+  }
+
   // Pages — STALE-WHILE-REVALIDATE for PUBLIC pages only: a cached page
   // renders instantly (instant cold start from the home-screen icon; no
   // multi-second network wait), and the in-flight network refresh updates

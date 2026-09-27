@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Mail, User, Send, CheckCircle, Loader2, Globe, Clock } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { sendMessage } from "@/lib/actions/messages";
 import { getErrorMessage } from "@/lib/utils";
 
 export default function ContactPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -59,7 +61,18 @@ export default function ContactPage() {
       setEmail("");
       setMessage("");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to send message. Please try again."));
+      // A deploy between "page loaded" and "submit" invalidates the server
+      // action ID baked into this page's HTML — Next reports it as "Server
+      // Action ... was not found". The typed message is still in local
+      // state, so DON'T reload: refresh the router (pulls the new action ID
+      // in the background) and ask for one more tap of Send.
+      const msg = String((error as Error)?.message || "");
+      if (msg.includes("Server Action") && msg.includes("was not found")) {
+        router.refresh();
+        toast.error("The site just updated — please press Send again. Your message is safe.");
+      } else {
+        toast.error(getErrorMessage(error, "Failed to send message. Please try again."));
+      }
     } finally {
       setIsSending(false);
     }
