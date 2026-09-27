@@ -508,6 +508,109 @@ function welcomeText(greetingName: string, appUrl: string): string {
  * Google/GitHub identity is linked. Best-effort: callers must never let a
  * welcome failure break signup/verification/sign-in.
  */
+/**
+ * Admin reply to a contact-form message. Quoted original included so the
+ * recipient has context even if they've forgotten what they wrote. Best-
+ * effort by nature, but the caller (replyToMessage) surfaces failures.
+ */
+export async function sendContactReplyEmail({
+  to,
+  name,
+  originalMessage,
+  reply,
+}: {
+  to: string;
+  name: string;
+  originalMessage: string;
+  reply: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const limit = await checkEmailSendLimit(to);
+  if (!limit.allowed) return { success: false, error: limit.error };
+
+  try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn("RESEND_API_KEY not set — skipping contact reply email");
+      return { success: false, error: "Email service not configured" };
+    }
+    const firstName = (name || "").trim().split(/\s+/)[0] || "there";
+    const safeReply = escapeHtml(reply).replace(/\n/g, "<br/>");
+    const safeQuote = escapeHtml(originalMessage).replace(/\n/g, "<br/>");
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      replyTo: process.env.ADMIN_REPLY_TO || undefined,
+      to,
+      subject: "Re: your message to Student Hub",
+      html: contactReplyHtml(firstName, safeReply, safeQuote),
+      text: contactReplyText(firstName, reply, originalMessage),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to send contact reply email:", err);
+    return { success: false, error: "Failed to send email" };
+  }
+}
+
+function contactReplyHtml(firstName: string, replyHtml: string, quoteHtml: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="background-color:#0d9488;padding:28px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#111111;letter-spacing:-0.02em;">Student Hub</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">Hi ${firstName},</p>
+              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">Thanks for reaching out to Student Hub — here's a reply from the team:</p>
+              <div style="padding:18px 20px;background-color:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;font-size:15px;line-height:1.7;color:#134e4a;">${replyHtml}</div>
+              <div style="margin-top:24px;padding:16px 20px;background-color:#f9fafb;border-left:3px solid #d1d5db;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6;color:#6b7280;">
+                <p style="margin:0 0 8px;font-weight:700;color:#374151;">You wrote:</p>
+                <p style="margin:0;">${quoteHtml}</p>
+              </div>
+              <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">Just reply to this email if anything's still unclear — it comes straight back to us.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 40px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;text-align:center;">
+                You're receiving this because you contacted Student Hub through the contact form.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function contactReplyText(firstName: string, reply: string, original: string): string {
+  return [
+    `Hi ${firstName},`,
+    "",
+    "Thanks for reaching out to Student Hub — here's a reply from the team:",
+    "",
+    reply,
+    "",
+    "--- You wrote: ---",
+    original,
+    "",
+    "Just reply to this email if anything's still unclear — it comes straight back to us.",
+  ].join("\n");
+}
+
 export async function sendWelcomeEmail(
   to: string,
   name?: string | null

@@ -1,9 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { messages } from "@/lib/db/schema";
+import { messages, adminEmails } from "@/lib/db/schema";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
 import { checkRateLimit } from "./rate-limit";
+import { sendContactReplyEmail } from "@/lib/email";
 import { headers } from "next/headers";
 
 const messageSchema = z.object({
@@ -46,6 +49,57 @@ export async function sendMessage(formData: {
     email: validatedData.email,
     message: validatedData.message,
   });
+
+  return { success: true };
+}
+
+const replySchema = z.object({
+  messageId: z.string().uuid(),
+  reply: z.string().min(1).max(5000),
+});
+
+/**
+ * Admin reply to a contact message: emails the sender through Resend and
+ * records the reply on the message row so the inbox shows what was answered.
+ * Admin-only — verified against admin_emails, not just the session.
+ */
+export async function replyToMessage(formData: {
+  messageId: string;
+  reply: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  const adminUserEmail = session?.user?.email;
+  if (!adminUserEmail) return { success: false, error: "Authentication required" };
+
+  // Must be on the admin list (same bar the admin panel itself applies).
+  const admin = await db.query.adminEmails.findFirst({
+    where: eq(adminEmails.email, adminUserEmail),
+  });
+  if (!admin) return { success: false, error: "Admin access required" };
+
+  const validated = replySchema.parse(formData);
+
+  const [msg] = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.id, validated.messageId))
+    .limit(1);
+  if (!msg) return { success: false, error: "Message not found" };
+
+  const sent = await sendContactReplyEmail({
+    to: msg.email,
+    name: msg.name,
+    originalMessage: msg.message,
+    reply: validated.reply,
+  });
+  if (!sent.success) {
+    return { success: false, error: sent.error ?? "Failed to send reply email" };
+  }
+
+  await db
+    .update(messages)
+    .set({ repliedAt: new Date(), replyText: validated.reply })
+    .where(eq(messages.id, validated.messageId));
 
   return { success: true };
 }

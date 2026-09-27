@@ -37,8 +37,12 @@ import {
   Eye,
   ArrowRight,
   Inbox,
+  Reply,
+  CheckCheck,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { replyToMessage } from "@/lib/actions/messages";
 import { getErrorMessage } from "@/lib/utils";
 import { isPermanentAdmin } from "@/lib/constants";
 import type { BlockedIp, AdminEmail, Message } from "@/lib/db/schema";
@@ -265,6 +269,39 @@ export default function AdminPanel() {
       loadData();
     } catch (error) {
       toast.error(getErrorMessage(error));
+    }
+  };
+
+  // Reply state: which message's composer is open + its draft.
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [isReplying, setIsReplying] = useState(false);
+
+  const openReply = (msg: Message) => {
+    setReplyingTo(msg.id);
+    setReplyDraft(`Hi ${msg.name.split(/\s+/)[0] || "there"},\n\n`);
+  };
+
+  const handleSendReply = async (id: string) => {
+    if (!replyDraft.trim()) {
+      toast.error("Write a reply first");
+      return;
+    }
+    setIsReplying(true);
+    try {
+      const res = await replyToMessage({ messageId: id, reply: replyDraft.trim() });
+      if (!res.success) {
+        toast.error(res.error ?? "Failed to send reply");
+      } else {
+        toast.success("Reply sent — the sender gets it by email");
+        setReplyingTo(null);
+        setReplyDraft("");
+        loadData();
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to send reply"));
+    } finally {
+      setIsReplying(false);
     }
   };
 
@@ -572,8 +609,21 @@ export default function AdminPanel() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                        {msg.repliedAt && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 px-2 py-0.5 text-[11px] font-bold text-green-700" title={msg.replyText ?? ""}>
+                            <CheckCheck className="w-3 h-3" aria-hidden />
+                            Replied
+                          </span>
+                        )}
                         <span className="text-xs text-foreground/70 font-medium">{new Date(msg.createdAt).toLocaleDateString()}</span>
                         {expandedMessage === msg.id ? <ChevronUp className="w-4 h-4 text-foreground/50" aria-hidden /> : <ChevronDown className="w-4 h-4 text-foreground/50" aria-hidden />}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (replyingTo === msg.id) setReplyingTo(null); else openReply(msg); }}
+                          className="p-1.5 rounded-lg hover:bg-accent/10 hover:text-accent transition-colors"
+                          aria-label={msg.repliedAt ? "Reply again" : "Reply to message"}
+                        >
+                          <Reply className="w-3.5 h-3.5" aria-hidden />
+                        </button>
                         <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors" aria-label="Delete message">
                           <Trash2 className="w-3.5 h-3.5" aria-hidden />
                         </button>
@@ -582,6 +632,48 @@ export default function AdminPanel() {
                     {expandedMessage === msg.id && (
                       <div className="mt-4 ml-11 p-4 bg-surface-muted rounded-xl">
                         <p className="text-sm font-medium text-foreground/70 whitespace-pre-wrap">{msg.message}</p>
+                      </div>
+                    )}
+                    {/* Reply composer: prefilled greeting, sends by email. */}
+                    {replyingTo === msg.id && (
+                      <div className="mt-4 ml-0 sm:ml-11 p-4 rounded-xl border-2 border-accent/30 bg-accent/5" onClick={(e) => e.stopPropagation()}>
+                        <label htmlFor={`reply-${msg.id}`} className="mb-2 block text-xs font-bold uppercase tracking-wider text-foreground/60">
+                          Reply to {msg.name} ({msg.email})
+                        </label>
+                        <textarea
+                          id={`reply-${msg.id}`}
+                          value={replyDraft}
+                          onChange={(e) => setReplyDraft(e.target.value)}
+                          rows={5}
+                          placeholder="Your reply — sent to their email as coming from the Student Hub team."
+                          className="w-full rounded-xl border-2 border-line bg-surface px-3.5 py-3 text-sm font-medium text-foreground focus:border-accent focus:outline-none resize-y"
+                          autoFocus
+                        />
+                        <div className="mt-3 flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => { setReplyingTo(null); setReplyDraft(""); }}
+                            className="rounded-full px-4 py-2 text-xs font-bold text-foreground/60 hover:bg-surface-muted transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleSendReply(msg.id)}
+                            disabled={isReplying || !replyDraft.trim()}
+                            className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-accent px-4 py-2 text-xs font-bold tracking-wider text-accent-contrast shadow-hard-sm transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+                          >
+                            {isReplying ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Mail className="h-3.5 w-3.5" aria-hidden />}
+                            {isReplying ? "Sending..." : "Send reply"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {/* Previous reply, shown inline under the original. */}
+                    {msg.repliedAt && replyingTo !== msg.id && msg.replyText && (
+                      <div className="mt-3 ml-0 sm:ml-11 p-3.5 rounded-xl border border-green-200 bg-green-50">
+                        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-green-700">
+                          Replied {new Date(msg.repliedAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm font-medium text-green-900/80 whitespace-pre-wrap">{msg.replyText}</p>
                       </div>
                     )}
                   </div>

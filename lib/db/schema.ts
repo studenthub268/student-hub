@@ -98,6 +98,10 @@ export const messages = pgTable('messages', {
   name: text('name').notNull(),
   email: text('email').notNull(),
   message: text('message').notNull(),
+  // Admin reply bookkeeping: when the reply was sent and what it said. Both
+  // nullable — a message stays "unreplied" until the admin actually answers.
+  repliedAt: timestamp('replied_at'),
+  replyText: text('reply_text'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
