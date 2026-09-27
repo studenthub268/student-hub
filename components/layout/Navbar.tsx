@@ -105,10 +105,10 @@ export function Navbar() {
           {pathname !== "/" && (
             <button
               onClick={goBack}
-              className="md:hidden p-1.5 sm:p-2 rounded-xl border-2 border-ink bg-surface text-foreground hover:bg-accent hover:text-accent-contrast transition-all press shadow-hard-sm"
+              className={`${ICON_BTN} md:hidden shrink-0`}
               aria-label="Go back"
             >
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
+              <ArrowLeft className="h-5 w-5" aria-hidden />
             </button>
           )}
           <Link href="/" prefetch className="flex items-center gap-1.5 sm:gap-2 group min-w-0">
