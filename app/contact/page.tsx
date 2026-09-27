@@ -2,11 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, User, Send, CheckCircle, Loader2, Globe, Clock } from "lucide-react";
+import { Mail, Send, CheckCircle, Loader2, Clock, MessageCircle, ShieldCheck, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { sendMessage } from "@/lib/actions/messages";
 import { getErrorMessage } from "@/lib/utils";
 
+/**
+ * Contact page — one centered conversation card, not a two-column split.
+ *
+ * The old layout duplicated the navbar's brand identity (an "about the
+ * developer" panel) beside the form; on phones that pushed the actual form
+ * below a full screen of decoration. Now: a compact ink header strip with the
+ * response-time promise and a mailto chip, the form as the hero, and a slim
+ * reassurance row under it. Same server action, honeypot and stale-action
+ * recovery as before — only the presentation changed.
+ */
 export default function ContactPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -48,9 +58,9 @@ export default function ContactPage() {
     setIsSending(true);
 
     try {
-      await sendMessage({ 
-        name: name.trim(), 
-        email: email.trim(), 
+      await sendMessage({
+        name: name.trim(),
+        email: email.trim(),
         message: message.trim(),
         website, // honeypot — normally ""
       });
@@ -78,188 +88,172 @@ export default function ContactPage() {
     }
   };
 
+  const fieldInput =
+    "w-full rounded-xl border-2 border-ink bg-surface px-4 text-base font-medium text-foreground shadow-hard-sm transition-all placeholder:text-foreground/50 focus:outline-none focus:shadow-hard";
+  const fieldLabel = "mb-2 block text-sm font-bold tracking-wider text-foreground";
+
   return (
-    <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 max-w-[1400px]">
-      {/* Header */}
-      <div className="mb-16 text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-foreground">
-          Get in Touch
-        </h1>
-        <p className="mt-4 text-lg text-foreground/60 font-medium max-w-xl mx-auto">
-          Have questions, feedback, or want to collaborate? We&apos;d love to hear from you.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-        {/* Contact Info Card */}
-        <div className="bg-ink on-ink rounded-[2rem] p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-800/40 via-ink to-ink opacity-50"></div>
-
-          <div className="relative z-10">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-              Contact Information
-            </h2>
-            <p className="font-medium text-sm tracking-wider opacity-60">
-              Reach out and we&apos;ll respond as soon as we can.
-            </p>
-          </div>
-
-          <div className="relative z-10 mt-12 space-y-8">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-accent text-accent-contrast border-2 border-ink">
-                <User className="h-5 w-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Name</p>
-                <p className="text-lg font-bold">Muhammad Abubakar</p>
-              </div>
+    <div className="mx-auto w-full max-w-3xl px-4 pt-8 pb-16 sm:px-6 sm:pt-12 lg:px-8">
+      {/* Compact header: what this is + how fast we answer. */}
+      <header className="overflow-hidden rounded-[2rem] border-2 border-ink bg-ink on-ink shadow-hard">
+        <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-background/30 bg-accent text-accent-contrast">
+              <MessageCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             </div>
-
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-accent text-accent-contrast border-2 border-ink">
-                <Mail className="h-5 w-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Email</p>
-                <a href="mailto:abubakartanveer826@gmail.com" className="text-lg font-bold hover:text-accent transition-colors break-all">
-                  abubakartanveer826@gmail.com
-                </a>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-accent text-accent-contrast border-2 border-ink">
-                <Globe className="h-5 w-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Support</p>
-                <p className="text-lg font-bold">24/7 Academic Support</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-accent text-accent-contrast border-2 border-ink">
-                <Clock className="h-5 w-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-xs font-bold tracking-wider opacity-70 mb-1">Availability</p>
-                <p className="text-lg font-bold">Open to collaborate</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative z-10 mt-12 flex gap-2">
-            <span className="px-3 py-1 bg-surface/10 rounded-full text-xs font-bold tracking-wider opacity-80">
-              Student Developer
-            </span>
-            <span className="px-3 py-1 bg-accent text-accent-contrast rounded-full text-xs font-bold tracking-wider">
-              Open to Collaborate
-            </span>
-          </div>
-        </div>
-
-        {/* Message Form Card */}
-        <div className="rounded-[2rem] border-2 border-ink bg-surface p-8 sm:p-10 shadow-hard">
-          {isSent ? (
-            <div className="flex flex-col items-center justify-center h-full py-16 text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent border-2 border-ink mb-6">
-                <CheckCircle className="h-10 w-10 text-accent-contrast" strokeWidth={2} />
-              </div>
-              <h3 className="text-2xl font-black tracking-tight text-foreground">Message Sent!</h3>
-              <p className="mt-3 text-foreground/60 font-medium max-w-xs">
-                Thank you for reaching out. We&apos;ll get back to you as soon as possible.
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Get in Touch</h1>
+              <p className="mt-1 text-sm font-medium opacity-70">
+                Questions, feedback, or a resource to flag — it all lands in the admin inbox.
               </p>
-              <button
-                onClick={() => setIsSent(false)}
-                className="mt-8 rounded-full border-2 border-ink bg-ink on-ink px-6 py-3 text-sm font-bold tracking-wider hover:-translate-y-1 hover:shadow-hard-accent transition-all"
-              >
-                Send Another
-              </button>
             </div>
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold tracking-tight text-foreground mb-8">
-                Send a Message
-              </h2>
+          </div>
+          <a
+            href="mailto:abubakartanveer826@gmail.com"
+            className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border-2 border-background/30 bg-background/10 px-4 py-2 text-sm font-bold transition-all hover:-translate-y-0.5 hover:bg-background/20 sm:self-center"
+          >
+            <Mail size={15} strokeWidth={2.25} aria-hidden />
+            Email us directly
+          </a>
+        </div>
+      </header>
 
-              <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      {/* Form card — the hero. */}
+      <div className="mt-6 rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard sm:mt-7 sm:p-10">
+        {isSent ? (
+          <div className="flex flex-col items-center justify-center py-14 text-center sm:py-20">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-ink bg-accent">
+              <CheckCircle className="h-10 w-10 text-accent-contrast" strokeWidth={2} aria-hidden />
+            </div>
+            <h2 className="mt-6 text-2xl font-black tracking-tight text-foreground">Message Sent!</h2>
+            <p className="mt-3 max-w-xs font-medium text-foreground/60">
+              Thank you for reaching out — you&apos;ll hear back at the email you left.
+            </p>
+            <button
+              onClick={() => setIsSent(false)}
+              className="mt-8 rounded-full border-2 border-ink bg-ink on-ink px-6 py-3 text-sm font-bold tracking-wider transition-all hover:-translate-y-1 hover:shadow-hard-accent"
+            >
+              Send Another
+            </button>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Send a Message</h2>
+            <p className="mt-1.5 text-sm font-medium text-foreground/60">
+              We usually reply within a day.
+            </p>
+
+            <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-5 sm:space-y-6">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Your Name <span className="text-red-500">*</span></label>
+                  <label htmlFor="contact-name" className={fieldLabel}>
+                    Your Name <span className="text-red-500" aria-hidden>*</span>
+                  </label>
                   <input
+                    id="contact-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Name"
+                    placeholder="Your name"
                     required
-                    className="w-full h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base font-medium text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/60"
+                    className={`${fieldInput} h-14`}
+                    aria-invalid={!!errors.name}
                   />
                   {errors.name && <p className="mt-2 text-xs font-bold text-red-600">{errors.name}</p>}
                 </div>
 
-                {/* Honeypot — visually hidden, keyboard/sr reachable semantics
-                    not wanted: it must stay unfilled by humans. */}
-                <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden opacity-0">
-                  <label htmlFor="website">Website</label>
-                  <input
-                    type="text"
-                    id="website"
-                    name="website"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                  />
-                </div>
-
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Your Email <span className="text-red-500">*</span></label>
+                  <label htmlFor="contact-email" className={fieldLabel}>
+                    Your Email <span className="text-red-500" aria-hidden>*</span>
+                  </label>
                   <input
+                    id="contact-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@university.edu"
                     required
-                    className="w-full h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base font-medium text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/60"
+                    className={`${fieldInput} h-14`}
                     aria-invalid={!!errors.email}
                   />
                   {errors.email && <p className="mt-2 text-xs font-bold text-red-600">{errors.email}</p>}
                 </div>
+              </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Message <span className="text-red-500">*</span></label>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Your message here..."
-                    rows={5}
-                    required
-                    className="flex w-full rounded-xl border-2 border-ink bg-surface px-4 py-3 text-base font-medium shadow-hard-sm placeholder:text-foreground/60 focus:outline-none focus:shadow-hard transition-all resize-none"
-                    aria-invalid={!!errors.message}
-                  />
-                  {errors.message && <p className="mt-2 text-xs font-bold text-red-600">{errors.message}</p>}
-                </div>
+              {/* Honeypot — visually hidden, keyboard/sr reachable semantics
+                  not wanted: it must stay unfilled by humans. */}
+              <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden opacity-0">
+                <label htmlFor="website">Website</label>
+                <input
+                  type="text"
+                  id="website"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={isSending}
-                  className="w-full flex items-center justify-center gap-2 text-lg h-16 rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-wider hover:-translate-y-1 hover:bg-ink hover:shadow-hard-accent transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                >
-                  {isSending ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-5 w-5" />
-                      Send Message
-                    </>
-                  )}
-                </button>
-              </form>
-            </>
-          )}
-        </div>
+              <div>
+                <label htmlFor="contact-message" className={fieldLabel}>
+                  Message <span className="text-red-500" aria-hidden>*</span>
+                </label>
+                <textarea
+                  id="contact-message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="What's on your mind?"
+                  rows={6}
+                  required
+                  className={`${fieldInput} resize-none px-4 py-3`}
+                  aria-invalid={!!errors.message}
+                />
+                {errors.message && <p className="mt-2 text-xs font-bold text-red-600">{errors.message}</p>}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSending}
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-full border-2 border-ink bg-accent text-base font-bold tracking-wider text-accent-contrast shadow-hard transition-all hover:-translate-y-1 hover:shadow-hard-lg disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-hard sm:h-16 sm:text-lg"
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-5 w-5" aria-hidden />
+                    Send Message
+                  </>
+                )}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+
+      {/* Reassurance row: three quiet promises, wraps on phones. */}
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        {[
+          { icon: Clock, title: "Fast replies", text: "Most messages answered within 24 hours." },
+          { icon: ShieldCheck, title: "No account needed", text: "Report issues or ask anything, anonymously." },
+          { icon: Zap, title: "Goes to a real inbox", text: "Delivered straight to the maintainer's email." },
+        ].map(({ icon: Icon, title, text }) => (
+          <div
+            key={title}
+            className="flex items-center gap-3.5 rounded-2xl border-2 border-ink bg-surface px-4 py-3.5 shadow-hard-sm"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-surface-muted">
+              <Icon size={16} strokeWidth={2.25} className="text-foreground" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground">{title}</p>
+              <p className="truncate text-xs font-medium text-foreground/60">{text}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

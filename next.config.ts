@@ -52,7 +52,10 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://student-hub-uet.vercel.app https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
       "font-src 'self' https://fonts.gstatic.com",
       "connect-src 'self' https://*.neon.tech https://api.resend.com https://*.r2.dev",
-      "frame-src 'self'",
+      // frame-src must include the R2 public host: resource PDFs render in
+      // an <iframe> straight from storage (images only need img-src, which is
+      // why PDFs alone showed Chrome's "This content is blocked" panel).
+      "frame-src 'self' https://*.r2.dev https://*.r2.cloudflarestorage.com",
       "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",

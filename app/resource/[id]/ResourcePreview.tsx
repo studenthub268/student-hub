@@ -36,6 +36,7 @@ export default function ResourcePreview({
 }: ResourcePreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [frameBlocked, setFrameBlocked] = useState(false);
 
   const isPDF = fileType?.includes("pdf") ?? false;
   const isImage = fileType?.includes("image") ?? false;
@@ -170,12 +171,27 @@ export default function ResourcePreview({
           >
             {isPDF ? (
               // No #toolbar fragment: desktop browsers keep their native page
-              // navigation, which matters for multi-page past papers.
+              // navigation, which matters for multi-page past papers. When the
+              // frame errors (storage hiccup, blocked frame) show a real
+              // message instead of Chrome's silent grey box.
+              frameBlocked ? (
+                <div className="flex h-full w-full flex-col items-center justify-center px-6 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-surface">
+                    <FileGlyph fileType={fileType} size={28} className="text-foreground" />
+                  </div>
+                  <p className="mt-5 text-lg font-bold text-foreground">Preview unavailable</p>
+                  <p className="mt-1.5 max-w-xs text-sm font-medium text-foreground/60">
+                    The file couldn&apos;t be displayed right now — use Download or open it in a new tab above.
+                  </p>
+                </div>
+              ) : (
               <iframe
                 src={fileUrl}
                 className="h-full w-full border-0"
                 title={`Preview of ${title}`}
+                onError={() => setFrameBlocked(true)}
               />
+              )
             ) : isImage ? (
               <button
                 type="button"
