@@ -2,6 +2,6 @@
 // DEPLOY_VERSION changes on every deploy (see /api/version and
 // components/DeployWatcher.tsx); POLICY_VERSION and LAST_UPDATED follow
 // package.json version + its last commit date.
-export const DEPLOY_VERSION = "4de190427c92";
+export const DEPLOY_VERSION = "1d01b6a8d86d";
 export const POLICY_VERSION = "0.2.21";
-export const LAST_UPDATED = "September 24, 2026";
+export const LAST_UPDATED = "September 28, 2026";

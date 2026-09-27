@@ -200,6 +200,7 @@ export default async function ResourceDetailPage({
       <div className="mt-6 grid grid-cols-1 gap-6 lg:mt-7 lg:grid-cols-12 lg:gap-7">
         <div className="min-w-0 lg:col-span-8">
           <ResourcePreview
+            resourceId={resource.id}
             title={resource.title}
             fileUrl={resource.fileUrl}
             fileType={resource.fileType}
