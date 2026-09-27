@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Send, CheckCircle, Loader2, Clock, MessageCircle, ShieldCheck, Zap } from "lucide-react";
+import { Mail, Send, CheckCircle, Loader2, Clock, MessageCircle, ShieldCheck, Zap, ChevronDown } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { sendMessage } from "@/lib/actions/messages";
 import { getErrorMessage } from "@/lib/utils";
@@ -17,6 +17,34 @@ import { getErrorMessage } from "@/lib/utils";
  * reassurance row under it. Same server action, honeypot and stale-action
  * recovery as before — only the presentation changed.
  */
+/**
+ * The questions that actually fill the inbox. Kept in one array so the
+ * visible accordions and the FAQPage structured data (below) can't drift
+ * apart — search engines and visitors always see the same answers.
+ */
+const FAQ_ITEMS = [
+  {
+    q: "Do I need an account to download resources?",
+    a: "No. Anyone can browse and download everything on Student Hub without signing in. An account is only needed to upload, like, or manage your own materials.",
+  },
+  {
+    q: "What file types can I upload?",
+    a: "PDF, PNG, JPG, and DOCX files up to 4 MB. The limit keeps uploads fast on mobile data — if your scan is larger, compress it first or split multi-paper bundles.",
+  },
+  {
+    q: "I uploaded a resource — where is it?",
+    a: "Uploads appear on Browse immediately, there's no approval queue. If yours is missing, it was likely an unsupported file type; sign in and check your upload page, or send us a message below.",
+  },
+  {
+    q: "How do I report a wrong or harmful resource?",
+    a: "Open the resource and use the \"Report Issue\" link in its sidebar — reports go straight to the admin queue and are reviewed quickly. You don't need an account to report.",
+  },
+  {
+    q: "Can I request material that isn't on the site yet?",
+    a: "Yes — send the course name and what you need through this form. Requests with the most demand get priority when contributors upload.",
+  },
+] as const;
+
 export default function ContactPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -250,11 +278,64 @@ export default function ContactPage() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-foreground">{title}</p>
-              <p className="truncate text-xs font-medium text-foreground/60">{text}</p>
+              <p className="text-xs leading-snug font-medium text-foreground/60">{text}</p>
             </div>
           </div>
         ))}
       </div>
+
+      {/* FAQ — native <details> accordions: keyboard/screen-reader friendly
+          with zero JS, and one open at a time reads calmer than a wall of
+          text. Segoe-style quote via the name attribute (Chrome/Safari 17+);
+          older browsers just allow multiple open, which is fine. */}
+      <section className="mt-10 sm:mt-14" aria-labelledby="faq-heading">
+        <h2 id="faq-heading" className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Frequently asked questions
+        </h2>
+        <p className="mt-2 text-sm font-medium text-foreground/60 sm:text-base">
+          Quick answers to what people ask most — the form below is still there if yours isn&apos;t covered.
+        </p>
+
+        <div className="mt-6 space-y-3">
+          {FAQ_ITEMS.map((item) => (
+            <details
+              key={item.q}
+              name="contact-faq"
+              className="group rounded-2xl border-2 border-ink bg-surface shadow-hard-sm open:shadow-hard"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-muted sm:text-base [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <ChevronDown
+                  size={18}
+                  strokeWidth={2.5}
+                  aria-hidden
+                  className="shrink-0 transition-transform duration-200 group-open:rotate-180"
+                />
+              </summary>
+              <p className="border-t-2 border-ink/10 px-5 py-4 text-sm leading-relaxed font-medium text-foreground/70">
+                {item.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </section>
+      {/* FAQPage structured data — generated from the same array as the
+          visible accordions. html-safe: answers are authored constants, not
+          user content. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: FAQ_ITEMS.map((item) => ({
+              "@type": "Question",
+              name: item.q,
+              acceptedAnswer: { "@type": "Answer", text: item.a },
+            })),
+          }),
+        }}
+      />
     </div>
   );
 }
