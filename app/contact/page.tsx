@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Send, CheckCircle, Loader2, Clock, MessageCircle, ShieldCheck, Zap, ChevronDown } from "lucide-react";
+import { Mail, Send, CheckCircle, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { sendMessage } from "@/lib/actions/messages";
 import { getErrorMessage } from "@/lib/utils";
@@ -116,66 +116,62 @@ export default function ContactPage() {
     }
   };
 
-  const fieldInput =
-    "w-full rounded-xl border-2 border-ink bg-surface px-4 text-base font-medium text-foreground shadow-hard-sm transition-all placeholder:text-foreground/50 focus:outline-none focus:shadow-hard";
-  const fieldLabel = "mb-2 block text-sm font-bold tracking-wider text-foreground";
-
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pt-8 pb-16 sm:px-6 sm:pt-12 lg:px-8">
-      {/* Compact header: what this is + how fast we answer. */}
-      <header className="overflow-hidden rounded-[2rem] border-2 border-ink bg-ink on-ink shadow-hard">
-        <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-background/30 bg-accent text-accent-contrast">
-              <MessageCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Get in Touch</h1>
-              <p className="mt-1 text-sm font-medium opacity-70">
-                Questions, feedback, or a resource to flag — it all lands in the admin inbox.
-              </p>
-            </div>
-          </div>
-          <a
-            href="mailto:abubakartanveer826@gmail.com"
-            className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border-2 border-background/30 bg-background/10 px-4 py-2 text-sm font-bold transition-all hover:-translate-y-0.5 hover:bg-background/20 sm:self-center"
-          >
-            <Mail size={15} strokeWidth={2.25} aria-hidden />
-            Email us directly
-          </a>
-        </div>
+    <div className="mx-auto w-full max-w-3xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 lg:px-8">
+      {/* Editorial header: oversized title with accent underline and a
+          two-line lede. Big type carries the page; no boxed strip. */}
+      <header>
+        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">
+          <span className="inline-block h-2 w-2 rounded-full bg-accent" aria-hidden />
+          Contact
+        </p>
+        <h1 className="mt-3 text-4xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl">
+          Talk to the{" "}
+          <span className="relative inline-block">
+            people
+            <span className="absolute inset-x-0 bottom-1 h-3 bg-accent/60 -z-10 sm:h-4" aria-hidden />
+          </span>{" "}
+          behind it
+        </h1>
+        <p className="mt-4 max-w-xl text-base leading-relaxed font-medium text-foreground/60 sm:text-lg">
+          Student Hub is built and run by students. Questions, feedback, bug
+          reports, resource requests — everything lands in a real inbox and
+          gets a real reply.
+        </p>
       </header>
 
-      {/* Form card — the hero. */}
-      <div className="mt-6 rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard sm:mt-7 sm:p-10">
-        {isSent ? (
-          <div className="flex flex-col items-center justify-center py-14 text-center sm:py-20">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-ink bg-accent">
-              <CheckCircle className="h-10 w-10 text-accent-contrast" strokeWidth={2} aria-hidden />
+      {/* Main: form on the ink card (the centerpiece), meta rail beside it
+          on desktop, stacked under it on phones. */}
+      <div className="mt-8 grid grid-cols-1 gap-5 sm:mt-10 lg:grid-cols-5 lg:gap-6">
+        {/* Form card — dark, so it reads as THE object on the page. */}
+        <div className="rounded-[2rem] border-2 border-ink bg-ink on-ink p-6 shadow-hard sm:p-8 lg:col-span-3">
+          {isSent ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center sm:py-16">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-background/30 bg-accent">
+                <CheckCircle className="h-10 w-10 text-accent-contrast" strokeWidth={2} aria-hidden />
+              </div>
+              <h2 className="mt-6 text-2xl font-black tracking-tight">Message Sent!</h2>
+              <p className="mt-3 max-w-xs font-medium opacity-70">
+                Thank you for reaching out — you&apos;ll hear back at the email you left.
+              </p>
+              <button
+                onClick={() => setIsSent(false)}
+                className="mt-8 rounded-full border-2 border-background/40 bg-background/10 px-6 py-3 text-sm font-bold tracking-wider transition-all hover:-translate-y-1 hover:bg-background/20"
+              >
+                Send Another
+              </button>
             </div>
-            <h2 className="mt-6 text-2xl font-black tracking-tight text-foreground">Message Sent!</h2>
-            <p className="mt-3 max-w-xs font-medium text-foreground/60">
-              Thank you for reaching out — you&apos;ll hear back at the email you left.
-            </p>
-            <button
-              onClick={() => setIsSent(false)}
-              className="mt-8 rounded-full border-2 border-ink bg-ink on-ink px-6 py-3 text-sm font-bold tracking-wider transition-all hover:-translate-y-1 hover:shadow-hard-accent"
-            >
-              Send Another
-            </button>
-          </div>
-        ) : (
-          <>
-            <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Send a Message</h2>
-            <p className="mt-1.5 text-sm font-medium text-foreground/60">
-              We usually reply within a day.
-            </p>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Send a message</h2>
+              <p className="mt-1.5 text-sm font-medium opacity-60">
+                Usually answered within a day.
+              </p>
 
-            <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-5 sm:space-y-6">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
+              <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-5">
                 <div>
-                  <label htmlFor="contact-name" className={fieldLabel}>
-                    Your Name <span className="text-red-500" aria-hidden>*</span>
+                  <label htmlFor="contact-name" className="mb-2 block text-xs font-bold uppercase tracking-wider opacity-70">
+                    Your Name <span className="text-accent" aria-hidden>*</span>
                   </label>
                   <input
                     id="contact-name"
@@ -184,15 +180,15 @@ export default function ContactPage() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
                     required
-                    className={`${fieldInput} h-14`}
+                    className="h-13 w-full rounded-xl border-2 border-background/20 bg-background/10 px-4 py-3 text-base font-medium transition-all placeholder:opacity-40 focus:border-background/50 focus:outline-none"
                     aria-invalid={!!errors.name}
                   />
-                  {errors.name && <p className="mt-2 text-xs font-bold text-red-600">{errors.name}</p>}
+                  {errors.name && <p className="mt-2 text-xs font-bold text-red-400">{errors.name}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="contact-email" className={fieldLabel}>
-                    Your Email <span className="text-red-500" aria-hidden>*</span>
+                  <label htmlFor="contact-email" className="mb-2 block text-xs font-bold uppercase tracking-wider opacity-70">
+                    Your Email <span className="text-accent" aria-hidden>*</span>
                   </label>
                   <input
                     id="contact-email"
@@ -201,99 +197,111 @@ export default function ContactPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@university.edu"
                     required
-                    className={`${fieldInput} h-14`}
+                    className="h-13 w-full rounded-xl border-2 border-background/20 bg-background/10 px-4 py-3 text-base font-medium transition-all placeholder:opacity-40 focus:border-background/50 focus:outline-none"
                     aria-invalid={!!errors.email}
                   />
-                  {errors.email && <p className="mt-2 text-xs font-bold text-red-600">{errors.email}</p>}
+                  {errors.email && <p className="mt-2 text-xs font-bold text-red-400">{errors.email}</p>}
                 </div>
-              </div>
 
-              {/* Honeypot — visually hidden, keyboard/sr reachable semantics
-                  not wanted: it must stay unfilled by humans. */}
-              <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden opacity-0">
-                <label htmlFor="website">Website</label>
-                <input
-                  type="text"
-                  id="website"
-                  name="website"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                />
-              </div>
+                {/* Honeypot — visually hidden, keyboard/sr reachable semantics
+                    not wanted: it must stay unfilled by humans. */}
+                <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden opacity-0">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </div>
 
-              <div>
-                <label htmlFor="contact-message" className={fieldLabel}>
-                  Message <span className="text-red-500" aria-hidden>*</span>
-                </label>
-                <textarea
-                  id="contact-message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="What's on your mind?"
-                  rows={6}
-                  required
-                  className={`${fieldInput} resize-none px-4 py-3`}
-                  aria-invalid={!!errors.message}
-                />
-                {errors.message && <p className="mt-2 text-xs font-bold text-red-600">{errors.message}</p>}
-              </div>
+                <div>
+                  <label htmlFor="contact-message" className="mb-2 block text-xs font-bold uppercase tracking-wider opacity-70">
+                    Message <span className="text-accent" aria-hidden>*</span>
+                  </label>
+                  <textarea
+                    id="contact-message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="What's on your mind?"
+                    rows={6}
+                    required
+                    className="w-full resize-none rounded-xl border-2 border-background/20 bg-background/10 px-4 py-3 text-base font-medium transition-all placeholder:opacity-40 focus:border-background/50 focus:outline-none"
+                    aria-invalid={!!errors.message}
+                  />
+                  {errors.message && <p className="mt-2 text-xs font-bold text-red-400">{errors.message}</p>}
+                </div>
 
-              <button
-                type="submit"
-                disabled={isSending}
-                className="flex h-14 w-full items-center justify-center gap-2 rounded-full border-2 border-ink bg-accent text-base font-bold tracking-wider text-accent-contrast shadow-hard transition-all hover:-translate-y-1 hover:shadow-hard-lg disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-hard sm:h-16 sm:text-lg"
-              >
-                {isSending ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-5 w-5" aria-hidden />
-                    Send Message
-                  </>
-                )}
-              </button>
-            </form>
-          </>
-        )}
-      </div>
+                <button
+                  type="submit"
+                  disabled={isSending}
+                  className="flex h-14 w-full items-center justify-center gap-2 rounded-full border-2 border-ink bg-accent text-base font-bold tracking-wider text-accent-contrast shadow-hard-sm transition-all hover:-translate-y-1 hover:shadow-hard disabled:opacity-50 disabled:hover:translate-y-0"
+                >
+                  {isSending ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5" aria-hidden />
+                      Send Message
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
 
-      {/* Reassurance row: three quiet promises, wraps on phones. */}
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-        {[
-          { icon: Clock, title: "Fast replies", text: "Most messages answered within 24 hours." },
-          { icon: ShieldCheck, title: "No account needed", text: "Report issues or ask anything, anonymously." },
-          { icon: Zap, title: "Goes to a real inbox", text: "Delivered straight to the maintainer's email." },
-        ].map(({ icon: Icon, title, text }) => (
-          <div
-            key={title}
-            className="flex items-center gap-3.5 rounded-2xl border-2 border-ink bg-surface px-4 py-3.5 shadow-hard-sm"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-surface-muted">
-              <Icon size={16} strokeWidth={2.25} className="text-foreground" aria-hidden />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-foreground">{title}</p>
-              <p className="text-xs leading-snug font-medium text-foreground/60">{text}</p>
-            </div>
+        {/* Meta rail: the human details, quiet and stacked. */}
+        <aside className="flex flex-col gap-5 lg:col-span-2">
+          <div className="rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-foreground/50">Prefer email?</p>
+            <a
+              href="mailto:abubakartanveer826@gmail.com"
+              className="mt-3 flex items-center gap-2.5 break-all text-sm font-bold text-foreground transition-colors hover:text-accent"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-surface-muted">
+                <Mail size={15} strokeWidth={2.25} aria-hidden />
+              </span>
+              abubakartanveer826@gmail.com
+            </a>
           </div>
-        ))}
+
+          <div className="rounded-[2rem] border-2 border-ink bg-surface p-6 shadow-hard-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-foreground/50">What happens next</p>
+            <ol className="mt-4 space-y-3.5">
+              {[
+                "Your message hits the admin inbox instantly.",
+                "You get a reply at the email you left, usually within a day.",
+                "Reports on resources are reviewed even faster — they're prioritized.",
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm leading-snug font-medium text-foreground/70">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-accent text-[11px] font-black text-accent-contrast" aria-hidden>
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </aside>
       </div>
 
       {/* FAQ — native <details> accordions: keyboard/screen-reader friendly
           with zero JS, and one open at a time reads calmer than a wall of
           text. Segoe-style quote via the name attribute (Chrome/Safari 17+);
           older browsers just allow multiple open, which is fine. */}
-      <section className="mt-10 sm:mt-14" aria-labelledby="faq-heading">
+      <section className="mt-12 sm:mt-16" aria-labelledby="faq-heading">
         <h2 id="faq-heading" className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Frequently asked questions
         </h2>
         <p className="mt-2 text-sm font-medium text-foreground/60 sm:text-base">
-          Quick answers to what people ask most — the form below is still there if yours isn&apos;t covered.
+          Quick answers to what people ask most — the form above is still there if yours isn&apos;t covered.
         </p>
 
         <div className="mt-6 space-y-3">
@@ -319,6 +327,7 @@ export default function ContactPage() {
           ))}
         </div>
       </section>
+
       {/* FAQPage structured data — generated from the same array as the
           visible accordions. html-safe: answers are authored constants, not
           user content. */}

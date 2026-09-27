@@ -116,6 +116,13 @@ export async function proxy(request: NextRequest) {
     // limits per IP and must answer directly (fetching it through a login
     // redirect would corrupt the binary stream for <a download> clicks).
     pathname.startsWith("/api/download/") ||
+    // PDF viewer byte proxy — same deal: guests read PDFs in the site's
+    // viewer, and pdf.js must receive the binary stream, not a login page.
+    pathname.startsWith("/api/pdf/") ||
+    // PDF.js worker for the custom viewer — a static file, but module
+    // scripts are fetched without credentials, so the login redirect would
+    // hand back HTML and the worker would fail strict MIME checking.
+    pathname.startsWith("/pdfjs/") ||
     pathname === "/login" ||
     pathname.startsWith("/login/") || // e.g. /login/forgot-password
     pathname === "/signup" ||

@@ -1,10 +1,15 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { ExternalLink, File, FileImage, FileText, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatFileType, formatFileSize } from "@/lib/utils";
+
+// Custom PDF viewer, loaded only when a PDF is actually opened — image
+// pages never download pdf.js (~400 KB gzipped).
+const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
 
 /**
  * The download filename is the resource title, which has no extension —
@@ -22,6 +27,7 @@ export function withExtension(name: string, url: string): string {
 }
 
 interface ResourcePreviewProps {
+  resourceId: string;
   title: string;
   fileUrl: string;
   fileType: string | null;
@@ -29,6 +35,7 @@ interface ResourcePreviewProps {
 }
 
 export default function ResourcePreview({
+  resourceId,
   title,
   fileUrl,
   fileType,
@@ -36,7 +43,7 @@ export default function ResourcePreview({
 }: ResourcePreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [frameBlocked, setFrameBlocked] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   const isPDF = fileType?.includes("pdf") ?? false;
   const isImage = fileType?.includes("image") ?? false;
@@ -67,13 +74,16 @@ export default function ResourcePreview({
     }
   };
 
-  /* The expand button matches the picture's own behavior: for images it
-     opens the same zoomable lightbox (which also works on iPhone, where
-     native fullscreen doesn't exist — previously the button vanished
-     there); PDFs keep native fullscreen since the lightbox is image-only. */
+  /* The expand button opens the themed in-app viewer for both types —
+     images get the zoomable lightbox, PDFs the custom pdf.js viewer (works
+     on iPhone, where native fullscreen/PDF UIs are unreliable). */
   const handleExpand = () => {
     if (isImage) {
       setLightboxOpen(true);
+      return;
+    }
+    if (isPDF) {
+      setPdfOpen(true);
       return;
     }
     handleFullscreen();
@@ -123,21 +133,24 @@ export default function ResourcePreview({
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {/* Images: always shown — the lightbox needs no fullscreen API.
-                PDFs: only where the fullscreen API exists. */}
-            {(isImage || fullscreenSupported) && (
+            {/* Fullscreen button: images open the lightbox, PDFs the themed
+                viewer — neither needs the fullscreen API, so it renders
+                everywhere (iPhone included). */}
+            {(isImage || isPDF || fullscreenSupported) && (
               <button
                 onClick={handleExpand}
                 className={iconBtn}
                 aria-label={
                   isImage
                     ? "Open image in a larger view"
-                    : isFullscreen
-                      ? "Exit fullscreen"
-                      : "View fullscreen"
+                    : isPDF
+                      ? "Open PDF in full viewer"
+                      : isFullscreen
+                        ? "Exit fullscreen"
+                        : "View fullscreen"
                 }
               >
-                {!isImage && isFullscreen
+                {!isImage && !isPDF && isFullscreen
                   ? <Minimize2 size={15} strokeWidth={2.25} aria-hidden />
                   : <Maximize2 size={15} strokeWidth={2.25} aria-hidden />}
               </button>
@@ -170,28 +183,15 @@ export default function ResourcePreview({
             }`}
           >
             {isPDF ? (
-              // No #toolbar fragment: desktop browsers keep their native page
-              // navigation, which matters for multi-page past papers. When the
-              // frame errors (storage hiccup, blocked frame) show a real
-              // message instead of Chrome's silent grey box.
-              frameBlocked ? (
-                <div className="flex h-full w-full flex-col items-center justify-center px-6 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-surface">
-                    <FileGlyph fileType={fileType} size={28} className="text-foreground" />
-                  </div>
-                  <p className="mt-5 text-lg font-bold text-foreground">Preview unavailable</p>
-                  <p className="mt-1.5 max-w-xs text-sm font-medium text-foreground/60">
-                    The file couldn&apos;t be displayed right now — use Download or open it in a new tab above.
-                  </p>
-                </div>
-              ) : (
-              <iframe
-                src={fileUrl}
-                className="h-full w-full border-0"
-                title={`Preview of ${title}`}
-                onError={() => setFrameBlocked(true)}
+              // Inline themed reader: first page renders immediately and the
+              // whole document scrolls right here, like the image preview.
+              // pdf.js lazy-loads on first view; the expand button opens the
+              // same document in a fullscreen overlay with a toolbar.
+              <PdfViewer
+                resourceId={resourceId}
+                title={title}
+                variant="inline"
               />
-              )
             ) : isImage ? (
               <button
                 type="button"
@@ -239,6 +239,17 @@ export default function ResourcePreview({
           alt={title}
           title={title}
           onClose={() => setLightboxOpen(false)}
+        />
+      )}
+
+      {/* Themed PDF viewer, fullscreen overlay: same document, toolbar with
+          zoom + page navigation, Esc to close. */}
+      {pdfOpen && isPDF && (
+        <PdfViewer
+          resourceId={resourceId}
+          title={fileName}
+          variant="fullscreen"
+          onClose={() => setPdfOpen(false)}
         />
       )}
     </>
