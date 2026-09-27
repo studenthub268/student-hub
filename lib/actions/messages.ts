@@ -6,7 +6,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "./rate-limit";
-import { sendContactReplyEmail } from "@/lib/email";
+import { sendContactReplyEmail, sendAdminMessageNotificationEmail } from "@/lib/email";
 import { headers } from "next/headers";
 
 const messageSchema = z.object({
@@ -49,6 +49,16 @@ export async function sendMessage(formData: {
     email: validatedData.email,
     message: validatedData.message,
   });
+
+  // 5. Notify the maintainer (best-effort, AFTER the row is safe): a failed
+  //    notification must never surface to the sender as a failed submission.
+  //    Not awaited to completion — fired with its own catch so cold-start
+  //    latency of the email API doesn't delay the sender's response either.
+  void sendAdminMessageNotificationEmail({
+    name: validatedData.name,
+    email: validatedData.email,
+    message: validatedData.message,
+  }).catch((e) => console.error("Admin notification failed:", e));
 
   return { success: true };
 }
