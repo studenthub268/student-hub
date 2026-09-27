@@ -309,10 +309,10 @@ export default function ContactPage() {
             <details
               key={item.q}
               name="contact-faq"
-              className="group rounded-2xl border-2 border-ink bg-surface shadow-hard-sm open:shadow-hard"
+              className="group w-full max-w-full overflow-hidden rounded-2xl border-2 border-ink bg-surface shadow-hard-sm open:shadow-hard"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-muted sm:text-base [&::-webkit-details-marker]:hidden">
-                {item.q}
+              <summary className="flex min-w-0 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-muted sm:text-base [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0 break-words text-left">{item.q}</span>
                 <ChevronDown
                   size={18}
                   strokeWidth={2.5}
