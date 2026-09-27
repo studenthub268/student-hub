@@ -277,6 +277,13 @@ export default function AdminPanel() {
   const [replyDraft, setReplyDraft] = useState("");
   const [isReplying, setIsReplying] = useState(false);
 
+  // Inbox filter: unanswered first by default — that's the queue to work.
+  // "answered" flips to the archive view; "all" shows everything.
+  const [messageFilter, setMessageFilter] = useState<"pending" | "answered" | "all">("pending");
+  const filteredMessages = messagesList.filter((m) =>
+    messageFilter === "pending" ? !m.repliedAt : messageFilter === "answered" ? Boolean(m.repliedAt) : true
+  );
+
   const openReply = (msg: Message) => {
     setReplyingTo(msg.id);
     setReplyDraft(`Hi ${msg.name.split(/\s+/)[0] || "there"},\n\n`);
@@ -587,11 +594,53 @@ export default function AdminPanel() {
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
               <Inbox className="h-4 w-4 text-accent" aria-hidden /> Messages ({messagesList.length})
             </h3>
+            {/* Read/answered filter: pending = unanswered, answered = replied,
+                all = everything. Counts shown inline so the state of the
+                inbox is visible without switching tabs. */}
+            {(() => {
+              const answeredCount = messagesList.filter((m) => m.repliedAt).length;
+              const pendingCount = messagesList.length - answeredCount;
+              const filters = [
+                { key: "pending" as const, label: "Pending", count: pendingCount },
+                { key: "answered" as const, label: "Answered", count: answeredCount },
+                { key: "all" as const, label: "All", count: messagesList.length },
+              ];
+              return (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  {filters.map((f) => {
+                    const active = messageFilter === f.key;
+                    return (
+                      <button
+                        key={f.key}
+                        onClick={() => setMessageFilter(f.key)}
+                        className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-xs font-bold transition-all ${
+                          active
+                            ? "border-ink bg-ink on-ink shadow-hard-sm"
+                            : "border-line bg-surface text-foreground/60 hover:text-foreground hover:border-foreground/30"
+                        }`}
+                        aria-pressed={active}
+                      >
+                        {f.label}
+                        <span className={`rounded-full px-1.5 text-[11px] tabular-nums ${active ? "bg-background/20" : "bg-surface-muted"}`}>
+                          {f.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             <div className="space-y-3">
-              {messagesList.length === 0 ? (
-                <p className="text-sm text-foreground/60 font-medium p-4 rounded-xl bg-surface-muted">No messages.</p>
+              {filteredMessages.length === 0 ? (
+                <p className="text-sm text-foreground/60 font-medium p-4 rounded-xl bg-surface-muted">
+                  {messageFilter === "pending"
+                    ? "All caught up — no unanswered messages."
+                    : messageFilter === "answered"
+                      ? "No replies sent yet."
+                      : "No messages."}
+                </p>
               ) : (
-                messagesList.map((msg) => (
+                filteredMessages.map((msg) => (
                   <div key={msg.id} className="p-4 rounded-xl border-2 border-line bg-surface">
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedMessage(expandedMessage === msg.id ? null : msg.id)}>
