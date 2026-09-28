@@ -1,15 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, ArrowUpRight } from "lucide-react";
+import { Heart, ArrowUpRight, HardDrive } from "lucide-react";
 import { Resource } from "@/lib/db/schema";
-import { formatFileSize } from "@/lib/utils";
+import { formatFileSize, formatFileType } from "@/lib/utils";
+import { isDriveHosted } from "@/lib/drive";
 
 interface ResourceCardProps {
   resource: Resource & { uploader?: { name: string | null } | null };
 }
 
 export function ResourceCard({ resource }: ResourceCardProps) {
+  // Drive-hosted resources get a badge and a size-aware pill: their size is
+  // whatever the upload-time probe harvested (often unknown for huge files),
+  // and "0 Bytes" would be a lie — omit the size slot instead.
+  const isDrive = isDriveHosted(resource.fileType, resource.fileUrl);
+  const typeLabel = formatFileType(resource.fileType);
+
   return (
     <Link href={`/resource/${resource.id}`} className="block h-full group">
       <div className="flex flex-col h-full bg-surface rounded-[2rem] border-2 border-ink shadow-hard transition-all duration-300 ease-out group-hover:shadow-hard-lg group-hover:-translate-y-1.5 active:scale-[0.98] overflow-hidden relative">
@@ -43,10 +50,28 @@ export function ResourceCard({ resource }: ResourceCardProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-ink on-ink px-3 py-1.5 rounded-full text-xs tracking-wider">
-              <span className="uppercase">{resource.fileType?.split('/')[1] || 'FILE'}</span>
-              <span className="opacity-50">•</span>
-              <span>{formatFileSize(resource.fileSize ?? 0)}</span>
+            <div className="flex items-center gap-2">
+              {/* Drive badge: tells students this file streams from Google
+                  Drive (usually because it's too large for in-app storage)
+                  before they tap through. */}
+              {isDrive && (
+                <span
+                  className="flex items-center gap-1 rounded-full border border-ink bg-surface-muted px-2 py-1 text-xs font-bold tracking-wider text-foreground/70"
+                  title="Hosted on Google Drive"
+                >
+                  <HardDrive className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  <span className="sr-only">Hosted on Google Drive</span>
+                </span>
+              )}
+              <div className="flex items-center gap-2 bg-ink on-ink px-3 py-1.5 rounded-full text-xs tracking-wider">
+                <span className="uppercase">{typeLabel}</span>
+                {resource.fileSize ? (
+                  <>
+                    <span className="opacity-50">•</span>
+                    <span>{formatFileSize(resource.fileSize)}</span>
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

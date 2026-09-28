@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { unstable_cache } from "next/cache";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { getTypeConfig } from "@/lib/constants";
+import { isDriveHosted } from "@/lib/drive";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import ResourcePreview from "./ResourcePreview";
 import ResourceActions from "./ResourceActions";
@@ -145,6 +146,14 @@ export default async function ResourceDetailPage({
   const typeConfig = getTypeConfig(resource.type);
   const related = await queryRelated(id, resource.subject);
 
+  // Drive-hosted resources render without the preview stage unless the
+  // file itself is previewable (PDF renders through the Drive-aware proxy,
+  // images directly) — see the workspace comment below.
+  const isDriveResource = isDriveHosted(resource.fileType, resource.fileUrl);
+  const drivePreviewable =
+    isDriveResource &&
+    Boolean(resource.fileType?.match(/^(application\/pdf|image\/)/));
+
   const uploaderName = resource.uploader?.name || "Unknown";
   const isOwner = Boolean(session?.user?.id) && session!.user!.id === resource.uploaderId;
 
@@ -196,20 +205,31 @@ export default async function ResourceDetailPage({
 
       {/* Workspace: large preview left, details-and-actions rail right.
           On mobile the DOM order is header → preview → rail, so the document
-          leads and the actions follow it. */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:mt-7 lg:grid-cols-12 lg:gap-7">
-        <div className="min-w-0 lg:col-span-8">
-          <ResourcePreview
-            resourceId={resource.id}
-            title={resource.title}
-            fileUrl={resource.fileUrl}
-            fileType={resource.fileType}
-            fileSize={resource.fileSize}
-          />
-        </div>
+          leads and the actions follow it.
+          Drive-hosted resources skip the preview stage EXCEPT previewable
+          types (PDF/image) — those render inline like stored files (PDF via
+          the Drive-aware /api/pdf proxy, images directly). Non-previewable
+          Drive files (ZIP, video, docs) show rail-only, centered: a big
+          empty hand-off card would just push the actions below the fold. */}
+      <div
+        className={`mt-6 grid grid-cols-1 gap-6 lg:mt-7 lg:gap-7 ${
+          isDriveResource && !drivePreviewable ? "mx-auto max-w-xl" : "lg:grid-cols-12"
+        }`}
+      >
+        {(!isDriveResource || drivePreviewable) && (
+          <div className="min-w-0 lg:col-span-8">
+            <ResourcePreview
+              resourceId={resource.id}
+              title={resource.title}
+              fileUrl={resource.fileUrl}
+              fileType={resource.fileType}
+              fileSize={resource.fileSize}
+            />
+          </div>
+        )}
 
-        <aside className="lg:col-span-4">
-          <div className="lg:sticky lg:top-24">
+        <aside className={isDriveResource && !drivePreviewable ? "" : "lg:col-span-4"}>
+          <div className={isDriveResource && !drivePreviewable ? "" : "lg:sticky lg:top-24"}>
             <ResourceActions
               resourceId={resource.id}
               title={resource.title}

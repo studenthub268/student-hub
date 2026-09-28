@@ -51,10 +51,27 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
     return task.promise;
   }, []);
 
+  /* One transparent retry: a transient 429 from the rate limiter or a
+     blip fetching from storage used to land readers directly in the error
+     state ("preview blocked"), with the fix being nothing more than
+     reloading. A single short-delay retry absorbs the spike without
+     masking a genuinely dead file — the second failure still errors. */
+  const loadDocWithRetry = useCallback(
+    async (url: string) => {
+      try {
+        return await loadDoc(url);
+      } catch {
+        await new Promise((r) => setTimeout(r, 1500));
+        return loadDoc(url);
+      }
+    },
+    [loadDoc]
+  );
+
   /* Load document once. */
   useEffect(() => {
     let cancelled = false;
-    loadDoc(`/api/pdf/${resourceId}`)
+    loadDocWithRetry(`/api/pdf/${resourceId}`)
       .then((doc) => {
         if (cancelled) {
           doc.destroy();
@@ -73,7 +90,7 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
       docRef.current?.destroy();
       docRef.current = null;
     };
-  }, [resourceId, loadDoc]);
+  }, [resourceId, loadDocWithRetry]);
 
   /* Render visible pages. Fit-width base scale; zoom multiplies it. Renders
      are versioned — a newer request invalidates older in-flight ones. */
@@ -273,7 +290,7 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
             <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-2 px-6 text-center">
               <p className="text-lg font-bold text-foreground">Couldn&apos;t load the PDF</p>
               <p className="text-sm font-medium text-foreground/60">
-                The file may be unavailable right now — use Download below, or reload the page.
+                The file may be temporarily unavailable — try again in a moment, or use Download below.
               </p>
             </div>
           )}
@@ -331,7 +348,7 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
           <div className="flex h-full flex-col items-center justify-center gap-3 text-background">
             <p className="text-lg font-bold">Couldn&apos;t load the PDF</p>
             <p className="max-w-xs text-center text-sm font-medium opacity-70">
-              The file may be unavailable right now — try Download instead, or reload the page.
+              The file may be temporarily unavailable — try again in a moment, or use Download instead.
             </p>
           </div>
         )}

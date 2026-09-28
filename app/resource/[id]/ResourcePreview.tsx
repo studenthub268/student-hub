@@ -3,9 +3,10 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
-import { ExternalLink, File, FileImage, FileText, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ExternalLink, File, FileImage, FileText, HardDrive, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatFileType, formatFileSize } from "@/lib/utils";
+import { isDriveHosted, DRIVE_FILE_TYPE } from "@/lib/drive";
 
 // Custom PDF viewer, loaded only when a PDF is actually opened — image
 // pages never download pdf.js (~400 KB gzipped).
@@ -45,8 +46,15 @@ export default function ResourcePreview({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
 
+  const isDrive = isDriveHosted(fileType, fileUrl);
+  /* Drive-hosted PDFs and images CAN render inline: PDF bytes stream
+     through the same-origin /api/pdf proxy (now Drive-aware), and images
+     render in a plain <img> — no CORS needed for either. Other Drive
+     types (ZIP, video, Office docs) have no inline renderer — the Drive
+     hand-off card shows instead. */
   const isPDF = fileType?.includes("pdf") ?? false;
   const isImage = fileType?.includes("image") ?? false;
+  const isPreviewable = isPDF || isImage;
 
   const formatLabel = formatFileType(fileType);
   const sizeLabel = fileSize ? formatFileSize(fileSize) : null;
@@ -136,7 +144,9 @@ export default function ResourcePreview({
             {/* Fullscreen button: images open the lightbox, PDFs the themed
                 viewer — neither needs the fullscreen API, so it renders
                 everywhere (iPhone included). */}
-            {(isImage || isPDF || fullscreenSupported) && (
+            {/* Previewable files (PDF/image, R2 or Drive) get the expand
+                button; other types rely on the fullscreen API only. */}
+            {(isPreviewable || fullscreenSupported) && (
               <button
                 onClick={handleExpand}
                 className={iconBtn}
@@ -182,7 +192,31 @@ export default function ResourcePreview({
               isFullscreen ? "border-background/20" : "border-ink"
             }`}
           >
-            {isPDF ? (
+            {isDrive && !isPreviewable ? (
+              // Drive-hosted, non-previewable type (ZIP, video, docs): the
+              // bytes live on Google's origin and no inline renderer exists,
+              // so the stage is a branded hand-off — one big button opens
+              // Drive's viewer in a new tab. PDFs/images skip this branch
+              // and render inline below (PDF via the same-origin proxy).
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-full w-full flex-col items-center justify-center px-6 text-center transition-colors hover:bg-surface-muted"
+              >
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-accent text-accent-contrast">
+                  <HardDrive size={28} strokeWidth={1.75} aria-hidden />
+                </div>
+                <p className="mt-5 text-lg font-bold text-foreground">Hosted on Google Drive</p>
+                <p className="mt-1.5 max-w-xs text-sm font-medium text-foreground/60">
+                  This file is too large for in-app storage — open it in Google Drive, or use Download.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-surface px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground">
+                  Open in Drive
+                  <ExternalLink size={13} strokeWidth={2.25} aria-hidden />
+                </span>
+              </a>
+            ) : isPDF ? (
               // Inline themed reader: first page renders immediately and the
               // whole document scrolls right here, like the image preview.
               // pdf.js lazy-loads on first view; the expand button opens the
@@ -203,17 +237,32 @@ export default function ResourcePreview({
                     have unknown aspect ratios, and a hard-coded width/height
                     here re-laid-out the whole card when the real ratio arrived
                     (Lighthouse CLS 0.10). The stage owns the size; the image
-                    only letterboxes inside it — zero shift for any upload. */}
+                    only letterboxes inside it — zero shift for any upload.
+                    Drive-hosted images use a plain <img>: next/image would
+                    route Drive URLs through the optimizer (unsupported host,
+                    extra hop) and the raw bytes are already exactly the
+                    upload. */}
                 <span className="relative block h-full w-full">
-                  <Image
-                    src={fileUrl}
-                    alt={title}
-                    fill
-                    priority
-                    fetchPriority="high"
-                    sizes="(min-width: 1024px) 66vw, 100vw"
-                    className="object-contain"
-                  />
+                  {isDrive ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={fileUrl}
+                      alt={title}
+                      loading="eager"
+                      fetchPriority="high"
+                      className="absolute inset-0 h-full w-full object-contain"
+                    />
+                  ) : (
+                    <Image
+                      src={fileUrl}
+                      alt={title}
+                      fill
+                      priority
+                      fetchPriority="high"
+                      sizes="(min-width: 1024px) 66vw, 100vw"
+                      className="object-contain"
+                    />
+                  )}
                 </span>
               </button>
             ) : (
@@ -491,7 +540,10 @@ function ImageLightbox({
 
 /**
  * File-type glyph, shared by the toolbar and the fallback card. Carries no
- * colour of its own — callers pass a text colour class.
+ * colour of its own — callers pass a text colour class. Drive-hosted files
+ * with an unknown type show the Drive glyph; with a known type they show
+ * the matching file icon (the Drive badge on cards carries the hosting
+ * signal — the glyph just describes the file).
  */
 export function FileGlyph({
   fileType,
@@ -504,10 +556,13 @@ export function FileGlyph({
   strokeWidth?: number;
   className?: string;
 }) {
-  const Icon = fileType?.includes("pdf")
-    ? FileText
-    : fileType?.includes("image")
-      ? FileImage
-      : File;
+  const Icon =
+    fileType === DRIVE_FILE_TYPE
+      ? HardDrive
+      : fileType?.includes("pdf")
+        ? FileText
+        : fileType?.includes("image")
+          ? FileImage
+          : File;
   return <Icon size={size} strokeWidth={strokeWidth} className={className} aria-hidden />;
 }

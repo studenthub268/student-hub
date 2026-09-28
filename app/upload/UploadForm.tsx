@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
-import { Upload, File, X, AlertTriangle, Link as LinkIcon } from "lucide-react";
+import { Upload, File, X, AlertTriangle, Link as LinkIcon, HardDrive, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
   notify,
@@ -11,8 +11,10 @@ import {
 } from "@/lib/notify";
 import { SUBJECTS, RESOURCE_TYPES, DEPARTMENTS } from "@/lib/constants";
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_MB } from "@/lib/uploads";
-import { formatFileSize, getErrorMessage } from "@/lib/utils";
+import { DRIVE_FILE_TYPE } from "@/lib/drive";
+import { formatFileSize, formatFileType, getErrorMessage } from "@/lib/utils";
 import { uploadResource, checkDuplicateResources } from "@/lib/actions/resources";
+import { probeDriveLink } from "@/lib/actions/drive";
 import Link from "next/link";
 
 export default function UploadForm() {
@@ -28,6 +30,22 @@ export default function UploadForm() {
   const [isUploading, setIsUploading] = useState(false);
   const [duplicates, setDuplicates] = useState<{ id: string; title: string; subject: string; department: string | null; uploader: { name: string | null } | null }[]>([]);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+
+  /* ---- Drive-link mode: file source toggle + pasted-link state. ----
+     Two ways to contribute: upload the file here (≤4 MB, stored in the
+     platform's R2 bucket) or host it on your own Google Drive (any size,
+     link verified at save time). Drive state is its own little machine:
+     raw link text, probe status (idle/probing/ok/error), and the
+     probe-reported metadata used to pre-fill type/size. */
+  const [source, setSource] = useState<"r2" | "drive">("r2");
+  const [driveUrl, setDriveUrl] = useState("");
+  const [driveProbe, setDriveProbe] = useState<
+    | { status: "idle"; fileName: null; fileSize: null; fileType: null }
+    | { status: "probing"; fileName: null; fileSize: null; fileType: null }
+    | { status: "ok"; fileName: string | null; fileSize: number | null; fileType: string | null }
+    | { status: "error"; message: string; fileName: null; fileSize: null; fileType: null }
+  >({ status: "idle", fileName: null, fileSize: null, fileType: null });
+  const driveProbeSeq = useRef(0);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
@@ -59,6 +77,44 @@ export default function UploadForm() {
   });
 
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  /* Debounced live probe of the pasted Drive link: 800ms after typing
+     stops, validate server-side and (on success) harvest filename/size
+     for the type/size chips. All state changes happen inside the debounced
+     callback (not synchronously in the effect body), and every run bumps a
+     sequence counter so only the latest probe's result may land — a race
+     from fast typing can't overwrite a newer probe. */
+  useEffect(() => {
+    if (source !== "drive") return;
+    const trimmed = driveUrl.trim();
+    const seq = ++driveProbeSeq.current;
+    const timer = setTimeout(async () => {
+      if (driveProbeSeq.current !== seq) return; // superseded while waiting
+      if (!trimmed) {
+        setDriveProbe({ status: "idle", fileName: null, fileSize: null, fileType: null });
+        return;
+      }
+      setDriveProbe({ status: "probing", fileName: null, fileSize: null, fileType: null });
+      try {
+        const result = await probeDriveLink(trimmed);
+        if (driveProbeSeq.current !== seq) return; // stale — newer probe in flight
+        if (result.ok) {
+          setDriveProbe({
+            status: "ok",
+            fileName: result.fileName,
+            fileSize: result.fileSize,
+            fileType: result.fileType,
+          });
+        } else {
+          setDriveProbe({ status: "error", message: result.error, fileName: null, fileSize: null, fileType: null });
+        }
+      } catch {
+        if (driveProbeSeq.current !== seq) return;
+        setDriveProbe({ status: "error", message: "Couldn't check that link — try again.", fileName: null, fileSize: null, fileType: null });
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [driveUrl, source]);
 
   // Idempotency key: one stable UUID per logical upload, shared by the file
   // PUT and the resource insert. A retry after a lost response (flaky mobile
@@ -109,11 +165,12 @@ export default function UploadForm() {
     });
 
   const doUpload = async () => {
-    if (!file) return;
+    if (uploadInFlightRef.current) return;
+    if (source === "r2" && !file) return;
+    if (source === "drive" && driveProbe.status !== "ok") return;
     // Re-entry guard: the duplicate-warning modal's "Upload anyway" used to
     // fire this twice (click handler + implicit form submit) — and a rapid
     // double-click here can still race React's disabled state.
-    if (uploadInFlightRef.current) return;
     uploadInFlightRef.current = true;
     setIsUploading(true);
     setShowDuplicateWarning(false);
@@ -125,26 +182,59 @@ export default function UploadForm() {
     void requestNotificationPermission();
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("uploadId", uploadIdRef.current);
+      let result;
+      if (source === "drive") {
+        /* Drive mode: no file transfer at all — save the resource row
+           pointing at the verified Drive link. file_key carries the Drive
+           file id, file_url the direct-download URL; the download route and
+           resource page branch on that shape. The probe already verified
+           the link server-side; the action re-verifies as the gate. */
+        const trimmed = driveUrl.trim();
+        result = await uploadResource({
+          title,
+          description,
+          type,
+          subject,
+          professor: professor.trim() || undefined,
+          department: department.trim() || undefined,
+          file_url: trimmed,
+          file_key: trimmed, // replaced by the real file id server-side
+          // Real MIME when the probe harvested one (PDF/ZIP/video… — powers
+          // the type chip on cards); the synthetic marker renders as "DRIVE"
+          // when the type couldn't be determined. Either way it disables
+          // inline viewers via the preview component's isDrive check.
+          file_type: driveProbe.fileType ?? DRIVE_FILE_TYPE,
+          file_size: driveProbe.fileSize ?? undefined,
+          uploadId: uploadIdRef.current,
+          source: "drive",
+        });
+      } else {
+        // Non-null here is guaranteed by handleSubmit's file check (the only
+        // caller besides the duplicate-modal's "Upload anyway", which only
+        // renders when validation already passed).
+        const picked = file!;
+        const formData = new FormData();
+        formData.append("file", picked);
+        formData.append("uploadId", uploadIdRef.current);
 
-      const { key, publicUrl } = await uploadFileWithProgress(formData);
-      setUploadProgress(100);
+        const { key, publicUrl } = await uploadFileWithProgress(formData);
+        setUploadProgress(100);
 
-      const result = await uploadResource({
-        title,
-        description,
-        type,
-        subject,
-        professor: professor.trim() || undefined,
-        department: department.trim() || undefined,
-        file_url: publicUrl,
-        file_key: key,
-        file_type: file.type,
-        file_size: file.size,
-        uploadId: uploadIdRef.current,
-      });
+        result = await uploadResource({
+          title,
+          description,
+          type,
+          subject,
+          professor: professor.trim() || undefined,
+          department: department.trim() || undefined,
+          file_url: publicUrl,
+          file_key: key,
+          file_type: picked.type,
+          file_size: picked.size,
+          uploadId: uploadIdRef.current,
+          source: "r2",
+        });
+      }
 
       // Native OS notification when permitted (survives leaving the tab —
       // important for big files on slow networks); branded toast otherwise.
@@ -156,7 +246,7 @@ export default function UploadForm() {
       router.push("/browse");
       router.refresh();
     } catch (error) {
-      void notify("error", "Upload failed", getErrorMessage(error, "Failed to upload resource"));
+      void notify("error", "Upload failed", getErrorMessage(error, "Failed to publish resource"));
       setIsUploading(false);
     } finally {
       uploadInFlightRef.current = false;
@@ -166,20 +256,31 @@ export default function UploadForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!file) {
-      toast.error("Please select a file to upload");
-      return;
+    if (source === "r2") {
+      if (!file) {
+        toast.error("Please select a file to upload");
+        return;
+      }
+
+      // Check size here too, not only in the dropzone: a file picked before its
+      // limit changed (or restored from a saved form) still reaches this path.
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`That file is over ${MAX_FILE_SIZE_MB}MB — please upload a smaller file.`);
+        return;
+      }
+    } else {
+      if (driveProbe.status !== "ok") {
+        toast.error(
+          driveProbe.status === "error"
+            ? driveProbe.message
+            : "Paste your Drive link and wait for it to be verified first."
+        );
+        return;
+      }
     }
 
     if (!subject || !type) {
       toast.error("Please select a subject and resource type");
-      return;
-    }
-
-    // Check size here too, not only in the dropzone: a file picked before its
-    // limit changed (or restored from a saved form) still reaches this path.
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error(`That file is over ${MAX_FILE_SIZE_MB}MB — please upload a smaller file.`);
       return;
     }
 
@@ -290,7 +391,85 @@ export default function UploadForm() {
       <div>
         <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">File <span className="text-red-500">*</span></label>
 
-        {!file ? (
+        {/* Source toggle: upload to the platform's storage, or link a file
+            from your own Google Drive (any size — no 4MB cap). */}
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setSource("r2")}
+            aria-pressed={source === "r2"}
+            className={`flex items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-bold transition-all ${
+              source === "r2"
+                ? "border-ink bg-accent text-accent-contrast shadow-hard-sm"
+                : "border-ink bg-surface text-foreground hover:bg-surface-muted"
+            }`}
+          >
+            <Upload size={15} strokeWidth={2.25} aria-hidden />
+            Upload file
+          </button>
+          <button
+            type="button"
+            onClick={() => setSource("drive")}
+            aria-pressed={source === "drive"}
+            className={`flex items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-bold transition-all ${
+              source === "drive"
+                ? "border-ink bg-accent text-accent-contrast shadow-hard-sm"
+                : "border-ink bg-surface text-foreground hover:bg-surface-muted"
+            }`}
+          >
+            <HardDrive size={15} strokeWidth={2.25} aria-hidden />
+            Google Drive link
+          </button>
+        </div>
+
+        {source === "drive" ? (
+          <div className="rounded-[1rem] border-2 border-ink bg-surface p-4 shadow-hard-sm">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-foreground/70" htmlFor="drive-url">
+              Drive share link
+            </label>
+            <input
+              id="drive-url"
+              type="url"
+              value={driveUrl}
+              onChange={(e) => setDriveUrl(e.target.value)}
+              placeholder="https://drive.google.com/file/d/…/view?usp=sharing"
+              autoComplete="off"
+              spellCheck={false}
+              className="flex h-14 w-full rounded-xl border-2 border-ink bg-surface px-4 text-base font-medium shadow-hard-sm placeholder:text-foreground/60 focus:outline-none focus:shadow-hard transition-all"
+            />
+            <p className="mt-2 text-xs font-medium text-foreground/60">
+              In Google Drive: right-click the file → <strong>Share</strong> → set
+              “General access” to <strong>Anyone with the link</strong> → Copy link.
+              Any file size — it streams straight from Drive, and your Drive
+              storage is used, not the site&apos;s.
+            </p>
+
+            {/* Probe status: live feedback while the uploader can still fix
+                a private or malformed link. */}
+            <div className="mt-3" aria-live="polite">
+              {driveProbe.status === "probing" && (
+                <p className="flex items-center gap-2 text-sm font-bold text-foreground/60">
+                  <Loader2 size={15} className="animate-spin" aria-hidden />
+                  Checking the link…
+                </p>
+              )}
+              {driveProbe.status === "ok" && (
+                <p className="flex items-center gap-2 text-sm font-bold text-green-700">
+                  <CheckCircle2 size={15} aria-hidden />
+                  Link verified
+                  {driveProbe.fileType ? ` · ${formatFileType(driveProbe.fileType)}` : ""}
+                  {driveProbe.fileSize ? ` · ${formatFileSize(driveProbe.fileSize)}` : ""}
+                </p>
+              )}
+              {driveProbe.status === "error" && (
+                <p className="flex items-start gap-2 text-sm font-bold text-red-600">
+                  <XCircle size={15} className="mt-0.5 shrink-0" aria-hidden />
+                  {driveProbe.message}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : !file ? (
           <div
             {...getRootProps()}
             // Drag state is an accent TINT, not a fill: the copy inside is
@@ -337,12 +516,16 @@ export default function UploadForm() {
         <button
           type="submit"
           className="w-full text-lg h-16 rounded-full border-2 border-ink bg-ink on-ink font-bold tracking-wider hover:-translate-y-1 hover:bg-ink hover:shadow-hard-accent transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-          disabled={isUploading || !file}
+          disabled={isUploading || (source === "r2" ? !file : driveProbe.status !== "ok")}
         >
-          {isUploading ? (uploadProgress < 100 ? `Uploading ${uploadProgress}%` : "Saving resource...") : "Publish Resource"}
+          {isUploading
+            ? source === "drive" || uploadProgress >= 100
+              ? "Saving resource..."
+              : `Uploading ${uploadProgress}%`
+            : "Publish Resource"}
         </button>
 
-        {isUploading && (
+        {isUploading && source === "r2" && (
           <div className="mt-4">
             <div className="h-2.5 w-full rounded-full border border-line bg-surface-muted overflow-hidden">
               <div

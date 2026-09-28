@@ -34,6 +34,9 @@ const MIME_LABELS: Record<string, string> = {
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
   "application/zip": "ZIP",
   "text/plain": "TXT",
+  // Synthetic marker (not a real MIME type) for Drive-hosted resources —
+  // see lib/drive.ts. Labelled so cards read "DRIVE" instead of "EXTERNAL".
+  "external/drive": "DRIVE",
 };
 
 export function formatFileType(fileType: string | null | undefined): string {
