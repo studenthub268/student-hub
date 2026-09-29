@@ -18,12 +18,21 @@ export function ResourceCard({ resource }: ResourceCardProps) {
   const typeLabel = formatFileType(resource.fileType);
 
   return (
-    <Link href={`/resource/${resource.id}`} className="block h-full group">
+    <Link
+      href={`/resource/${resource.id}`}
+      // Prefetch on viewport: cards are the site's primary navigation
+      // surface — a card entering the screen silently pulls its resource
+      // page, so tapping it renders instantly (the RSC payload is already
+      // in the router cache). Card pages are small server components, so
+      // the prefetch cost is a few KB per visible card.
+      prefetch
+      className="block h-full group"
+    >
       <div className="flex flex-col h-full bg-surface rounded-[2rem] border-2 border-ink shadow-hard transition-all duration-300 ease-out group-hover:shadow-hard-lg group-hover:-translate-y-1.5 active:scale-[0.98] overflow-hidden relative">
 
-        <div className="p-6 sm:p-8 flex flex-col flex-grow">
-          <div className="flex items-start justify-between mb-8">
-            <div className="border border-ink rounded-full px-4 py-1.5 text-xs font-semibold tracking-wider">
+        <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-grow">
+          <div className="flex items-start justify-between mb-4 sm:mb-8">
+            <div className="border border-ink rounded-full px-3 py-1 sm:px-4 sm:py-1.5 text-xs font-semibold tracking-wider">
               {resource.type.replace('-', ' ')}
             </div>
             <div className="p-2 rounded-full border border-ink group-hover:bg-accent group-hover:text-accent-contrast group-hover:rotate-45 transition-all duration-300">
@@ -35,40 +44,40 @@ export function ResourceCard({ resource }: ResourceCardProps) {
             {resource.title}
           </h3>
 
-          <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground/70 mb-8">
-            <span className="bg-surface-muted px-3 py-1 rounded-full">{resource.subject}</span>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-foreground/70 mb-4 sm:mb-8">
+            <span className="bg-surface-muted px-2.5 py-1 rounded-full">{resource.subject}</span>
             {resource.department && (
-              <span className="bg-surface-muted px-3 py-1 rounded-full">{resource.department}</span>
+              <span className="bg-surface-muted px-2.5 py-1 rounded-full">{resource.department}</span>
             )}
           </div>
 
-          <div className="mt-auto pt-6 border-t-2 border-line flex flex-wrap items-center justify-between gap-4 text-sm font-medium">
-            <div className="flex items-center gap-5">
-              <div className="flex items-center gap-2 group/stat hover:text-red-600 transition-colors cursor-pointer">
-                <Heart className="h-5 w-5 group-hover/stat:fill-red-600" strokeWidth={1.5} />
+          <div className="mt-auto pt-4 sm:pt-6 border-t-2 border-line flex flex-wrap items-center justify-between gap-2 sm:gap-4 text-sm font-medium">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <div className="flex items-center gap-1.5 sm:gap-2 group/stat hover:text-red-600 transition-colors cursor-pointer">
+                <Heart className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover/stat:fill-red-600" strokeWidth={1.5} />
                 <span>{resource.likes}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Drive badge: tells students this file streams from Google
                   Drive (usually because it's too large for in-app storage)
                   before they tap through. */}
               {isDrive && (
                 <span
-                  className="flex items-center gap-1 rounded-full border border-ink bg-surface-muted px-2 py-1 text-xs font-bold tracking-wider text-foreground/70"
+                  className="flex items-center gap-1 rounded-full border border-ink bg-surface-muted px-1.5 sm:px-2 py-1 text-xs font-bold tracking-wider text-foreground/70"
                   title="Hosted on Google Drive"
                 >
                   <HardDrive className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                   <span className="sr-only">Hosted on Google Drive</span>
                 </span>
               )}
-              <div className="flex items-center gap-2 bg-ink on-ink px-3 py-1.5 rounded-full text-xs tracking-wider">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-ink on-ink px-2.5 sm:px-3 py-1.5 rounded-full text-xs tracking-wider">
                 <span className="uppercase">{typeLabel}</span>
                 {resource.fileSize ? (
                   <>
                     <span className="opacity-50">•</span>
-                    <span>{formatFileSize(resource.fileSize)}</span>
+                    <span className="truncate max-w-24 sm:max-w-none">{formatFileSize(resource.fileSize)}</span>
                   </>
                 ) : null}
               </div>

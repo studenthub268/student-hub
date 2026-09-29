@@ -11,6 +11,9 @@ import {
   driveMetaFromResponse,
   driveDirectDownloadUrl,
   resolveDriveFileType,
+  isDriveFolderLink,
+  parseDriveFolderLink,
+  checkDriveFolder,
 } from "@/lib/drive";
 
 /**
@@ -54,6 +57,24 @@ export async function probeDriveLink(url: string): Promise<
   if (!isDriveLink(parsedInput.data)) {
     return { ok: false, error: "Paste a link from drive.google.com." };
   }
+
+  /* ---- Folder links: a different shape with its own probe. ---- */
+  if (isDriveFolderLink(parsedInput.data)) {
+    const folder = parseDriveFolderLink(parsedInput.data);
+    if (!folder) {
+      return { ok: false, error: "Couldn't find a folder in that link — copy it from Drive's Share → Copy link." };
+    }
+    const { problem, folderName } = await checkDriveFolder(folder.fileId);
+    if (problem) return { ok: false, error: problem };
+    return {
+      ok: true,
+      directUrl: folder.url,
+      fileName: folderName,
+      fileSize: null,
+      fileType: "external/drive-folder",
+    };
+  }
+
   if (isEditableDocsLink(parsedInput.data)) {
     return {
       ok: false,

@@ -29,12 +29,22 @@
  */
 export const DRIVE_FILE_TYPE = "external/drive";
 
+/**
+ * file_type marker for Drive FOLDER resources. A folder can't be downloaded
+ * as a file — it's a collection — so the resource page embeds Drive's own
+ * read-only folder listing and the download route redirects to the folder.
+ */
+export const DRIVE_FOLDER_TYPE = "external/drive-folder";
+
 /** Drive file URLs: /file/d/<id>/…, open?id=<id>, uc?id=<id> */
 const DRIVE_FILE_RE =
   /(?:\/file\/d\/|\/open\?id=|\/uc\?(?:export=download&)?id=)([\w-]{20,})/;
 
 /** Google Docs/Sheets/Slides share links — not downloadable as-is. */
 const DRIVE_EDITABLE_RE = /\/(document|spreadsheets|presentation)\/d\//;
+
+/** Drive folder URLs: /drive/folders/<id> (also /drive/u/0/folders/<id>). */
+const DRIVE_FOLDER_RE = /\/drive\/(?:u\/\d+\/)?folders\/([\w-]{20,})/;
 
 /** Any drive.google.com or docs.google.com URL (for the "is this Drive?" check). */
 const DRIVE_HOST_RE = /^https:\/\/(drive|docs)\.google\.com\//;
@@ -77,6 +87,31 @@ export function parseDriveLink(url: string): ParsedDriveLink | null {
  */
 export function isEditableDocsLink(url: string): boolean {
   return DRIVE_EDITABLE_RE.test(url);
+}
+
+/** Is this a Drive folder share link? */
+export function isDriveFolderLink(url: string): boolean {
+  return DRIVE_HOST_RE.test(url) && DRIVE_FOLDER_RE.test(url);
+}
+
+/**
+ * Extract the folder id from a Drive folder share URL, or null.
+ */
+export function parseDriveFolderLink(url: string): ParsedDriveLink | null {
+  if (!DRIVE_HOST_RE.test(url)) return null;
+  const match = url.match(DRIVE_FOLDER_RE);
+  if (!match?.[1]) return null;
+  return { fileId: match[1], url };
+}
+
+/**
+ * Drive's embeddable read-only folder listing. Works for any
+ * "Anyone with the link" folder, no API key needed — it's the same view
+ * Drive generates for its own "Embed folder" feature. Rendered in an
+ * iframe on the resource page as the folder preview.
+ */
+export function driveEmbeddedFolderUrl(folderId: string): string {
+  return `https://drive.google.com/embeddedfolderview?id=${folderId}#list`;
 }
 
 /**
@@ -139,6 +174,62 @@ export async function checkDriveLinkProblem(
   }
 
   return null;
+}
+
+/**
+ * Server-side check that a FOLDER link is live and public. Folders have no
+ * download endpoint, so this GETs the folder page itself: 404 = dead link,
+ * 401/403 = not shared publicly. Resolves to the folder's display name when
+ * the page is reachable (parsed from the <title>), or null when it can't
+ * be read — the name is a convenience, the status is the gate.
+ */
+export async function checkDriveFolder(
+  folderId: string,
+  fetchFn: typeof fetch = fetch
+): Promise<{ problem: string | null; folderName: string | null }> {
+  let res: Response;
+  try {
+    res = await fetchFn(`https://drive.google.com/drive/folders/${folderId}`, {
+      method: "GET",
+      redirect: "follow",
+    });
+  } catch {
+    return { problem: "Couldn't reach Google Drive — check the link and try again.", folderName: null };
+  }
+
+  if (res.status === 404) {
+    return { problem: "That Drive folder doesn't exist (or the link is malformed).", folderName: null };
+  }
+  if (res.status === 401 || res.status === 403) {
+    return {
+      problem: "This folder isn't public. In Drive, set sharing to “Anyone with the link”.",
+      folderName: null,
+    };
+  }
+  if (!res.ok) {
+    return { problem: "Google Drive wouldn't open that folder — double-check the link.", folderName: null };
+  }
+
+  // 200 can still be a sign-in page for a non-public folder. The folder
+  // page's <title> is "Name - Google Drive" for a public one.
+  const contentType = res.headers.get("content-type") ?? "";
+  let folderName: string | null = null;
+  if (contentType.includes("text/html")) {
+    const head = (await res.text()).slice(0, 20000);
+    if (head.includes("accounts.google.com") && !head.includes("<title>")) {
+      return {
+        problem: "This folder isn't public. In Drive, set sharing to “Anyone with the link”.",
+        folderName: null,
+      };
+    }
+    const titleMatch = head.match(/<title>([\s\S]*?)<\/title>/i);
+    if (titleMatch?.[1]) {
+      const name = titleMatch[1].replace(/\s*-\s*Google Drive\s*$/i, "").trim();
+      if (name && !/^google drive$/i.test(name)) folderName = name.slice(0, 100);
+    }
+  }
+
+  return { problem: null, folderName };
 }
 
 /**
@@ -225,6 +316,9 @@ const EXT_MIME: Record<string, string> = {
   avi: "video/x-msvideo",
   mp3: "audio/mpeg",
   wav: "audio/wav",
+  // Folders aren't files — the extension fallback must never resolve one
+  // to a MIME type. (Listed so the mapping documents itself; the folder
+  // path never reaches resolveDriveFileType.)
 };
 
 /**

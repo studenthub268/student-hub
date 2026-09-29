@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, doublePrecision, timestamp, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
@@ -188,6 +188,28 @@ export const pageViews = pgTable('page_views', {
 }));
 
 export type PageView = InferSelectModel<typeof pageViews>;
+
+// Aggregate, privacy-safe Core Web Vitals (see /api/vitals): one row per
+// (path, day, metric) holding the sample count, the sum (for the average),
+// and how many samples rated "poor" by Google's thresholds. No IDs, no
+// session identifiers — the same posture as page_views.
+export const webVitals = pgTable('web_vitals', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  path: text('path').notNull(),
+  day: text('day').notNull(), // UTC yyyy-mm-dd
+  metric: text('metric').notNull(), // LCP | INP | CLS | FCP | TTFB
+  count: integer('count').default(0).notNull(),
+  sum: doublePrecision('sum').default(0).notNull(),
+  poorCount: integer('poor_count').default(0).notNull(),
+}, (table) => ({
+  aggKey: uniqueIndex('web_vitals_path_day_metric_unique').on(
+    table.path,
+    table.day,
+    table.metric
+  ),
+}));
+
+export type WebVital = InferSelectModel<typeof webVitals>;
 
 // Drizzle Relations
 export const usersRelations = relations(users, ({ many }) => ({

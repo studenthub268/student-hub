@@ -299,7 +299,7 @@ export default function UploadForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-8">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6 sm:space-y-8">
       <div>
         <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Title <span className="text-red-500">*</span></label>
         <input
@@ -392,33 +392,36 @@ export default function UploadForm() {
         <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">File <span className="text-red-500">*</span></label>
 
         {/* Source toggle: upload to the platform's storage, or link a file
-            from your own Google Drive (any size — no 4MB cap). */}
-        <div className="mb-4 grid grid-cols-2 gap-3">
+            or folder from your own Google Drive (any size — no 4MB cap).
+            Mobile: full-height tap targets (min-h-12 ≈ 48px, Apple/Google's
+            minimum), evenly split so neither pill wraps at 320px, and
+            gap-1.5 icon-to-label so "Google Drive link" fits one line. */}
+        <div className="mb-4 grid grid-cols-2 gap-2.5 sm:gap-3">
           <button
             type="button"
             onClick={() => setSource("r2")}
             aria-pressed={source === "r2"}
-            className={`flex items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-bold transition-all ${
+            className={`flex min-h-12 items-center justify-center gap-1.5 sm:gap-2 rounded-full border-2 px-3 sm:px-4 py-2.5 text-sm font-bold transition-all ${
               source === "r2"
                 ? "border-ink bg-accent text-accent-contrast shadow-hard-sm"
                 : "border-ink bg-surface text-foreground hover:bg-surface-muted"
             }`}
           >
-            <Upload size={15} strokeWidth={2.25} aria-hidden />
-            Upload file
+            <Upload size={16} strokeWidth={2.25} className="shrink-0" aria-hidden />
+            <span className="whitespace-nowrap">Upload file</span>
           </button>
           <button
             type="button"
             onClick={() => setSource("drive")}
             aria-pressed={source === "drive"}
-            className={`flex items-center justify-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-bold transition-all ${
+            className={`flex min-h-12 items-center justify-center gap-1.5 sm:gap-2 rounded-full border-2 px-3 sm:px-4 py-2.5 text-sm font-bold transition-all ${
               source === "drive"
                 ? "border-ink bg-accent text-accent-contrast shadow-hard-sm"
                 : "border-ink bg-surface text-foreground hover:bg-surface-muted"
             }`}
           >
-            <HardDrive size={15} strokeWidth={2.25} aria-hidden />
-            Google Drive link
+            <HardDrive size={16} strokeWidth={2.25} className="shrink-0" aria-hidden />
+            <span className="whitespace-nowrap">Drive link</span>
           </button>
         </div>
 
@@ -438,10 +441,11 @@ export default function UploadForm() {
               className="flex h-14 w-full rounded-xl border-2 border-ink bg-surface px-4 text-base font-medium shadow-hard-sm placeholder:text-foreground/60 focus:outline-none focus:shadow-hard transition-all"
             />
             <p className="mt-2 text-xs font-medium text-foreground/60">
-              In Google Drive: right-click the file → <strong>Share</strong> → set
-              “General access” to <strong>Anyone with the link</strong> → Copy link.
-              Any file size — it streams straight from Drive, and your Drive
-              storage is used, not the site&apos;s.
+              In Google Drive: right-click the file or folder → <strong>Share</strong> →
+              set “General access” to <strong>Anyone with the link</strong> → Copy link.
+              Folders work too — they preview as a file list. Any file size —
+              it streams straight from Drive, and your Drive storage is used,
+              not the site&apos;s.
             </p>
 
             {/* Probe status: live feedback while the uploader can still fix
@@ -456,9 +460,11 @@ export default function UploadForm() {
               {driveProbe.status === "ok" && (
                 <p className="flex items-center gap-2 text-sm font-bold text-green-700">
                   <CheckCircle2 size={15} aria-hidden />
-                  Link verified
-                  {driveProbe.fileType ? ` · ${formatFileType(driveProbe.fileType)}` : ""}
-                  {driveProbe.fileSize ? ` · ${formatFileSize(driveProbe.fileSize)}` : ""}
+                  {driveProbe.fileType === "external/drive-folder"
+                    ? `Folder verified${driveProbe.fileName ? ` · ${driveProbe.fileName}` : ""}`
+                    : `Link verified${
+                        driveProbe.fileType ? ` · ${formatFileType(driveProbe.fileType)}` : ""
+                      }${driveProbe.fileSize ? ` · ${formatFileSize(driveProbe.fileSize)}` : ""}`}
                 </p>
               )}
               {driveProbe.status === "error" && (
@@ -474,16 +480,18 @@ export default function UploadForm() {
             {...getRootProps()}
             // Drag state is an accent TINT, not a fill: the copy inside is
             // dark, and a solid accent would leave it unreadable mid-drag.
-            className={`mt-2 flex cursor-pointer flex-col items-center justify-center rounded-[1rem] border-2 border-dashed border-ink px-6 py-12 transition-all ${
+            // Mobile: py-10 keeps the tall tap target without pushing the
+            // submit button off-screen on short viewports.
+            className={`mt-2 flex cursor-pointer flex-col items-center justify-center rounded-[1rem] border-2 border-dashed border-ink px-4 py-10 sm:px-6 sm:py-12 transition-all ${
               isDragActive ? "bg-accent/15 scale-[1.02]" : "bg-surface-muted hover:bg-surface-muted"
             }`}
           >
             <input {...getInputProps()} />
-            <div className="w-16 h-16 rounded-full border-2 border-ink bg-surface flex items-center justify-center mb-6">
-              <Upload className="h-8 w-8 text-foreground" strokeWidth={1.5} />
+            <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full border-2 border-ink bg-surface flex items-center justify-center mb-4 sm:mb-6">
+              <Upload className="h-7 w-7 sm:h-8 sm:w-8 text-foreground" strokeWidth={1.5} />
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-base sm:text-lg font-bold text-foreground">
                 Click to upload or drag and drop
               </p>
               <p className="mt-2 text-sm font-medium text-foreground/60 tracking-wider">PDF, JPG, PNG, DOCX (up to {MAX_FILE_SIZE_MB}MB)
@@ -491,22 +499,24 @@ export default function UploadForm() {
             </div>
           </div>
         ) : (
-          <div className="mt-2 flex items-center justify-between rounded-[1rem] border-2 border-ink bg-surface p-4 shadow-hard-sm">
-            <div className="flex items-center gap-4 overflow-hidden">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[0.5rem] bg-accent border-2 border-ink text-accent-contrast">
-                <File size={24} strokeWidth={1.5} />
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-[1rem] border-2 border-ink bg-surface p-3 shadow-hard-sm sm:p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 items-center justify-center rounded-[0.5rem] bg-accent border-2 border-ink text-accent-contrast">
+                <File size={22} className="sm:hidden" strokeWidth={1.5} />
+                <File size={24} className="hidden sm:block" strokeWidth={1.5} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-base font-bold text-foreground">{file.name}</p>
-                <p className="text-sm font-medium text-foreground/60 tracking-wider">{formatFileSize(file.size)}</p>
+                <p className="truncate text-sm sm:text-base font-bold text-foreground">{file.name}</p>
+                <p className="text-xs sm:text-sm font-medium text-foreground/60 tracking-wider">{formatFileSize(file.size)}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setFile(null)}
-              className="ml-4 flex-shrink-0 rounded-full border-2 border-ink p-2 bg-surface hover:bg-red-500 hover:text-background transition-colors"
+              aria-label="Remove selected file"
+              className="flex-shrink-0 rounded-full border-2 border-ink p-2.5 bg-surface hover:bg-red-500 hover:text-background transition-colors"
             >
-              <X size={20} strokeWidth={2} />
+              <X size={18} strokeWidth={2} />
             </button>
           </div>
         )}
@@ -537,13 +547,12 @@ export default function UploadForm() {
               {uploadProgress < 100 ? `Uploading your file… ${uploadProgress}%` : "Finishing up…"}
             </p>
           </div>
-        )}
-      </div>
+        )}      </div>
 
       {/* Duplicate Warning Modal */}
       {showDuplicateWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4">
-          <div className="bg-surface rounded-[2rem] border-2 border-ink shadow-hard-lg max-w-lg w-full p-8 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-3 sm:p-4">
+          <div className="bg-surface rounded-[1.5rem] sm:rounded-[2rem] border-2 border-ink shadow-hard-lg max-w-lg w-full max-h-[calc(100dvh-1.5rem)] overflow-y-auto p-5 sm:p-8 space-y-5 sm:space-y-6">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-amber-600" />

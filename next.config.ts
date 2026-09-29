@@ -49,13 +49,18 @@ const securityHeaders = [
       "default-src 'self'",
       scriptSrc,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://student-hub-uet.vercel.app https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
+      "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://student-hub-uet.vercel.app https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://drive.google.com",
+      // media-src for Drive-hosted videos: <video> falls back to default-src
+      // ('self') when unset, which would block the cross-origin Drive stream.
+      "media-src 'self' https://drive.google.com",
       "font-src 'self' https://fonts.gstatic.com",
       "connect-src 'self' https://*.neon.tech https://api.resend.com https://*.r2.dev",
       // frame-src must include the R2 public host: resource PDFs render in
       // an <iframe> straight from storage (images only need img-src, which is
       // why PDFs alone showed Chrome's "This content is blocked" panel).
-      "frame-src 'self' https://*.r2.dev https://*.r2.cloudflarestorage.com",
+      // drive.google.com serves the embedded folder listing for folder
+      // resources — without it the iframe renders an empty CSP error panel.
+      "frame-src 'self' https://*.r2.dev https://*.r2.cloudflarestorage.com https://drive.google.com",
       "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
@@ -72,6 +77,10 @@ export default {
     // refetching the server for every dynamic page (default dynamic
     // staleTime is 0, which makes every click a full server round trip).
     staleTimes: { dynamic: 30, static: 180 },
+    // View Transitions API: page navigations cross-fade the old DOM into
+    // the new one instead of the hard flash-and-repaint. Zero JS cost —
+    // the browser does the compositing — and unsupported browsers ignore it.
+    viewTransition: true,
   },
   images: {
     formats: ["image/avif", "image/webp"],

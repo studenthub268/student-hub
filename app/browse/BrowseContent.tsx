@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, ChevronDown, ArrowDownWideNarrow } from "lucide-react";
 import { SUBJECTS, RESOURCE_TYPES } from "@/lib/constants";
@@ -72,6 +72,15 @@ function FilterPill({ label, active, count, disabled, pending, onClick }: Filter
 // viewport) and pushed the first actual result below the fold.
 const SUBJECT_LIMIT = 6;
 
+// Cards rendered initially / added per scroll batch. 24 fills ~3 rows on
+// desktop and ~12 screens on a phone column — far past where the sentinel
+// (600px lookahead) fires, so scrolling never shows a gap. The server
+// already caps the payload at 200 rows (a small JSON fetch, now index-backed);
+// what actually hurts at scale is MOUNTING 200 card components up front —
+// hydration time and DOM size grow linearly with the library. Windowing the
+// render keeps both constant no matter how many rows ship.
+const PAGE_SIZE = 24;
+
 export default function BrowseContent({
   resources,
   typeCounts,
@@ -82,6 +91,47 @@ export default function BrowseContent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  // Rendered-window state, keyed to the results array: when the server
+  // delivers a new result set (filter/sort change), the count resets
+  // synchronously DURING the render that sees the new array — not in an
+  // effect after it — so a narrowed result never flashes all-then-fewer.
+  // (React's documented derived-state-from-props pattern.)
+  const [windowState, setWindowState] = useState({
+    results: resources,
+    count: PAGE_SIZE,
+  });
+  if (windowState.results !== resources) {
+    setWindowState({ results: resources, count: PAGE_SIZE });
+  }
+  const visibleCount = Math.min(windowState.count, resources.length);
+  const visibleResources = resources.slice(0, visibleCount);
+  const hasMore = visibleCount < resources.length;
+  const hiddenCount = resources.length - visibleCount;
+
+  // Auto-load: a sentinel div sits below the grid; when scrolling brings it
+  // within 600px of the viewport, extend the window. Re-created only when
+  // more results remain; the 600px rootMargin loads the next batch BEFORE
+  // the user reaches the end, so scrolling feels endless.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!hasMore || !el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setWindowState((s) =>
+            s.results === resources
+              ? { ...s, count: s.count + PAGE_SIZE }
+              : s // a new result set arrived mid-scroll — the render-reset wins
+          );
+        }
+      },
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, resources]);
 
   // Arrivals from a search suggestion show results only — no filter wall.
   // Opening /browse directly keeps the full filter experience.
@@ -243,6 +293,10 @@ export default function BrowseContent({
                   Browse with filters
                 </button>
               </>
+            ) : resources.length > visibleCount ? (
+              <>
+                Showing {visibleCount} of {resources.length} resource{resources.length !== 1 && "s"}
+              </>
             ) : (
               <>Showing {resources.length} resource{resources.length !== 1 && "s"}</>
             )}
@@ -292,13 +346,37 @@ export default function BrowseContent({
         </div>
 
         {resources.length > 0 ? (
+          <>
           <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity ${isPending ? "opacity-60" : ""} fade-up-stagger`}>
-            {resources.map((resource) => (
+            {visibleResources.map((resource) => (
               <div key={resource.id} className="h-full">
                 <ResourceCard resource={resource} />
               </div>
             ))}
           </div>
+r
+          {/* Load-more: auto-fired by the sentinel above it while scrolling;
+              the button remains for keyboard users and any environment where
+              the observer hasn't run yet. Renders only when a hidden batch
+              exists, and reports the remaining count. */}
+          {hasMore && (
+            <div ref={sentinelRef} className="mt-10 flex justify-center">
+              <button
+                onClick={() =>
+                  setWindowState((s) =>
+                    s.results === resources ? { ...s, count: s.count + PAGE_SIZE } : s
+                  )
+                }
+                className="rounded-full border-2 border-ink bg-surface px-8 py-3 text-sm font-bold tracking-wider shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard active:translate-y-0 active:shadow-none"
+              >
+                Load {Math.min(PAGE_SIZE, hiddenCount)} more
+                <span className="ml-2 font-medium text-foreground/50">
+                  ({hiddenCount} left)
+                </span>
+              </button>
+            </div>
+          )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-ink bg-surface-muted py-32 text-center shadow-hard-faint">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-ink bg-surface mb-6">

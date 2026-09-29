@@ -4,7 +4,7 @@ import { resources } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
-import { isDriveHosted } from "@/lib/drive";
+import { isDriveHosted, DRIVE_FOLDER_TYPE } from "@/lib/drive";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Drive file ids: 28–33 chars of [A-Za-z0-9_-]. Guard on shape so a legacy
@@ -50,6 +50,27 @@ export async function GET(
   // link is public by construction (verified at upload time). The browser
   // follows the redirect and streams straight from Google. fileKey holds
   // the Drive file id; fileUrl is kept as the same uc?export=download URL.
+  if (
+    resource.fileType === DRIVE_FOLDER_TYPE &&
+    DRIVE_ID_RE.test(resource.fileKey)
+  ) {
+    // Folder resources: no bytes to stream — redirect to the folder itself.
+    // The share URL (file_url) is the human landing page; the browser
+    // follows the redirect and Drive renders its folder view.
+    try {
+      await db
+        .update(resources)
+        .set({ downloads: sql`${resources.downloads} + 1` })
+        .where(eq(resources.id, id));
+    } catch (error) {
+      console.error("Failed to record download:", error);
+    }
+    return NextResponse.redirect(resource.fileUrl, {
+      status: 302,
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  }
+
   if (isDriveHosted(resource.fileType, resource.fileUrl) && DRIVE_ID_RE.test(resource.fileKey)) {
     // Best-effort counter — same policy as the proxied path below.
     try {

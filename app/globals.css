@@ -388,6 +388,28 @@ html {
 .fade-up-stagger > *:nth-child(8) { animation-delay: 420ms; }
 .fade-up-stagger > *:nth-child(9) { animation-delay: 480ms; }
 
+/* ---- View Transitions: smooth cross-page morphs ----
+   Next.js 15 supports the View Transitions API via the `viewTransition`
+   experiment: navigations snapshot the old page and cross-fade to the new
+   one instead of a hard white flash + reflow. The default animation is a
+   gentle cross-fade — deliberately subtle so it reads as continuity, not
+   as a loading effect. Browsers without the API (Firefox ESR, older
+   Safari) skip it entirely and get the normal instant swap. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-fade-out 0.18s ease both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-fade-in 0.22s ease both;
+  }
+}
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fade-up,
   .fade-up-stagger > *,

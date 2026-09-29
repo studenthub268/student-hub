@@ -11,6 +11,7 @@ import { CookieConsent } from "@/components/layout/CookieConsent";
 import { DeployWatcher } from "@/components/DeployWatcher";
 import ScrollRestoration from "@/components/ScrollRestoration";
 import { Analytics } from "@/components/ui/Analytics";
+import { Vitals } from "@/components/ui/Vitals";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,6 +99,7 @@ export default function RootLayout({
         <LazyToaster />
         <CookieConsent />
         <Analytics />
+        <Vitals />
         <ServiceWorkerRegister />
         <DeployWatcher />
         <ScrollRestoration />

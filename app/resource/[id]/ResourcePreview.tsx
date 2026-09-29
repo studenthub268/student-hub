@@ -3,10 +3,10 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
-import { ExternalLink, File, FileImage, FileText, HardDrive, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ExternalLink, File, FileImage, FileText, Folder, HardDrive, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatFileType, formatFileSize } from "@/lib/utils";
-import { isDriveHosted, DRIVE_FILE_TYPE } from "@/lib/drive";
+import { isDriveHosted, DRIVE_FILE_TYPE, DRIVE_FOLDER_TYPE, driveEmbeddedFolderUrl, parseDriveFolderLink } from "@/lib/drive";
 
 // Custom PDF viewer, loaded only when a PDF is actually opened — image
 // pages never download pdf.js (~400 KB gzipped).
@@ -49,12 +49,18 @@ export default function ResourcePreview({
   const isDrive = isDriveHosted(fileType, fileUrl);
   /* Drive-hosted PDFs and images CAN render inline: PDF bytes stream
      through the same-origin /api/pdf proxy (now Drive-aware), and images
-     render in a plain <img> — no CORS needed for either. Other Drive
-     types (ZIP, video, Office docs) have no inline renderer — the Drive
-     hand-off card shows instead. */
+     render in a plain <img> — no CORS needed for either. Drive folders
+     embed Drive's read-only listing. Other Drive types (ZIP, Office docs)
+     have no inline renderer — the Drive hand-off card shows instead. */
+  const isFolder = fileType === DRIVE_FOLDER_TYPE;
+  const isVideo = fileType?.startsWith("video/") ?? false;
   const isPDF = fileType?.includes("pdf") ?? false;
   const isImage = fileType?.includes("image") ?? false;
-  const isPreviewable = isPDF || isImage;
+  const isPreviewable = isPDF || isImage || isFolder || isVideo;
+  // Folder resources store the folder id in fileKey — but this component
+  // doesn't receive it, so re-parse the share URL (same shape the uploader
+  // pasted; the server saved the canonical /drive/folders/<id> form).
+  const folderId = isFolder ? parseDriveFolderLink(fileUrl)?.fileId ?? null : null;
 
   const formatLabel = formatFileType(fileType);
   const sizeLabel = fileSize ? formatFileSize(fileSize) : null;
@@ -94,6 +100,28 @@ export default function ResourcePreview({
       setPdfOpen(true);
       return;
     }
+    if (isFolder) {
+      // The inline iframe IS the viewer; on phones the Drive listing is
+      // cramped inside the stage, so expand = fullscreen iframe when the
+      // platform supports it.
+      const el = document.getElementById("preview-stage");
+      if (el && fullscreenSupported) el.requestFullscreen().catch(() => {});
+      return;
+    }
+    if (isVideo) {
+      // iPhone Safari only allows fullscreen on the <video> element itself
+      // (webkitEnterFullscreen) — the generic Fullscreen API is a no-op for
+      // it. Android/desktop accept either.
+      const video = document.querySelector<HTMLVideoElement>("#preview-stage video");
+      if (video) {
+        const webkitVideo = video as HTMLVideoElement & {
+          webkitEnterFullscreen?: () => void;
+        };
+        if (typeof webkitVideo.webkitEnterFullscreen === "function") webkitVideo.webkitEnterFullscreen();
+        else if (fullscreenSupported) video.requestFullscreen().catch(() => {});
+      }
+      return;
+    }
     handleFullscreen();
   };
 
@@ -120,7 +148,7 @@ export default function ResourcePreview({
   /* Bold icon buttons for the toolbar: ink-bordered circles like the
      site's pills. */
   const iconBtn =
-    "inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-surface text-foreground transition-all hover:bg-surface-muted hover:-translate-y-0.5";
+    "inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 border-ink bg-surface text-foreground transition-all hover:bg-surface-muted hover:-translate-y-0.5";
 
   return (
     <>
@@ -130,12 +158,15 @@ export default function ResourcePreview({
           isFullscreen ? "flex h-full w-full flex-col rounded-none border-0 bg-ink" : "flex flex-col"
         }`}
       >
-        {/* Toolbar: filename left, viewer controls right. */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-ink bg-surface px-4 py-3 sm:px-5">
+        {/* Toolbar: filename left, viewer controls right. Mobile: px-3 and
+            the type/size caption hidden under sm: — a 360px screen gives the
+            filename every pixel it can get, and the chip data repeats on the
+            actions rail below anyway. */}
+        <div className="flex shrink-0 items-center justify-between gap-2 sm:gap-3 border-b-2 border-ink bg-surface px-3 py-2.5 sm:px-5 sm:py-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <FileGlyph fileType={fileType} size={16} className="shrink-0 text-foreground" />
             <span className="min-w-0 truncate text-sm font-bold text-foreground">{fileName}</span>
-            <span className="hidden shrink-0 text-xs font-bold uppercase tracking-wider text-foreground/60 sm:inline">
+            <span className="hidden shrink-0 text-xs font-bold uppercase tracking-wider text-foreground/60 md:inline">
               {formatLabel}
               {sizeLabel ? ` · ${sizeLabel}` : ""}
             </span>
@@ -155,12 +186,16 @@ export default function ResourcePreview({
                     ? "Open image in a larger view"
                     : isPDF
                       ? "Open PDF in full viewer"
-                      : isFullscreen
-                        ? "Exit fullscreen"
-                        : "View fullscreen"
+                      : isFolder
+                        ? "Expand folder view"
+                        : isVideo
+                          ? "Play video fullscreen"
+                          : isFullscreen
+                            ? "Exit fullscreen"
+                            : "View fullscreen"
                 }
               >
-                {!isImage && !isPDF && isFullscreen
+                {!isImage && !isPDF && !isFolder && !isVideo && isFullscreen
                   ? <Minimize2 size={15} strokeWidth={2.25} aria-hidden />
                   : <Maximize2 size={15} strokeWidth={2.25} aria-hidden />}
               </button>
@@ -183,8 +218,8 @@ export default function ResourcePreview({
         <div
           className={`bg-surface-muted ${
             isFullscreen
-              ? "flex-1 p-3 sm:p-6"
-              : "h-[58vh] min-h-[380px] p-3 sm:h-[64vh] sm:p-5 lg:h-[calc(100dvh-16rem)] lg:min-h-[480px]"
+              ? "flex-1 p-2 sm:p-6"
+              : "h-[56vh] min-h-[340px] p-2 sm:h-[64vh] sm:p-5 lg:h-[calc(100dvh-16rem)] lg:min-h-[480px]"
           }`}
         >
           <div
@@ -192,12 +227,47 @@ export default function ResourcePreview({
               isFullscreen ? "border-background/20" : "border-ink"
             }`}
           >
-            {isDrive && !isPreviewable ? (
-              // Drive-hosted, non-previewable type (ZIP, video, docs): the
-              // bytes live on Google's origin and no inline renderer exists,
-              // so the stage is a branded hand-off — one big button opens
-              // Drive's viewer in a new tab. PDFs/images skip this branch
-              // and render inline below (PDF via the same-origin proxy).
+            {isFolder && folderId ? (
+              // Drive folder: Drive's embeddable read-only listing, same
+              // view Drive generates for its own "Embed folder" feature —
+              // no API key, works for any public folder. Scrollable inside
+              // the stage; Download (in the actions rail) hands off to Drive
+              // for full navigation. A malformed stored URL (folderId null)
+              // falls through to the generic hand-off below rather than an
+              // empty iframe.
+              <iframe
+                src={driveEmbeddedFolderUrl(folderId)}
+                title={`Files in ${title}`}
+                loading="lazy"
+                className="h-full w-full border-0 bg-surface"
+              />
+            ) : isVideo ? (
+              // Drive-hosted (or R2) video: the direct URL streams H.264/VP9
+              // bytes with Range support, so the native <video> element can
+              // seek without the whole file loading first. Inline playback —
+              // no hand-off card — matches how PDFs and images behave now.
+              <video
+                src={fileUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="h-full w-full bg-black object-contain"
+              />
+            ) : isPDF ? (
+              // Inline themed reader: first page renders immediately and the
+              // whole document scrolls right here, like the image preview.
+              // pdf.js lazy-loads on first view; the expand button opens the
+              // same document in a fullscreen overlay with a toolbar.
+              <PdfViewer
+                resourceId={resourceId}
+                title={title}
+                variant="inline"
+              />
+            ) : isDrive && !isPreviewable ? (
+              // Drive-hosted, non-previewable type (ZIP, docs): the bytes
+              // live on Google's origin and no inline renderer exists, so
+              // the stage is a branded hand-off — one big button opens
+              // Drive's viewer in a new tab.
               <a
                 href={fileUrl}
                 target="_blank"
@@ -216,16 +286,6 @@ export default function ResourcePreview({
                   <ExternalLink size={13} strokeWidth={2.25} aria-hidden />
                 </span>
               </a>
-            ) : isPDF ? (
-              // Inline themed reader: first page renders immediately and the
-              // whole document scrolls right here, like the image preview.
-              // pdf.js lazy-loads on first view; the expand button opens the
-              // same document in a fullscreen overlay with a toolbar.
-              <PdfViewer
-                resourceId={resourceId}
-                title={title}
-                variant="inline"
-              />
             ) : isImage ? (
               <button
                 type="button"
@@ -557,12 +617,14 @@ export function FileGlyph({
   className?: string;
 }) {
   const Icon =
-    fileType === DRIVE_FILE_TYPE
-      ? HardDrive
-      : fileType?.includes("pdf")
-        ? FileText
-        : fileType?.includes("image")
-          ? FileImage
-          : File;
+    fileType === DRIVE_FOLDER_TYPE
+      ? Folder
+      : fileType === DRIVE_FILE_TYPE
+        ? HardDrive
+        : fileType?.includes("pdf")
+          ? FileText
+          : fileType?.includes("image")
+            ? FileImage
+            : File;
   return <Icon size={size} strokeWidth={strokeWidth} className={className} aria-hidden />;
 }

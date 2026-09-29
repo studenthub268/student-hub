@@ -37,6 +37,8 @@ const MIME_LABELS: Record<string, string> = {
   // Synthetic marker (not a real MIME type) for Drive-hosted resources —
   // see lib/drive.ts. Labelled so cards read "DRIVE" instead of "EXTERNAL".
   "external/drive": "DRIVE",
+  // Drive folder resource — a folder link, previewed as an inline listing.
+  "external/drive-folder": "FOLDER",
 };
 
 export function formatFileType(fileType: string | null | undefined): string {

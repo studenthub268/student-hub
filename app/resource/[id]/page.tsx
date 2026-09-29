@@ -150,15 +150,20 @@ export default async function ResourceDetailPage({
   // file itself is previewable (PDF renders through the Drive-aware proxy,
   // images directly) — see the workspace comment below.
   const isDriveResource = isDriveHosted(resource.fileType, resource.fileUrl);
+  // Folders embed Drive's listing; videos stream through <video>; PDFs go
+  // through the proxy; images render directly.
   const drivePreviewable =
     isDriveResource &&
-    Boolean(resource.fileType?.match(/^(application\/pdf|image\/)/));
+    Boolean(
+      resource.fileType === "external/drive-folder" ||
+        resource.fileType?.match(/^(application\/pdf|image\/|video\/)/)
+    );
 
   const uploaderName = resource.uploader?.name || "Unknown";
   const isOwner = Boolean(session?.user?.id) && session!.user!.id === resource.uploaderId;
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 pt-6 pb-14 sm:px-6 lg:px-8 lg:pb-12">
+    <div className="mx-auto w-full max-w-[1400px] px-3 pt-4 pb-14 sm:px-6 sm:pt-6 lg:px-8 lg:pb-12">
       {/* Breadcrumb — hidden on phones: the navbar already shows a back
           button there, and two back affordances stacked read as clutter
           (and disagree on destination). Desktop keeps it since the navbar
@@ -192,7 +197,7 @@ export default async function ResourceDetailPage({
           )}
         </div>
 
-        <h1 className="mt-4 max-w-4xl text-3xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+        <h1 className="mt-3.5 max-w-4xl text-[1.65rem] leading-tight font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
           {resource.title}
         </h1>
 
@@ -212,7 +217,7 @@ export default async function ResourceDetailPage({
           Drive files (ZIP, video, docs) show rail-only, centered: a big
           empty hand-off card would just push the actions below the fold. */}
       <div
-        className={`mt-6 grid grid-cols-1 gap-6 lg:mt-7 lg:gap-7 ${
+        className={`mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 lg:mt-7 lg:gap-7 ${
           isDriveResource && !drivePreviewable ? "mx-auto max-w-xl" : "lg:grid-cols-12"
         }`}
       >
