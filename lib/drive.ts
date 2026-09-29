@@ -124,6 +124,17 @@ export function driveDirectDownloadUrl(fileId: string): string {
 }
 
 /**
+ * Drive's usercontent endpoint — the same bytes as uc?export=download but
+ * WITHOUT the virus-scan interstitial for large files: `confirm=t` skips
+ * the "can't scan this file" HTML wall, so a 30 MB lecture PDF streams
+ * instead of failing. This is the endpoint the byte proxy uses; the plain
+ * uc endpoint above stays for probes (it answers Range/HEAD cheaply).
+ */
+export function driveUserContentDownloadUrl(fileId: string): string {
+  return `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
+}
+
+/**
  * Drive's HTML confirmation page (the "can't scan this file for viruses"
  * interstitial) — served in place of bytes when the file is large. Its
  * title makes it unmistakable without parsing the rest of the page.

@@ -39,16 +39,32 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
 
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const docRef = useRef<Awaited<ReturnType<typeof loadDoc>> | null>(null);
+  type LoadingTask = Awaited<ReturnType<typeof loadTask>>;
+  const docRef = useRef<Awaited<LoadingTask["promise"]> | null>(null);
   const renderVersionRef = useRef(0);
 
   /* Dynamic import: resolves to the ESM build; worker URL points at the
-     copy in /public (same version — they ship together in the repo). */
-  const loadDoc = useCallback(async (url: string) => {
-    const pdfjs = await import("pdfjs-dist");
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
-    const task = pdfjs.getDocument({ url, withCredentials: false });
-    return task.promise;
+     copy in /public (same version — they ship together in the repo).
+     disableAutoFetch + disableStream: pdf.js's default behavior fetches
+     the WHOLE file in the background even when only page 1 is on screen.
+     With the proxy now answering Range requests, rangeChunkSize (256 KB
+     chunks) + these flags make page 1 paint after ~1 chunk instead of
+     after the full download — the single biggest perceived-speed win for
+     big scans. The full file still arrives as the reader scrolls (each
+     chunk is fetched on demand). */
+  const loadTask = useCallback((url: string) => {
+    // Synchronous import kick-off; returns the LOADING TASK (not the doc
+    // promise) so the caller can hook onProgress for byte-level loading UX.
+    return import("pdfjs-dist").then((pdfjs) => {
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
+      return pdfjs.getDocument({
+        url,
+        withCredentials: false,
+        rangeChunkSize: 262144,
+        disableAutoFetch: true,
+        disableStream: true,
+      });
+    });
   }, []);
 
   /* One transparent retry: a transient 429 from the rate limiter or a
@@ -56,41 +72,59 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
      state ("preview blocked"), with the fix being nothing more than
      reloading. A single short-delay retry absorbs the spike without
      masking a genuinely dead file — the second failure still errors. */
-  const loadDocWithRetry = useCallback(
+  const loadTaskWithRetry = useCallback(
     async (url: string) => {
       try {
-        return await loadDoc(url);
+        return await loadTask(url);
       } catch {
         await new Promise((r) => setTimeout(r, 1500));
-        return loadDoc(url);
+        return loadTask(url);
       }
     },
-    [loadDoc]
+    [loadTask]
   );
 
-  /* Load document once. */
+  /* Load document once. onProgress surfaces byte-level progress so the
+     loading state shows real movement ("4.2 MB of 12 MB") instead of an
+     indeterminate spinner for a 30 MB scan — the difference between
+     "it's working" and "it's broken" on a slow connection. */
+  const [progressLabel, setProgressLabel] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    loadDocWithRetry(`/api/pdf/${resourceId}`)
-      .then((doc) => {
-        if (cancelled) {
-          doc.destroy();
-          return;
-        }
-        docRef.current = doc;
-        setNumPages(doc.numPages);
-        setState("ready");
-      })
-      .catch((e) => {
-        console.error("PDF load failed:", e);
-        if (!cancelled) setState("error");
-      });
+    loadTaskWithRetry(`/api/pdf/${resourceId}`).then((task) => {
+      if (cancelled) {
+        task.destroy();
+        return;
+      }
+      task.onProgress = ({ loaded, total }: { loaded: number; total: number }) => {
+        if (!total || total <= 0) return;
+        setProgressLabel(
+          loaded >= total
+            ? null
+            : `${(loaded / 1_048_576).toFixed(1)} MB of ${(total / 1_048_576).toFixed(1)} MB`
+        );
+      };
+      task.promise
+        .then((doc) => {
+          if (cancelled) {
+            doc.destroy();
+            return;
+          }
+          docRef.current = doc;
+          setNumPages(doc.numPages);
+          setState("ready");
+        })
+        .catch((e) => {
+          console.error("PDF load failed:", e);
+          if (!cancelled) setState("error");
+        });
+    });
     return () => {
       cancelled = true;
       docRef.current?.destroy();
       docRef.current = null;
     };
-  }, [resourceId, loadDocWithRetry]);
+  }, [resourceId, loadTaskWithRetry]);
 
   /* Render visible pages. Fit-width base scale; zoom multiplies it. Renders
      are versioned — a newer request invalidates older in-flight ones. */
@@ -284,6 +318,9 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
             <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
               <Loader2 className="h-7 w-7 animate-spin text-foreground/60" aria-hidden />
               <p className="text-sm font-bold text-foreground/60">Loading PDF…</p>
+              {progressLabel && (
+                <p className="text-xs font-medium tabular-nums text-foreground/40">{progressLabel}</p>
+              )}
             </div>
           )}
           {state === "error" && (
@@ -342,6 +379,9 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
           <div className="flex h-full flex-col items-center justify-center gap-3 text-background">
             <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
             <p className="text-sm font-bold">Loading PDF…</p>
+            {progressLabel && (
+              <p className="text-xs font-medium tabular-nums opacity-60">{progressLabel}</p>
+            )}
           </div>
         )}
         {state === "error" && (
