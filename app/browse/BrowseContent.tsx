@@ -354,7 +354,7 @@ export default function BrowseContent({
               </div>
             ))}
           </div>
-r
+
           {/* Load-more: auto-fired by the sentinel above it while scrolling;
               the button remains for keyboard users and any environment where
               the observer hasn't run yet. Renders only when a hidden batch

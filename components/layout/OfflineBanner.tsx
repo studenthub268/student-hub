@@ -5,17 +5,24 @@ import { WifiOff } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 /**
- * Offline banner — an ink pill in the navbar's own card language (border-2
- * border-ink, rounded, hard shadow), floating just below the bar. The amber
- * icon/ring matches the verification banner's warning accent.
+ * Offline banner — shown ONLY when the connection is verifiably down, not
+ * merely slow.
  *
- * Detection is ACTIVE, not just passive:
- *  - the browser's `offline`/`online` events fire instantly on interface
- *    changes (wifi drop),
- *  - but `navigator.onLine` stays true when wifi is up while the internet
- *    is down (router/campus outage). So we also probe /api/ping (no-store,
- *    never SW-cached) whenever `online` is claimed, re-checking on the
- *    events, on window focus, and every 30s while offline is suspected.
+ * The old version flipped to "You're offline" after a single probe with a
+ * 5-second timeout — but a working 3G connection routinely takes 6-10s for
+ * a round trip, so a large share of the site's on-campus/prepaid audience
+ * saw "You're offline" WHILE pages were actually loading. Three changes:
+ *
+ *  1. The probe timeout scales to the connection: 5s on fast links, up to
+ *     15s when `navigator.connection` reports a slow effective type.
+ *  2. Slow-but-alive probes (the timeout fired but the OS link is up) are
+ *     treated as ONLINE — a slow site beats a false "offline" claim.
+ *  3. A true outage requires the OS to agree (navigator.onLine false) OR
+ *     two consecutive dead probes — one dropped packet on flaky mobile
+ *     data no longer shows the banner.
+ *
+ * Detection is still ACTIVE (probes /api/ping, never SW-cached), because
+ * `online`/`offline` events can't see "wifi up, internet down".
  */
 export function OfflineBanner() {
   const [offline, setOffline] = useState(false);
@@ -25,6 +32,7 @@ export function OfflineBanner() {
   // VERIFIED recovery, which lands after `online` already hid the banner.
   const offlineRef = useRef(false);
   const seenOfflineRef = useRef(false);
+  const consecutiveFailuresRef = useRef(0);
 
   // Single funnel for every verdict so the transition lives in one place.
   const apply = (next: boolean) => {
@@ -36,6 +44,26 @@ export function OfflineBanner() {
   useEffect(() => {
     let pollInterval: ReturnType<typeof setInterval> | null = null;
 
+    // Slow links get a longer leash: a 3G round trip regularly exceeds 5s,
+    // and declaring that "offline" is worse than useless — it makes users
+    // distrust the banner entirely.
+    const probeTimeoutMs = () => {
+      const conn = (
+        navigator as Navigator & {
+          connection?: { effectiveType?: string; saveData?: boolean };
+        }
+      ).connection;
+      switch (conn?.effectiveType) {
+        case "slow-2g":
+        case "2g":
+          return 15_000;
+        case "3g":
+          return 12_000;
+        default:
+          return 5_000;
+      }
+    };
+
     // A "connected" verdict requires both the interface up AND a real
     // round-trip. onLine=false short-circuits straight to offline.
     const check = async () => {
@@ -46,29 +74,40 @@ export function OfflineBanner() {
           apply(true);
           return;
         }
-        const res = await fetch("/api/ping", {
-          cache: "no-store",
-          // Abort quickly so the banner never hangs in limbo
-          signal: AbortSignal.timeout(5000),
-          // Low priority: connectivity probes must never compete with real
-          // page content for bandwidth.
-          priority: "low",
-        } as RequestInit & { priority: "low" });
-        // Toast only on a VERIFIED recovery: the probe succeeded after the
-        // banner has shown offline at some point (seenOfflineRef survives
-        // the optimistic `online`-event hide, and the optimistic path
-        // itself never toasts — on flaky Wi-Fi it fires before the
-        // internet is actually back).
-        if (res.ok && seenOfflineRef.current) {
-          seenOfflineRef.current = false;
-          toast.success(
-            "Back online — showing the latest content.",
-            { duration: 2500 }
-          );
+        try {
+          const res = await fetch("/api/ping", {
+            cache: "no-store",
+            signal: AbortSignal.timeout(probeTimeoutMs()),
+            // Low priority: connectivity probes must never compete with
+            // real page content for bandwidth.
+            priority: "low",
+          } as RequestInit & { priority: "low" });
+          if (res.ok) {
+            consecutiveFailuresRef.current = 0;
+            // Toast only on a VERIFIED recovery after a real outage.
+            if (seenOfflineRef.current) {
+              seenOfflineRef.current = false;
+              toast.success("Back online — showing the latest content.", {
+                duration: 2500,
+              });
+            }
+            apply(false);
+          } else {
+            throw new Error("probe failed");
+          }
+        } catch {
+          // Timeout or network error. If the OS still says we're online,
+          // this is much more likely a SLOW link (or one dropped request)
+          // than a dead one — don't scare the user off a site that's
+          // merely crawling. Only two consecutive dead probes (or the OS
+          // giving up on the interface) earn the banner.
+          consecutiveFailuresRef.current += 1;
+          if (!navigator.onLine || consecutiveFailuresRef.current >= 2) {
+            apply(true);
+          } else {
+            apply(false); // slow, not down — stay quiet
+          }
         }
-        apply(!res.ok);
-      } catch {
-        apply(true);
       } finally {
         probingRef.current = false;
       }
@@ -86,6 +125,7 @@ export function OfflineBanner() {
       pollInterval = setInterval(check, 30_000);
     };
     const goOnline = () => {
+      consecutiveFailuresRef.current = 0;
       // Optimistically hide, then verify with a real probe
       apply(false);
       void check();
@@ -109,17 +149,10 @@ export function OfflineBanner() {
 
   // Fixed pill, not a full-width bar: the navbar is sticky top-4 at every
   // scroll position, so a FIXED banner at a constant offset below it stays
-  // glued to the bar whether the page is scrolled or at the top. (Sticky was
-  // wrong here twice over: this component mounts ABOVE <Navbar /> in the
-  // layout, so at scrollY=0 its in-flow position was the very top of the
-  // document — overlapping the navbar — and once scrolled it pinned to its
-  // own offset. Fixed removes scroll from the equation entirely.)
-  //
-  // top-[5.75rem] = 92px: navbar bottom edge is top-4 (16px) + h-14 (56px)
-  // = 72px, plus its 4px hard shadow → 76px visual bottom; 92px leaves a
-  // 16px gap matching the page's spacing rhythm. Animated via .offline-
-  // banner (slide+settle), dot via .offline-dot; both are killed by the
-  // prefers-reduced-motion clamp in globals.css.
+  // glued to the bar whether the page is scrolled or at the top.
+  // top-[5.75rem] = 92px: navbar bottom edge (72px) + 4px shadow + 16px gap.
+  // Animated via .offline-banner (slide+settle), dot via .offline-dot; both
+  // are killed by the prefers-reduced-motion clamp in globals.css.
   return (
     <div
       role="status"

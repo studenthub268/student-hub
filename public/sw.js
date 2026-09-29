@@ -2,8 +2,8 @@
 // visitor's caches without a hand edit — one `npm version` bump rewrites the
 // number here and on the terms page at build time
 // (scripts/write-deploy-version.mjs).
-const STATIC_CACHE = "student-hub-static-v0.2.23";
-const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.23";
+const STATIC_CACHE = "student-hub-static-v0.2.24";
+const DYNAMIC_CACHE = "student-hub-dynamic-v0.2.24";
 
 // Status endpoints (admin flag) — cached so signed-in pages render
 // correctly offline and instantly, refreshed in background.
@@ -37,6 +37,31 @@ const PRECACHE_URLS = [
 // Cap on dynamically cached pages/subresources so one long session (or many
 // cached R2 PDFs) can't grow the cache without bound and hit quota errors.
 const MAX_DYNAMIC_ENTRIES = 60;
+
+// Network race timeout for page navigations. On 3G a cold navigation can
+// hang 10-30s before the server responds; racing the network against the
+// cache with a short deadline means a cached page paints in <300ms and the
+// fresh response replaces it in the background when it eventually lands.
+// 2.5s: comfortably above a fast 4G RTT, well below where a user gives up.
+const NETWORK_TIMEOUT_MS = 2500;
+
+// fetchWithTimeout: resolves with the network response, or null if the
+// network hasn't answered within `ms` (the request keeps running in the
+// background — the caller just stops waiting for it).
+function fetchWithTimeout(request, ms) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    fetch(request)
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        resolve(null);
+      });
+  });
+}
 
 // Install — precache critical assets
 self.addEventListener("install", (event) => {
@@ -272,13 +297,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages — STALE-WHILE-REVALIDATE for PUBLIC pages only: a cached page
-  // renders instantly (instant cold start from the home-screen icon; no
-  // multi-second network wait), and the in-flight network refresh updates
-  // the cache so the next open is current. First-ever visits (nothing
-  // cached) go straight to the network, with the /offline fallback when
-  // unreachable.
-  // Signed-in navigations also skip the stale copy: the cookie travels with
+  // Pages — STALE-WHILE-REVALIDATE with a NETWORK RACE for PUBLIC pages:
+  // a cached page answers IMMEDIATELY (instant cold start from the
+  // home-screen icon; no multi-second wait), and the in-flight network
+  // refresh updates the cache so the next open is current. When nothing is
+  // cached, we race the network against a 2.5s deadline: if the network
+  // is slow (3G cold start), a CACHED page from a previous visit paints
+  // instead of a blank wait, and the fresh response still updates the
+  // cache in the background when it lands. First-ever visits (nothing
+  // cached at all) just wait out the network, falling back to /offline.
+  // Signed-in navigations skip the stale copy: the cookie travels with
   // the fetch, so the network response reflects the CURRENT session, while a
   // cache entry may have been stored while signed out (guest shell + CTA
   // painted over a valid session — the "am I logged in or not" bug).
@@ -288,6 +316,9 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.open(DYNAMIC_CACHE).then((cache) =>
       cache.match(request).then((cached) => {
+        // Network promise resolves with the response OR null-on-timeout;
+        // the fetch itself is never aborted, so the cache still gets
+        // refreshed by the slow response whenever it arrives.
         const network = fetch(request)
           .then((response) => {
             if (response.ok && response.type === "basic") {
@@ -313,11 +344,32 @@ self.addEventListener("fetch", (event) => {
           event.waitUntil(network);
           return cached;
         }
-        return network.then((response) => {
-          if (response) return response;
-          // Offline fallback for navigations
-          if (request.mode === "navigate") return caches.match("/offline");
-          return new Response("Offline", { status: 503 });
+
+        // Nothing cached: give the network a fair shot, then fall back to
+        // the last-known-good copy of ANY nearby page? No — that would show
+        // the wrong content. Fall back to /offline only on genuine failure;
+        // a merely-slow network waits (correctly) for its content.
+        return Promise.race([
+          network,
+          fetchWithTimeout(request, NETWORK_TIMEOUT_MS).then(() => null),
+        ]).then((raced) => {
+          if (raced) return raced;
+          // Deadline hit with nothing cached — try the offline page only
+          // if the network is TRULY dead (a second probe), otherwise keep
+          // waiting for the real content.
+          return fetch("/api/ping", { cache: "no-store" })
+            .then((ping) =>
+              ping.ok
+                ? network // alive but slow — keep waiting for content
+                : request.mode === "navigate"
+                  ? caches.match("/offline")
+                  : new Response("Offline", { status: 503 })
+            )
+            .catch(() =>
+              request.mode === "navigate"
+                ? caches.match("/offline")
+                : new Response("Offline", { status: 503 })
+            );
         });
       })
     )
