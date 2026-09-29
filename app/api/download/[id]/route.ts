@@ -91,7 +91,14 @@ export async function GET(
   const requestHeaders = await headers();
   const ip =
     requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!(await checkRateLimit(`download-file:${ip}`, 30, 60))) {
+  // 120/min per IP: sized for the real audience shape — exam week puts a
+  // whole classroom (30-50 students) behind one NAT IP downloading past
+  // papers in the same minutes. 30/min meant each student got 1-2 downloads
+  // before the shared bucket 429'd ("Too many downloads"). 120/min is
+  // still 2/sec sustained — far above human pacing, tight enough to blunt
+  // scripted scraping, and the actual byte cost is bounded by R2's own
+  // egress, not this limiter.
+  if (!(await checkRateLimit(`download-file:${ip}`, 120, 60))) {
     return new NextResponse("Too many downloads — slow down.", {
       status: 429,
       headers: { "Retry-After": "60" },

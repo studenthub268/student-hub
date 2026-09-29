@@ -34,15 +34,16 @@ export async function POST(request: NextRequest) {
       return new NextResponse(null, { status: 204 });
     }
 
-    const body = (await request.json().catch(() => null)) as {
-      path?: unknown;
-      metric?: unknown;
-      value?: unknown;
-    } | null;
+    const body = (await request.json().catch(() => null)) as
+      | { path?: unknown; metric?: unknown; value?: unknown }
+      | { path?: unknown; samples?: unknown }
+      | null;
 
+    // Accept BOTH shapes: a single sample (legacy) or a batched array of
+    // samples for one page ("samples"). Batching is what the Vitals client
+    // sends — one POST per page view instead of five, which matters at
+    // thousands of concurrent visitors (5 requests → 1 per page load).
     const path = typeof body?.path === "string" ? body.path : "";
-    const metric = typeof body?.metric === "string" ? body.metric : "";
-    const value = typeof body?.value === "number" ? body.value : NaN;
 
     // Path: internal, no query string, no traversal (same rules as analytics).
     if (
@@ -64,31 +65,49 @@ export async function POST(request: NextRequest) {
       FCP: { max: 60_000, poor: 3_000 },
       TTFB: { max: 60_000, poor: 1_800 },
     };
-    const spec = METRICS[metric];
-    if (!spec || !Number.isFinite(value) || value < 0 || value > spec.max) {
+
+    type Sample = { metric: string; value: number; poor: boolean };
+    const samples: Sample[] = [];
+
+    const push = (metric: unknown, value: unknown) => {
+      if (typeof metric !== "string" || typeof value !== "number") return;
+      const spec = METRICS[metric];
+      if (!spec || !Number.isFinite(value) || value < 0 || value > spec.max) return;
+      samples.push({ metric, value, poor: value > spec.poor });
+    };
+
+    if (Array.isArray((body as { samples?: unknown }).samples)) {
+      const list = (body as { samples: unknown[] }).samples;
+      // Bound the batch: 5 metrics × 1 page is the legit max.
+      for (const s of list.slice(0, 10)) {
+        const item = s as { metric?: unknown; value?: unknown };
+        push(item?.metric, item?.value);
+      }
+    } else {
+      push((body as { metric?: unknown }).metric, (body as { value?: unknown }).value);
+    }
+
+    if (samples.length === 0) {
       return new NextResponse(null, { status: 204 });
     }
 
     const day = new Date().toISOString().slice(0, 10); // UTC yyyy-mm-dd
 
-    await db
-      .insert(webVitals)
-      .values({
-        path,
-        day,
-        metric,
-        count: 1,
-        sum: value,
-        poorCount: value > spec.poor ? 1 : 0,
+    // One multi-row insert + one aggregate upsert per metric in the batch.
+    // Values are already clamped above, so interpolation is safe.
+    await Promise.all(
+      samples.map((s) => {
+        const poorInc = s.poor ? 1 : 0;
+        return db.execute(sql`
+          INSERT INTO web_vitals (path, day, metric, count, sum, poor_count)
+          VALUES (${path}, ${day}, ${s.metric}, 1, ${s.value}, ${poorInc})
+          ON CONFLICT (path, day, metric) DO UPDATE SET
+            count = web_vitals.count + 1,
+            sum = web_vitals.sum + ${s.value},
+            poor_count = web_vitals.poor_count + ${poorInc}
+        `);
       })
-      .onConflictDoUpdate({
-        target: [webVitals.path, webVitals.day, webVitals.metric],
-        set: {
-          count: sql`${webVitals.count} + 1`,
-          sum: sql`${webVitals.sum} + ${value}`,
-          poorCount: sql`${webVitals.poorCount} + ${value > spec.poor ? 1 : 0}`,
-        },
-      });
+    );
   } catch {
     // Vitals reporting must never produce a user-visible failure.
   }

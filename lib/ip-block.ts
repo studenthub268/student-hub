@@ -52,12 +52,13 @@ const SCANNER_PATTERNS = [
 ];
 
 // Rate limiting: max requests per time window.
-// 300/min (5/sec sustained) is far above any human browsing pattern — this
-// only trips for scripts/DoS. Sized so a classroom behind one NAT IP and
-// CI runs don't get false-positive 429s.
+// Sized for the real audience shape: card prefetching means one scroll
+// through /browse fires 10-20 RSC requests per visitor, exam week packs a
+// whole classroom behind one NAT IP, and a couple-thousand-strong
+// audience concentrates into bursts. 600/min per IP (~10/sec sustained)
+// stays far above any human/prefetch pattern and only trips for scripts.
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 600; // 600 requests per minute — headroom for a
-// classroom behind one NAT IP; still far above any human browsing rate.
+const MAX_REQUESTS = 600;
 const RATE_LIMIT_MAP = new Map<string, { count: number; resetAt: number }>();
 
 // Lazy cleanup: prune expired entries every 2 minutes to prevent
