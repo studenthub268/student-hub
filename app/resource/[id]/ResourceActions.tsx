@@ -85,16 +85,67 @@ export default function ResourceActions({
     }
   };
 
-  /* ------------- Download (same-origin proxy, friendly filename) ------------- */
+  /* ------------- Download (same-origin proxy, friendly filename) -------------
 
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = `/api/download/${resourceId}`;
-    link.download = withExtension(title, fileUrl);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Download started!", { id: "download" });
+     The old implementation fired a synthetic <a> click and immediately
+     toasted "Download started!" — but the click only ASKS the browser to
+     download; if the server answered 404/429/502, storage was down, or a
+     content-blocker ate the navigation, the browser showed nothing and the
+     user was left staring at a lie. Now the download runs through fetch:
+     we know the real status before any toast, hold a loading toast while
+     the bytes stream in, then hand the browser a real blob. (The proxy
+     sets Content-Disposition: attachment, so blob URLs still save with the
+     friendly filename.) Drive-hosted files still bounce through the same
+     /api/download redirect — fetch follows it transparently. */
+  const [isDownloading, setIsDownloading] = useState(false);
+  const downloadingRef = useRef(false);
+
+  const handleDownload = async () => {
+    if (downloadingRef.current) return; // double-tap guard
+    downloadingRef.current = true;
+    setIsDownloading(true);
+    const toastId = "download";
+    toast.loading("Starting download…", { id: toastId });
+    try {
+      const res = await fetch(`/api/download/${resourceId}`);
+      if (!res.ok) {
+        // Surface the proxy's actual failure instead of a fake success.
+        const messages: Record<number, string> = {
+          403: "This file isn't publicly shared anymore.",
+          404: "This file no longer exists.",
+          429: "Too many downloads — wait a minute and try again.",
+          502: "File storage is temporarily unavailable.",
+        };
+        toast.error(messages[res.status] ?? `Download failed (error ${res.status}).`, {
+          id: toastId,
+        });
+        return;
+      }
+      if (!res.body) {
+        toast.error("Download failed — empty response from storage.", { id: toastId });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = withExtension(title, fileUrl);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // Revoke on the next tick — revoking synchronously can cancel the
+      // save in some browsers.
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      toast.success("Download ready!", { id: toastId });
+    } catch {
+      // fetch() rejects on network failure — genuinely unreachable.
+      toast.error("Download failed — check your connection and try again.", {
+        id: toastId,
+      });
+    } finally {
+      downloadingRef.current = false;
+      setIsDownloading(false);
+    }
   };
 
   /* ---------------- Share (native sheet, clipboard fallback) ---------------- */
@@ -195,10 +246,11 @@ export default function ResourceActions({
         <div className="space-y-3 px-5 py-4">
           <button
             onClick={handleDownload}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-accent px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-accent-contrast shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard active:translate-y-0 active:shadow-hard-sm"
+            disabled={isDownloading}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-accent px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-accent-contrast shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard active:translate-y-0 active:shadow-hard-sm disabled:opacity-60 disabled:hover:translate-y-0"
           >
-            <Download size={17} strokeWidth={2.5} aria-hidden />
-            Download
+            <Download size={17} strokeWidth={2.5} aria-hidden className={isDownloading ? "animate-bounce" : ""} />
+            {isDownloading ? "Downloading…" : "Download"}
           </button>
           <div className="grid grid-cols-2 gap-3">
             <button
