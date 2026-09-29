@@ -17,7 +17,7 @@ Add these in **Project → Settings → Environment Variables** (production scop
 
 | Variable | Value / where to get it | Required |
 |---|---|---|
-| `DATABASE_URL` | Neon Console → Project → Connection Details → **Pooled** connection string. Add `?sslmode=require` if missing. | ✅ |
+| `DATABASE_URL` | Neon Console → Project → Connection Details → **Pooled** connection string — the hostname MUST contain `-pooler` (e.g. `ep-xxxx-pooler.region.aws.neon.tech`). Add `?sslmode=require` if missing. The pooled endpoint routes through PgBouncer and is what lets thousands of concurrent serverless requests share a handful of Postgres connections; the direct (non-pooler) endpoint exhausts `max_connections` under exactly the burst load this site is built for. | ✅ |
 | `AUTH_SECRET` | Generate with `openssl rand -base64 32` (use a *different* value than local/dev) | ✅ |
 | `AUTH_URL` | Your production URL, e.g. `https://student-hub-xxx.vercel.app` (no trailing slash) | ✅ |
 | `APP_URL` | Same as `AUTH_URL` — used in email links & metadata (server-side only, no `NEXT_PUBLIC_` prefix needed) | ✅ |
@@ -52,6 +52,10 @@ npm run db:migrate
 ```
 
 Or apply the SQL in `drizzle/` from the Neon SQL editor.
+
+> **Note:** run migrations against the **direct** (non-`-pooler`) endpoint — drizzle-kit needs
+> a stable session for schema drift detection, and PgBouncer's transaction pooling can break
+> migration tooling. The app itself runs on the pooled endpoint; only migrations use direct.
 
 ## 5. Deploy
 
@@ -104,6 +108,7 @@ reads the constant) to the new value.
 | Symptom | Likely fix |
 |---|---|
 | 500 on every page / "DATABASE_URL missing" | Env var not set in the *Production* scope — set it and redeploy |
+| "too many connections" errors under load | `DATABASE_URL` is using the direct Neon endpoint — switch to the **pooled** (`-pooler`) connection string (see step 2) |
 | Login redirects loop | `AUTH_URL` doesn't match the actual production URL |
 | OAuth "redirect_uri mismatch" | Callback URL in the OAuth app doesn't match the live domain |
 | Uploads fail with "Upload failed" and the file is large | Vercel caps a Function's request body at 4.5 MB — files over `MAX_FILE_SIZE` (`lib/uploads.ts`, currently 4 MB) are rejected at the edge. Lower the file size, or see *Raising the file size ceiling* below |
