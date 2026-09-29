@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails, pageViews } from "@/lib/db/schema";
+import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails, pageViews, webVitals } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { eq, desc, sql, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -147,6 +147,62 @@ export async function getAdminPanelData() {
     emailStats: emailData,
     autoBlocks: recentAutoBlocks,
     users: usersWithMeta,
+  };
+}
+
+/**
+ * Aggregated Core Web Vitals for the admin Vitals tab (see /api/vitals —
+ * the collector). Reads only the web_vitals aggregate: one row per
+ * (path, day, metric) with count/sum/poor_count. No visitor identifiers
+ * exist in this table. Averages are computed in SQL; "good rate" is
+ * 1 - poor/count using Google's per-metric poor thresholds that the
+ * collector already classified at write time.
+ */
+export async function getWebVitalsData() {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
+
+  const utcDay = (offset: number) => {
+    const t = new Date();
+    t.setUTCDate(t.getUTCDate() - offset);
+    return t.toISOString().slice(0, 10);
+  };
+  const d30 = utcDay(29);
+
+  // Per-metric site-wide summary over the trailing 30 days. count=0 rows
+  // are impossible (the collector inserts count=1), but coalesce anyway.
+  const metrics = await db
+    .select({
+      metric: webVitals.metric,
+      count: sql<number>`sum(${webVitals.count})::int`,
+      avg: sql<number>`(sum(${webVitals.sum}) / greatest(sum(${webVitals.count}), 1))`,
+      poor: sql<number>`sum(${webVitals.poorCount})::int`,
+    })
+    .from(webVitals)
+    .where(gte(webVitals.day, d30))
+    .groupBy(webVitals.metric);
+
+  // Slowest pages: highest average LCP, with enough samples to be
+  // meaningful (≥ 5) so one unlucky visitor doesn't crown a page "slowest".
+  const slowestPages = await db
+    .select({
+      path: webVitals.path,
+      avgLcp: sql<number>`(sum(${webVitals.sum}) / greatest(sum(${webVitals.count}), 1))`,
+      samples: sql<number>`sum(${webVitals.count})::int`,
+      poorRate: sql<number>`(sum(${webVitals.poorCount})::float / greatest(sum(${webVitals.count}), 1))`,
+    })
+    .from(webVitals)
+    .where(gte(webVitals.day, d30))
+    .groupBy(webVitals.path)
+    .having(sql`sum(${webVitals.count}) >= 5`)
+    .orderBy(desc(sql`sum(${webVitals.sum}) / greatest(sum(${webVitals.count}), 1)`))
+    .limit(8);
+
+  return {
+    windowDays: 30,
+    metrics, // LCP/INP/CLS/FCP/TTFB rows; missing metric = no samples yet
+    slowestPages,
   };
 }
 

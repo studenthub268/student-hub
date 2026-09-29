@@ -40,6 +40,7 @@ import {
   Reply,
   CheckCheck,
   Loader2,
+  Gauge,
 } from "lucide-react";
 import Link from "next/link";
 import { replyToMessage } from "@/lib/actions/messages";
@@ -54,6 +55,8 @@ import dynamic from "next/dynamic";
 // Lazy-loaded: the Traffic tab pulls its own data via getTrafficData, so the
 // other tabs never pay for its JS or query until they open it.
 const TrafficTab = dynamic(() => import("./TrafficTab"));
+// Same for the Vitals tab (getWebVitalsData) — real-user Core Web Vitals.
+const VitalsTab = dynamic(() => import("./VitalsTab"));
 
 type Tab = "overview" | "moderation" | "security" | "users" | "diagnostics";
 
@@ -1002,6 +1005,13 @@ export default function AdminPanel() {
                 </div>
               </div>
             )}
+          </section>
+
+          <section>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Gauge className="h-4 w-4" aria-hidden /> Core Web Vitals
+            </h3>
+            <VitalsTab />
           </section>
 
           <section>
