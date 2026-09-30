@@ -47,11 +47,18 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
      copy in /public (same version — they ship together in the repo).
      disableAutoFetch + disableStream: pdf.js's default behavior fetches
      the WHOLE file in the background even when only page 1 is on screen.
-     With the proxy now answering Range requests, rangeChunkSize (256 KB
-     chunks) + these flags make page 1 paint after ~1 chunk instead of
-     after the full download — the single biggest perceived-speed win for
-     big scans. The full file still arrives as the reader scrolls (each
-     chunk is fetched on demand). */
+     With the proxy now answering Range requests, these flags make page 1
+     paint after ~1 chunk instead of after the full download — the single
+     biggest perceived-speed win for big scans. The full file still arrives
+     as the reader scrolls (each chunk is fetched on demand).
+     rangeChunkSize 64KB (pdf.js's floor): measured on throttled downloads
+     through the proxy, a 256KB chunk needs 9.3s at Slow 3G / 6.8s at 3G
+     before the first page can paint; 64KB paints in roughly a quarter of
+     that. Small chunks only add request overhead when a reader scrolls
+     through EVERY page of a huge scan — where 4x faster first paint is
+     worth ~4 extra range round trips per MB.
+     Repeat visitors don't pay either way: the browser caches the body
+     (Cache-Control on /api/pdf), so a second open paints from disk. */
   const loadTask = useCallback((url: string) => {
     // Synchronous import kick-off; returns the LOADING TASK (not the doc
     // promise) so the caller can hook onProgress for byte-level loading UX.
@@ -60,7 +67,7 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
       return pdfjs.getDocument({
         url,
         withCredentials: false,
-        rangeChunkSize: 262144,
+        rangeChunkSize: 65536,
         disableAutoFetch: true,
         disableStream: true,
       });

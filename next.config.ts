@@ -119,6 +119,27 @@ export default {
         ],
       },
       {
+        // MUST come after the /api/(.*) rule: with multiple matching rules the
+        // later one wins, and the blanket no-store above was overriding the
+        // PDF proxy's own cacheable Cache-Control — forcing every resource-page
+        // view to re-download the full PDF body (Range-cached chunks never had
+        // a chance either). Config headers beat route-set headers in Next, so
+        // the cacheable value lives HERE, not only in the route handler.
+        // Vary: Range keeps range-cached chunks correct per browser.
+        source: "/api/pdf/:id",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400",
+          },
+          {
+            key: "Vary",
+            value: "Range",
+          },
+        ],
+      },
+      {
         // .mjs included: the 1.4MB pdf.js worker (public/pdfjs/pdf.worker.min.mjs)
         // is content-fixed per pdfjs-dist release, so it must cache immutable —
         // without this it revalidated on every visit and cost repeat PDF readers
