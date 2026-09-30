@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, ChevronDown, ArrowDownWideNarrow } from "lucide-react";
 import { SUBJECTS, RESOURCE_TYPES } from "@/lib/constants";
 import { ResourceCard } from "@/components/resources/ResourceCard";
+import { CardSkeletonBatch } from "@/components/resources/CardSkeleton";
 import type { Resource } from "@/lib/db/schema";
 
 interface BrowseResource extends Resource {
@@ -97,13 +98,28 @@ export default function BrowseContent({
   // synchronously DURING the render that sees the new array — not in an
   // effect after it — so a narrowed result never flashes all-then-fewer.
   // (React's documented derived-state-from-props pattern.)
+  // Scroll extensions (sentinel or button) swap in skeleton slots for the
+  // incoming batch INSTEAD of animating the new cards in: skeletons keep the
+  // grid full while fast scrolling, and skipping the entrance stagger means
+  // cards below the fold are never held at opacity 0 for ~0.5s while the
+  // visitor is already looking at them (the "blank gap" race). Filter/sort
+  // changes still get the stagger — the whole grid is replaced at once and
+  // the visitor is at the top, so the entrance reads as a fresh page.
+  const [scrollExtended, setScrollExtended] = useState(false);
   const [windowState, setWindowState] = useState({
     results: resources,
     count: PAGE_SIZE,
   });
   if (windowState.results !== resources) {
     setWindowState({ results: resources, count: PAGE_SIZE });
+    if (scrollExtended) setScrollExtended(false);
   }
+  const extendWindow = () => {
+    setScrollExtended(true);
+    setWindowState((s) =>
+      s.results === resources ? { ...s, count: s.count + PAGE_SIZE } : s
+    );
+  };
   const visibleCount = Math.min(windowState.count, resources.length);
   const visibleResources = resources.slice(0, visibleCount);
   const hasMore = visibleCount < resources.length;
@@ -120,11 +136,7 @@ export default function BrowseContent({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
-          setWindowState((s) =>
-            s.results === resources
-              ? { ...s, count: s.count + PAGE_SIZE }
-              : s // a new result set arrived mid-scroll — the render-reset wins
-          );
+          extendWindow();
         }
       },
       { rootMargin: "600px 0px" }
@@ -390,12 +402,20 @@ export default function BrowseContent({
 
         {resources.length > 0 ? (
           <>
-          <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity ${isPending ? "opacity-60" : ""} fade-up-stagger`}>
+          <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity ${isPending ? "opacity-60" : ""} ${scrollExtended ? "" : "fade-up-stagger"}`}>
             {visibleResources.map((resource) => (
               <div key={resource.id} className="h-full">
                 <ResourceCard resource={resource} />
               </div>
             ))}
+            {/* Incoming batch: skeleton slots keep the grid visually full
+                while scrolling toward the sentinel — no blank region below
+                the last card. Swapped 1:1 for real cards (same footprint)
+                when the window extends. Only while more results exist AND a
+                scroll extension is in flight (not on the initial render). */}
+            {hasMore && scrollExtended && (
+              <CardSkeletonBatch count={Math.min(PAGE_SIZE, hiddenCount)} />
+            )}
           </div>
 
           {/* Load-more: auto-fired by the sentinel above it while scrolling;
@@ -405,11 +425,7 @@ export default function BrowseContent({
           {hasMore && (
             <div ref={sentinelRef} className="mt-10 flex justify-center">
               <button
-                onClick={() =>
-                  setWindowState((s) =>
-                    s.results === resources ? { ...s, count: s.count + PAGE_SIZE } : s
-                  )
-                }
+                onClick={extendWindow}
                 className="rounded-full border-2 border-ink bg-surface px-8 py-3 text-sm font-bold tracking-wider shadow-hard-sm transition-all hover:-translate-y-0.5 hover:shadow-hard active:translate-y-0 active:shadow-none"
               >
                 Load {Math.min(PAGE_SIZE, hiddenCount)} more
