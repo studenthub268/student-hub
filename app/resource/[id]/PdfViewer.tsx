@@ -248,10 +248,14 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [numPages]);
 
-  /* Fullscreen only: Esc closes, page scroll locks, arrows page. */
+  /* Fullscreen only: Esc closes, page scroll locks, arrows page.
+     Key events originating inside form fields are ignored so the caret
+     arrows in the jump-to-page input don't turn pages. */
   useEffect(() => {
     if (variant !== "fullscreen") return;
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (e.key === "Escape") onClose?.();
       if (e.key === "ArrowRight" || e.key === "PageDown") jumpToPage(page + 1);
       if (e.key === "ArrowLeft" || e.key === "PageUp") jumpToPage(page - 1);
@@ -295,9 +299,7 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
       <button onClick={() => jumpToPage(page - 1)} disabled={page <= 1} className={ctrlBtn} aria-label="Previous page">
         <ChevronLeft size={16} strokeWidth={2.25} aria-hidden />
       </button>
-      <span className="text-xs font-bold tabular-nums text-foreground" aria-live="polite">
-        {page} / {numPages || "…"}
-      </span>
+      <PageJump page={page} numPages={numPages} onJump={jumpToPage} />
       <button onClick={() => jumpToPage(page + 1)} disabled={page >= numPages} className={ctrlBtn} aria-label="Next page">
         <ChevronRight size={16} strokeWidth={2.25} aria-hidden />
       </button>
@@ -412,5 +414,66 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The page indicator as an editable jump field: shows "page / total" like
+ * before, but the current page is an input — type a number, press Enter and
+ * the viewer scrolls straight to that page (past exam papers are often
+ * dozens of pages; chevron-walking to page 37 is not viable on a phone).
+ *
+ * Local text state so typing "3" then "7" doesn't jump mid-typing; Enter
+ * commits, blur/Escape revert to the live page. The input re-syncs when the
+ * page changes underneath it (scrolling, arrow keys) via the keyed value —
+ * clamped silently to [1, numPages] so "999" lands on the last page.
+ */
+function PageJump({
+  page,
+  numPages,
+  onJump,
+}: {
+  page: number;
+  numPages: number;
+  onJump: (n: number) => void;
+}) {
+  const [text, setText] = useState<string | null>(null);
+  const shown = text ?? String(page);
+  const commit = () => {
+    if (text === null) return;
+    const n = parseInt(text, 10);
+    setText(null);
+    if (Number.isFinite(n)) onJump(n); // jumpToPage clamps
+  };
+
+  return (
+    <span className="flex items-center gap-0.5 text-xs font-bold tabular-nums text-foreground">
+      <input
+        type="text"
+        inputMode="numeric"
+        aria-label="Jump to page"
+        value={shown}
+        onChange={(e) => {
+          const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
+          setText(v);
+        }}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+            (e.target as HTMLInputElement).blur();
+          } else if (e.key === "Escape") {
+            setText(null);
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        disabled={numPages === 0}
+        className="w-9 rounded-md border-2 border-transparent bg-transparent px-1 py-0.5 text-center transition-colors hover:border-line focus:border-ink focus:bg-surface focus:outline-none disabled:opacity-50"
+        style={{ width: `${Math.max(2, shown.length)}ch` }}
+      />
+      <span aria-hidden>/</span>
+      <span aria-live="polite">{numPages || "…"}</span>
+    </span>
   );
 }
