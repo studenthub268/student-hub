@@ -133,6 +133,49 @@ export default function BrowseContent({
     return () => observer.disconnect();
   }, [hasMore, resources]);
 
+  /* Idle prefetch of the NEXT batch's card pages. The result data is already
+     in memory (windowing), but each card's /resource/[id] RSC payload is
+     only fetched when the card MOUNTS — so a visitor who scrolls fast hits
+     cards whose prefetch just started (blank-ish tap targets on 3G).
+     While they're still reading the current window, warm the router cache
+     with the next batch's hrefs, one per idle slice (requestIdleCallback,
+     setTimeout fallback): the CPU/network stays free while they read, and
+     when the sentinel extends the window every new card renders — and
+     navigates — instantly. Mobile gets the same benefit without needing
+     hover. router.prefetch dedupes, so overlap with mounted cards' own
+     prefetching is free; cancelling the queue on any change keeps a filter
+     switch from prefetching stale hrefs. */
+  useEffect(() => {
+    if (!hasMore) return;
+    const nextHrefs = resources
+      .slice(visibleCount, visibleCount + PAGE_SIZE)
+      .map((r) => `/resource/${r.id}`);
+    if (nextHrefs.length === 0) return;
+
+    let cancelled = false;
+    let handle: number;
+    const schedule = (cb: () => void) => {
+      if (typeof window.requestIdleCallback === "function") {
+        return window.requestIdleCallback(cb, { timeout: 3000 });
+      }
+      return window.setTimeout(cb, 250);
+    };
+    const cancel = (h: number) => {
+      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(h);
+      else window.clearTimeout(h);
+    };
+    const drain = (i: number) => {
+      if (cancelled || i >= nextHrefs.length) return;
+      router.prefetch(nextHrefs[i]);
+      handle = schedule(() => drain(i + 1));
+    };
+    handle = schedule(() => drain(0));
+    return () => {
+      cancelled = true;
+      cancel(handle);
+    };
+  }, [hasMore, resources, visibleCount, router]);
+
   // Arrivals from a search suggestion show results only — no filter wall.
   // Opening /browse directly keeps the full filter experience.
   const fromSearch = searchParams.get("from") === "search";
