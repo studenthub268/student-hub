@@ -6,6 +6,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "./rate-limit";
+import { getRequestIpFromHeaders } from "@/lib/ip-block";
 import { sendContactReplyEmail, sendAdminMessageNotificationEmail } from "@/lib/email";
 import { headers } from "next/headers";
 
@@ -36,7 +37,7 @@ export async function sendMessage(formData: {
   // 3. Rate limit — per email AND per IP: an attacker can rotate fake
   //    emails freely, but both counters must pass. (3/hour each.)
   const requestHeaders = await headers();
-  const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = getRequestIpFromHeaders(requestHeaders);
   const byEmail = await checkRateLimit(`contact:${validatedData.email}`, 3, 3600);
   const byIp = await checkRateLimit(`contact-ip:${ip}`, 3, 3600);
   if (!byEmail || !byIp) {

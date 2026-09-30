@@ -4,6 +4,7 @@ import { resources } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
+import { getRequestIpFromHeaders } from "@/lib/ip-block";
 import { isDriveHosted, DRIVE_FOLDER_TYPE } from "@/lib/drive";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -89,8 +90,7 @@ export async function GET(
 
   // Per-IP throttle — same budget philosophy as the download counter.
   const requestHeaders = await headers();
-  const ip =
-    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = getRequestIpFromHeaders(requestHeaders);
   // 120/min per IP: sized for the real audience shape — exam week puts a
   // whole classroom (30-50 students) behind one NAT IP downloading past
   // papers in the same minutes. 30/min meant each student got 1-2 downloads

@@ -4,6 +4,7 @@ import { webVitals } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
+import { getRequestIpFromHeaders } from "@/lib/ip-block";
 
 /**
  * First-party Core Web Vitals collector.
@@ -26,8 +27,7 @@ import { checkRateLimit } from "@/lib/actions/rate-limit";
 export async function POST(request: NextRequest) {
   try {
     const requestHeaders = await headers();
-    const ip =
-      requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = getRequestIpFromHeaders(requestHeaders);
     // 30/min per IP: one page view reports up to 5 metrics (often spread
     // across two posts), so 30 is generous for humans and still caps abuse.
     if (!(await checkRateLimit(`vitals:${ip}`, 30, 60))) {

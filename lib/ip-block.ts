@@ -94,6 +94,23 @@ export function getIpAddress(request: Request): string {
   return "127.0.0.1";
 }
 
+/** Same rightmost-entry rule as getIpAddress, for route handlers that read
+ *  the request via next/headers() instead of a Request object. Every
+ *  per-IP rate limit MUST use this: trusting the leftmost (client-supplied)
+ *  entry lets a script rotate spoofed IPs to evade limiting, and lets an
+ *  attacker frame a victim IP into a 429 wall. */
+export function getRequestIpFromHeaders(
+  headersList: Pick<Headers, "get">,
+): string {
+  const forwarded = headersList.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",").pop()!.trim();
+  }
+  const realIp = headersList.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  return "unknown";
+}
+
 // Blocked-IP cache: the proxy checks EVERY request against this table, and
 // a Neon HTTP roundtrip per request is the single largest source of
 // navigation latency on the site. The list is tiny and changes rarely, so it

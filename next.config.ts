@@ -76,11 +76,10 @@ export default {
     // back/forward and repeat navigation render instantly instead of
     // refetching the server for every dynamic page (default dynamic
     // staleTime is 0, which makes every click a full server round trip).
+    // NOTE: view transitions need no config in Next 16 — route navigations
+    // activate React's ViewTransition integration automatically; the old
+    // experimental.viewTransition key is now rejected by the config schema.
     staleTimes: { dynamic: 30, static: 180 },
-    // View Transitions API: page navigations cross-fade the old DOM into
-    // the new one instead of the hard flash-and-repaint. Zero JS cost —
-    // the browser does the compositing — and unsupported browsers ignore it.
-    viewTransition: true,
   },
   images: {
     formats: ["image/avif", "image/webp"],
@@ -120,7 +119,22 @@ export default {
         ],
       },
       {
-        source: "/(.*)\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)",
+        // .mjs included: the 1.4MB pdf.js worker (public/pdfjs/pdf.worker.min.mjs)
+        // is content-fixed per pdfjs-dist release, so it must cache immutable —
+        // without this it revalidated on every visit and cost repeat PDF readers
+        // a full re-download on slow campus wifi. (The worker is served through
+        // Next's ESM static handler, which needs its own rule — the extension
+        // rule below alone didn't apply to it, verified 2026-10-01.)
+        source: "/pdfjs/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/(.*)\.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)",
         headers: [
           {
             key: "Cache-Control",

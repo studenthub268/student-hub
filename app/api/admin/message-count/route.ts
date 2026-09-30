@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { adminEmails, messages } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
+import { getRequestIpFromHeaders } from "@/lib/ip-block";
 import { headers } from "next/headers";
 
 export async function GET() {
@@ -11,7 +12,7 @@ export async function GET() {
     // Poll endpoint (admin badge in the navbar) — throttle per IP like the
     // other status endpoints so a scripted hammer can't free-ride on it.
     const requestHeaders = await headers();
-    const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = getRequestIpFromHeaders(requestHeaders);
     if (!(await checkRateLimit(`admin-count:${ip}`, 30, 60))) {
       return NextResponse.json({ count: 0 }, { status: 429, headers: { "Retry-After": "60" } });
     }

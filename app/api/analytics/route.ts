@@ -4,6 +4,7 @@ import { pageViews } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
+import { getRequestIpFromHeaders } from "@/lib/ip-block";
 
 const MAX_PATH_LENGTH = 200;
 const MAX_REF_LENGTH = 100;
@@ -21,8 +22,7 @@ export async function POST(request: NextRequest) {
   try {
     // Per-IP throttle in front of the DB write.
     const requestHeaders = await headers();
-    const ip =
-      requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = getRequestIpFromHeaders(requestHeaders);
     if (!(await checkRateLimit(`analytics:${ip}`, 60, 60))) {
       return new NextResponse(null, { status: 204 });
     }

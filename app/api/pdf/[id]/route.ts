@@ -4,6 +4,7 @@ import { resources } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
+import { getRequestIpFromHeaders } from "@/lib/ip-block";
 import {
   isDriveHosted,
   driveUserContentDownloadUrl,
@@ -85,8 +86,7 @@ export async function GET(
   }
 
   const requestHeaders = await headers();
-  const ip =
-    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = getRequestIpFromHeaders(requestHeaders);
   // 240/min per IP: a single viewer open fetches the document once (bytes are
   // cached by the browser afterwards), but a classroom behind one NAT IP —
   // the norm for this site's audience on campus wifi — shares the bucket

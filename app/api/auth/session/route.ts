@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
+import { getRequestIpFromHeaders } from "@/lib/ip-block";
 
 // Session is per-request (reads the NextAuth cookie) — must never be cached.
 export const dynamic = "force-dynamic";
@@ -16,7 +17,10 @@ export const dynamic = "force-dynamic";
 // this into a session-decoding oracle.
 export async function GET() {
   const requestHeaders = await headers();
-  const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  // Rightmost (trusted-edge) x-forwarded-for entry — see lib/ip-block.ts.
+  // The previous leftmost read was client-spoofable: a script could rotate
+  // fake IPs to evade limiting, or frame a victim IP into a 429 wall.
+  const ip = getRequestIpFromHeaders(requestHeaders);
   if (!(await checkRateLimit(`session:${ip}`, 300, 60))) {
     return NextResponse.json({}, { status: 429, headers: { "Retry-After": "60" } });
   }
