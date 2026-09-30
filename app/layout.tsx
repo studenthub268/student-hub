@@ -12,6 +12,7 @@ import { DeployWatcher } from "@/components/DeployWatcher";
 import ScrollRestoration from "@/components/ScrollRestoration";
 import { Analytics } from "@/components/ui/Analytics";
 import { Vitals } from "@/components/ui/Vitals";
+import { IdleMount } from "@/components/IdleMount";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,11 +99,20 @@ export default function RootLayout({
         <Footer />
         <LazyToaster />
         <CookieConsent />
-        <Analytics />
-        <Vitals />
-        <ServiceWorkerRegister />
-        <DeployWatcher />
-        <ScrollRestoration />
+        {/* Non-critical, nothing-rendering reporters and pollers: deferring
+            them to idle keeps their fetches (session/verified/admin/version/
+            analytics) and JS off the critical path — on a throttled phone
+            those four requests were firing ~2.8s into the load, competing
+            with the font and stylesheets the LCP heading waits on. All are
+            hidden-or-null at first paint, so nothing visible is delayed:
+            the two banners still render (they read caches synchronously and
+            show only after a network verdict anyway). */}
+        <IdleMount>
+          <Analytics />
+          <Vitals />
+          <ServiceWorkerRegister />
+          <DeployWatcher />
+        </IdleMount>
       </body>
     </html>
   );
