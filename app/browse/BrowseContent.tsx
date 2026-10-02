@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useRef, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, ChevronDown, ArrowDownWideNarrow } from "lucide-react";
 import { SUBJECTS, RESOURCE_TYPES } from "@/lib/constants";
@@ -114,12 +114,12 @@ export default function BrowseContent({
     setWindowState({ results: resources, count: PAGE_SIZE });
     if (scrollExtended) setScrollExtended(false);
   }
-  const extendWindow = () => {
+  const extendWindow = useCallback(() => {
     setScrollExtended(true);
     setWindowState((s) =>
       s.results === resources ? { ...s, count: s.count + PAGE_SIZE } : s
     );
-  };
+  }, [resources]);
   const visibleCount = Math.min(windowState.count, resources.length);
   const visibleResources = resources.slice(0, visibleCount);
   const hasMore = visibleCount < resources.length;
@@ -143,7 +143,7 @@ export default function BrowseContent({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasMore, resources]);
+  }, [hasMore, resources, extendWindow]);
 
   /* Idle prefetch of the NEXT batch's card pages. The result data is already
      in memory (windowing), but each card's /resource/[id] RSC payload is

@@ -23,6 +23,7 @@
     "start": "next start",
     "lint": "eslint",
     "preflight": "npm run lint && tsc --noEmit",
+    "brain": "node scripts/generate-brain-graph.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"

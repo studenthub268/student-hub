@@ -9,7 +9,6 @@ import { LazyToaster } from "@/components/LazyToaster";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { DeployWatcher } from "@/components/DeployWatcher";
-import ScrollRestoration from "@/components/ScrollRestoration";
 import { Analytics } from "@/components/ui/Analytics";
 import { Vitals } from "@/components/ui/Vitals";
 import { IdleMount } from "@/components/IdleMount";

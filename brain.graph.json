@@ -1,0 +1,1672 @@
+{
+  "generatedBy": "scripts/generate-brain-graph.mjs",
+  "generatedAt": "2026-10-02T19:13:33.059Z",
+  "root": ".",
+  "stats": {
+    "files": 119,
+    "edges": 239,
+    "modules": 46
+  },
+  "nodes": [
+    {
+      "id": "app/(home)/loading.tsx",
+      "module": "app/(home)",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/(home)/page.tsx",
+      "module": "app/(home)",
+      "inbound": 0,
+      "outbound": 6
+    },
+    {
+      "id": "app/admin/layout.tsx",
+      "module": "app/admin",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/admin/loading.tsx",
+      "module": "app/admin",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/admin/page.tsx",
+      "module": "app/admin",
+      "inbound": 0,
+      "outbound": 9
+    },
+    {
+      "id": "app/admin/TrafficTab.tsx",
+      "module": "app/admin",
+      "inbound": 1,
+      "outbound": 2
+    },
+    {
+      "id": "app/admin/VitalsTab.tsx",
+      "module": "app/admin",
+      "inbound": 1,
+      "outbound": 2
+    },
+    {
+      "id": "app/api/admin/message-count/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 5
+    },
+    {
+      "id": "app/api/analytics/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 4
+    },
+    {
+      "id": "app/api/auth/[...nextauth]/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/api/auth/session/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 3
+    },
+    {
+      "id": "app/api/check-admin/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 3
+    },
+    {
+      "id": "app/api/check-verified/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 3
+    },
+    {
+      "id": "app/api/download/[id]/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 5
+    },
+    {
+      "id": "app/api/pdf/[id]/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 5
+    },
+    {
+      "id": "app/api/ping/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/api/upload/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 6
+    },
+    {
+      "id": "app/api/version/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/api/vitals/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 3
+    },
+    {
+      "id": "app/api/webhooks/resend/route.ts",
+      "module": "app/api",
+      "inbound": 0,
+      "outbound": 2
+    },
+    {
+      "id": "app/auth/error/page.tsx",
+      "module": "app/auth",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/auth/loading.tsx",
+      "module": "app/auth",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/auth/reset-password/page.tsx",
+      "module": "app/auth",
+      "inbound": 0,
+      "outbound": 4
+    },
+    {
+      "id": "app/auth/verify-email/page.tsx",
+      "module": "app/auth",
+      "inbound": 0,
+      "outbound": 2
+    },
+    {
+      "id": "app/browse/BrowseContent.tsx",
+      "module": "app/browse",
+      "inbound": 1,
+      "outbound": 4
+    },
+    {
+      "id": "app/browse/error.tsx",
+      "module": "app/browse",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/browse/loading.tsx",
+      "module": "app/browse",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/browse/page.tsx",
+      "module": "app/browse",
+      "inbound": 0,
+      "outbound": 4
+    },
+    {
+      "id": "app/contact/layout.tsx",
+      "module": "app/contact",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/contact/loading.tsx",
+      "module": "app/contact",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/contact/page.tsx",
+      "module": "app/contact",
+      "inbound": 0,
+      "outbound": 2
+    },
+    {
+      "id": "app/error.tsx",
+      "module": "app/error.tsx",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/layout.tsx",
+      "module": "app/layout.tsx",
+      "inbound": 0,
+      "outbound": 11
+    },
+    {
+      "id": "app/login/forgot-password/page.tsx",
+      "module": "app/login",
+      "inbound": 0,
+      "outbound": 2
+    },
+    {
+      "id": "app/login/layout.tsx",
+      "module": "app/login",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/login/loading.tsx",
+      "module": "app/login",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/login/page.tsx",
+      "module": "app/login",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/not-found.tsx",
+      "module": "app/not-found.tsx",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/offline/page.tsx",
+      "module": "app/offline",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/privacy/page.tsx",
+      "module": "app/privacy",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/profile/DeleteAccount.tsx",
+      "module": "app/profile",
+      "inbound": 1,
+      "outbound": 3
+    },
+    {
+      "id": "app/profile/error.tsx",
+      "module": "app/profile",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/profile/layout.tsx",
+      "module": "app/profile",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/profile/loading.tsx",
+      "module": "app/profile",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/profile/page.tsx",
+      "module": "app/profile",
+      "inbound": 0,
+      "outbound": 5
+    },
+    {
+      "id": "app/profile/ProfileContent.tsx",
+      "module": "app/profile",
+      "inbound": 1,
+      "outbound": 3
+    },
+    {
+      "id": "app/report/layout.tsx",
+      "module": "app/report",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/report/page.tsx",
+      "module": "app/report",
+      "inbound": 0,
+      "outbound": 3
+    },
+    {
+      "id": "app/resource/[id]/error.tsx",
+      "module": "app/resource",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/resource/[id]/loading.tsx",
+      "module": "app/resource",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/resource/[id]/page.tsx",
+      "module": "app/resource",
+      "inbound": 0,
+      "outbound": 8
+    },
+    {
+      "id": "app/resource/[id]/PdfViewer.tsx",
+      "module": "app/resource",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "app/resource/[id]/ResourceActions.tsx",
+      "module": "app/resource",
+      "inbound": 1,
+      "outbound": 5
+    },
+    {
+      "id": "app/resource/[id]/ResourcePreview.tsx",
+      "module": "app/resource",
+      "inbound": 2,
+      "outbound": 3
+    },
+    {
+      "id": "app/robots.ts",
+      "module": "app/robots.ts",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/signup/layout.tsx",
+      "module": "app/signup",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/signup/loading.tsx",
+      "module": "app/signup",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/signup/page.tsx",
+      "module": "app/signup",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/sitemap.ts",
+      "module": "app/sitemap.ts",
+      "inbound": 0,
+      "outbound": 2
+    },
+    {
+      "id": "app/terms/page.tsx",
+      "module": "app/terms",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/upload/error.tsx",
+      "module": "app/upload",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/upload/layout.tsx",
+      "module": "app/upload",
+      "inbound": 0,
+      "outbound": 0
+    },
+    {
+      "id": "app/upload/loading.tsx",
+      "module": "app/upload",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/upload/page.tsx",
+      "module": "app/upload",
+      "inbound": 0,
+      "outbound": 1
+    },
+    {
+      "id": "app/upload/UploadForm.tsx",
+      "module": "app/upload",
+      "inbound": 1,
+      "outbound": 7
+    },
+    {
+      "id": "components/auth/LoginForm.tsx",
+      "module": "components/auth",
+      "inbound": 1,
+      "outbound": 2
+    },
+    {
+      "id": "components/auth/SignupForm.tsx",
+      "module": "components/auth",
+      "inbound": 1,
+      "outbound": 4
+    },
+    {
+      "id": "components/DeployWatcher.tsx",
+      "module": "components/DeployWatcher.tsx",
+      "inbound": 1,
+      "outbound": 1
+    },
+    {
+      "id": "components/IdleMount.tsx",
+      "module": "components/IdleMount.tsx",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/layout/AdminLink.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/layout/CookieConsent.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/layout/Footer.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/layout/Navbar.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 4
+    },
+    {
+      "id": "components/layout/NavbarAuth.tsx",
+      "module": "components/layout",
+      "inbound": 2,
+      "outbound": 1
+    },
+    {
+      "id": "components/layout/NavbarSearch.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/layout/OfflineBanner.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 1
+    },
+    {
+      "id": "components/layout/SearchPopup.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 2
+    },
+    {
+      "id": "components/layout/VerificationBanner.tsx",
+      "module": "components/layout",
+      "inbound": 1,
+      "outbound": 3
+    },
+    {
+      "id": "components/LazyToaster.tsx",
+      "module": "components/LazyToaster.tsx",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/resources/CardSkeleton.tsx",
+      "module": "components/resources",
+      "inbound": 1,
+      "outbound": 1
+    },
+    {
+      "id": "components/resources/ResourceCard.tsx",
+      "module": "components/resources",
+      "inbound": 4,
+      "outbound": 3
+    },
+    {
+      "id": "components/ServiceWorkerRegister.tsx",
+      "module": "components/ServiceWorkerRegister.tsx",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/Analytics.tsx",
+      "module": "components/ui",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/Avatar.tsx",
+      "module": "components/ui",
+      "inbound": 3,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/ConfirmDialog.tsx",
+      "module": "components/ui",
+      "inbound": 2,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/ContributeCta.tsx",
+      "module": "components/ui",
+      "inbound": 1,
+      "outbound": 1
+    },
+    {
+      "id": "components/ui/LiveStats.tsx",
+      "module": "components/ui",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/PasswordInput.tsx",
+      "module": "components/ui",
+      "inbound": 4,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/QuoteCard.tsx",
+      "module": "components/ui",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/Skeleton.tsx",
+      "module": "components/ui",
+      "inbound": 9,
+      "outbound": 0
+    },
+    {
+      "id": "components/ui/Vitals.tsx",
+      "module": "components/ui",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "lib/actions/admin.ts",
+      "module": "lib/actions",
+      "inbound": 3,
+      "outbound": 7
+    },
+    {
+      "id": "lib/actions/auth.ts",
+      "module": "lib/actions",
+      "inbound": 6,
+      "outbound": 8
+    },
+    {
+      "id": "lib/actions/drive.ts",
+      "module": "lib/actions",
+      "inbound": 1,
+      "outbound": 3
+    },
+    {
+      "id": "lib/actions/likes.ts",
+      "module": "lib/actions",
+      "inbound": 1,
+      "outbound": 5
+    },
+    {
+      "id": "lib/actions/messages.ts",
+      "module": "lib/actions",
+      "inbound": 2,
+      "outbound": 6
+    },
+    {
+      "id": "lib/actions/rate-limit.ts",
+      "module": "lib/actions",
+      "inbound": 17,
+      "outbound": 1
+    },
+    {
+      "id": "lib/actions/reports.ts",
+      "module": "lib/actions",
+      "inbound": 1,
+      "outbound": 3
+    },
+    {
+      "id": "lib/actions/resources.ts",
+      "module": "lib/actions",
+      "inbound": 2,
+      "outbound": 9
+    },
+    {
+      "id": "lib/actions/search.ts",
+      "module": "lib/actions",
+      "inbound": 2,
+      "outbound": 5
+    },
+    {
+      "id": "lib/alerts.ts",
+      "module": "lib/alerts.ts",
+      "inbound": 1,
+      "outbound": 2
+    },
+    {
+      "id": "lib/auth.ts",
+      "module": "lib/auth.ts",
+      "inbound": 18,
+      "outbound": 5
+    },
+    {
+      "id": "lib/cleanup.ts",
+      "module": "lib/cleanup.ts",
+      "inbound": 1,
+      "outbound": 2
+    },
+    {
+      "id": "lib/constants.ts",
+      "module": "lib/constants.ts",
+      "inbound": 10,
+      "outbound": 1
+    },
+    {
+      "id": "lib/db/index.ts",
+      "module": "lib/db",
+      "inbound": 29,
+      "outbound": 2
+    },
+    {
+      "id": "lib/db/schema.ts",
+      "module": "lib/db",
+      "inbound": 31,
+      "outbound": 0
+    },
+    {
+      "id": "lib/db/scoped.ts",
+      "module": "lib/db",
+      "inbound": 3,
+      "outbound": 0
+    },
+    {
+      "id": "lib/drive.ts",
+      "module": "lib/drive.ts",
+      "inbound": 8,
+      "outbound": 0
+    },
+    {
+      "id": "lib/email.ts",
+      "module": "lib/email.ts",
+      "inbound": 3,
+      "outbound": 4
+    },
+    {
+      "id": "lib/generated/deploy-version.ts",
+      "module": "lib/generated",
+      "inbound": 5,
+      "outbound": 0
+    },
+    {
+      "id": "lib/ip-block.ts",
+      "module": "lib/ip-block.ts",
+      "inbound": 9,
+      "outbound": 2
+    },
+    {
+      "id": "lib/notify.ts",
+      "module": "lib/notify.ts",
+      "inbound": 1,
+      "outbound": 0
+    },
+    {
+      "id": "lib/password.ts",
+      "module": "lib/password.ts",
+      "inbound": 3,
+      "outbound": 0
+    },
+    {
+      "id": "lib/r2.ts",
+      "module": "lib/r2.ts",
+      "inbound": 4,
+      "outbound": 0
+    },
+    {
+      "id": "lib/toast.ts",
+      "module": "lib/toast.ts",
+      "inbound": 2,
+      "outbound": 0
+    },
+    {
+      "id": "lib/uploads.ts",
+      "module": "lib/uploads.ts",
+      "inbound": 3,
+      "outbound": 0
+    },
+    {
+      "id": "lib/utils.ts",
+      "module": "lib/utils.ts",
+      "inbound": 19,
+      "outbound": 0
+    },
+    {
+      "id": "proxy.ts",
+      "module": "proxy.ts",
+      "inbound": 0,
+      "outbound": 10
+    },
+    {
+      "id": "types/next-auth.d.ts",
+      "module": "types/next-auth.d.ts",
+      "inbound": 0,
+      "outbound": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "app/(home)/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/(home)/page.tsx",
+      "to": "components/resources/ResourceCard.tsx"
+    },
+    {
+      "from": "app/(home)/page.tsx",
+      "to": "components/ui/ContributeCta.tsx"
+    },
+    {
+      "from": "app/(home)/page.tsx",
+      "to": "components/ui/LiveStats.tsx"
+    },
+    {
+      "from": "app/(home)/page.tsx",
+      "to": "components/ui/QuoteCard.tsx"
+    },
+    {
+      "from": "app/(home)/page.tsx",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/(home)/page.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "app/admin/TrafficTab.tsx"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "app/admin/VitalsTab.tsx"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "components/ui/Avatar.tsx"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "components/ui/ConfirmDialog.tsx"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/actions/admin.ts"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/actions/messages.ts"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/admin/TrafficTab.tsx",
+      "to": "lib/actions/admin.ts"
+    },
+    {
+      "from": "app/admin/TrafficTab.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/admin/VitalsTab.tsx",
+      "to": "lib/actions/admin.ts"
+    },
+    {
+      "from": "app/admin/VitalsTab.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/api/admin/message-count/route.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "app/api/admin/message-count/route.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/api/admin/message-count/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/admin/message-count/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/api/admin/message-count/route.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "app/api/analytics/route.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "app/api/analytics/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/analytics/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/api/analytics/route.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "app/api/auth/[...nextauth]/route.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/api/auth/session/route.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "app/api/auth/session/route.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/api/auth/session/route.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "app/api/check-admin/route.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/api/check-admin/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/check-admin/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/api/check-verified/route.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/api/check-verified/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/check-verified/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/api/download/[id]/route.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "app/api/download/[id]/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/download/[id]/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/api/download/[id]/route.ts",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "app/api/download/[id]/route.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "app/api/pdf/[id]/route.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "app/api/pdf/[id]/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/pdf/[id]/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/api/pdf/[id]/route.ts",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "app/api/pdf/[id]/route.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "app/api/upload/route.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "app/api/upload/route.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/api/upload/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/upload/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/api/upload/route.ts",
+      "to": "lib/r2.ts"
+    },
+    {
+      "from": "app/api/upload/route.ts",
+      "to": "lib/uploads.ts"
+    },
+    {
+      "from": "app/api/version/route.ts",
+      "to": "lib/generated/deploy-version.ts"
+    },
+    {
+      "from": "app/api/vitals/route.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "app/api/vitals/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/vitals/route.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "app/api/webhooks/resend/route.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/api/webhooks/resend/route.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/auth/reset-password/page.tsx",
+      "to": "components/ui/PasswordInput.tsx"
+    },
+    {
+      "from": "app/auth/reset-password/page.tsx",
+      "to": "lib/actions/auth.ts"
+    },
+    {
+      "from": "app/auth/reset-password/page.tsx",
+      "to": "lib/password.ts"
+    },
+    {
+      "from": "app/auth/reset-password/page.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/auth/verify-email/page.tsx",
+      "to": "lib/actions/auth.ts"
+    },
+    {
+      "from": "app/auth/verify-email/page.tsx",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "app/browse/BrowseContent.tsx",
+      "to": "components/resources/CardSkeleton.tsx"
+    },
+    {
+      "from": "app/browse/BrowseContent.tsx",
+      "to": "components/resources/ResourceCard.tsx"
+    },
+    {
+      "from": "app/browse/BrowseContent.tsx",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "app/browse/BrowseContent.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/browse/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/browse/page.tsx",
+      "to": "app/browse/BrowseContent.tsx"
+    },
+    {
+      "from": "app/browse/page.tsx",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/browse/page.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/browse/page.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/contact/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/contact/page.tsx",
+      "to": "lib/actions/messages.ts"
+    },
+    {
+      "from": "app/contact/page.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/DeployWatcher.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/IdleMount.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/layout/CookieConsent.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/layout/Footer.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/layout/Navbar.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/layout/OfflineBanner.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/layout/VerificationBanner.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/LazyToaster.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/ServiceWorkerRegister.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/ui/Analytics.tsx"
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/ui/Vitals.tsx"
+    },
+    {
+      "from": "app/login/forgot-password/page.tsx",
+      "to": "lib/actions/auth.ts"
+    },
+    {
+      "from": "app/login/forgot-password/page.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/login/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/login/page.tsx",
+      "to": "components/auth/LoginForm.tsx"
+    },
+    {
+      "from": "app/privacy/page.tsx",
+      "to": "lib/generated/deploy-version.ts"
+    },
+    {
+      "from": "app/profile/DeleteAccount.tsx",
+      "to": "components/ui/PasswordInput.tsx"
+    },
+    {
+      "from": "app/profile/DeleteAccount.tsx",
+      "to": "lib/actions/auth.ts"
+    },
+    {
+      "from": "app/profile/DeleteAccount.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/profile/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/profile/page.tsx",
+      "to": "app/profile/DeleteAccount.tsx"
+    },
+    {
+      "from": "app/profile/page.tsx",
+      "to": "app/profile/ProfileContent.tsx"
+    },
+    {
+      "from": "app/profile/page.tsx",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/profile/page.tsx",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/profile/page.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/profile/ProfileContent.tsx",
+      "to": "components/resources/ResourceCard.tsx"
+    },
+    {
+      "from": "app/profile/ProfileContent.tsx",
+      "to": "components/ui/Avatar.tsx"
+    },
+    {
+      "from": "app/profile/ProfileContent.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/report/page.tsx",
+      "to": "lib/actions/reports.ts"
+    },
+    {
+      "from": "app/report/page.tsx",
+      "to": "lib/actions/search.ts"
+    },
+    {
+      "from": "app/report/page.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/resource/[id]/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "app/resource/[id]/ResourceActions.tsx"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "app/resource/[id]/ResourcePreview.tsx"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "components/resources/ResourceCard.tsx"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/resource/[id]/page.tsx",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "app/resource/[id]/ResourceActions.tsx",
+      "to": "app/resource/[id]/ResourcePreview.tsx"
+    },
+    {
+      "from": "app/resource/[id]/ResourceActions.tsx",
+      "to": "components/ui/ConfirmDialog.tsx"
+    },
+    {
+      "from": "app/resource/[id]/ResourceActions.tsx",
+      "to": "lib/actions/likes.ts"
+    },
+    {
+      "from": "app/resource/[id]/ResourceActions.tsx",
+      "to": "lib/actions/resources.ts"
+    },
+    {
+      "from": "app/resource/[id]/ResourceActions.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/resource/[id]/ResourcePreview.tsx",
+      "to": "app/resource/[id]/PdfViewer.tsx"
+    },
+    {
+      "from": "app/resource/[id]/ResourcePreview.tsx",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "app/resource/[id]/ResourcePreview.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "app/signup/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/signup/page.tsx",
+      "to": "components/auth/SignupForm.tsx"
+    },
+    {
+      "from": "app/sitemap.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "app/sitemap.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "app/terms/page.tsx",
+      "to": "lib/generated/deploy-version.ts"
+    },
+    {
+      "from": "app/upload/loading.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "app/upload/page.tsx",
+      "to": "app/upload/UploadForm.tsx"
+    },
+    {
+      "from": "app/upload/UploadForm.tsx",
+      "to": "lib/actions/drive.ts"
+    },
+    {
+      "from": "app/upload/UploadForm.tsx",
+      "to": "lib/actions/resources.ts"
+    },
+    {
+      "from": "app/upload/UploadForm.tsx",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "app/upload/UploadForm.tsx",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "app/upload/UploadForm.tsx",
+      "to": "lib/notify.ts"
+    },
+    {
+      "from": "app/upload/UploadForm.tsx",
+      "to": "lib/uploads.ts"
+    },
+    {
+      "from": "app/upload/UploadForm.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "components/auth/LoginForm.tsx",
+      "to": "components/ui/PasswordInput.tsx"
+    },
+    {
+      "from": "components/auth/LoginForm.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "components/auth/SignupForm.tsx",
+      "to": "components/ui/PasswordInput.tsx"
+    },
+    {
+      "from": "components/auth/SignupForm.tsx",
+      "to": "lib/actions/auth.ts"
+    },
+    {
+      "from": "components/auth/SignupForm.tsx",
+      "to": "lib/password.ts"
+    },
+    {
+      "from": "components/auth/SignupForm.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "components/DeployWatcher.tsx",
+      "to": "lib/generated/deploy-version.ts"
+    },
+    {
+      "from": "components/layout/Navbar.tsx",
+      "to": "components/layout/AdminLink.tsx"
+    },
+    {
+      "from": "components/layout/Navbar.tsx",
+      "to": "components/layout/NavbarAuth.tsx"
+    },
+    {
+      "from": "components/layout/Navbar.tsx",
+      "to": "components/layout/NavbarSearch.tsx"
+    },
+    {
+      "from": "components/layout/Navbar.tsx",
+      "to": "components/layout/SearchPopup.tsx"
+    },
+    {
+      "from": "components/layout/NavbarAuth.tsx",
+      "to": "components/ui/Avatar.tsx"
+    },
+    {
+      "from": "components/layout/OfflineBanner.tsx",
+      "to": "lib/toast.ts"
+    },
+    {
+      "from": "components/layout/SearchPopup.tsx",
+      "to": "lib/actions/search.ts"
+    },
+    {
+      "from": "components/layout/SearchPopup.tsx",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "components/layout/VerificationBanner.tsx",
+      "to": "lib/actions/auth.ts"
+    },
+    {
+      "from": "components/layout/VerificationBanner.tsx",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "components/layout/VerificationBanner.tsx",
+      "to": "lib/toast.ts"
+    },
+    {
+      "from": "components/resources/CardSkeleton.tsx",
+      "to": "components/ui/Skeleton.tsx"
+    },
+    {
+      "from": "components/resources/ResourceCard.tsx",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "components/resources/ResourceCard.tsx",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "components/resources/ResourceCard.tsx",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "components/ui/ContributeCta.tsx",
+      "to": "components/layout/NavbarAuth.tsx"
+    },
+    {
+      "from": "lib/actions/admin.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/admin.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/admin.ts",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "lib/actions/admin.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/actions/admin.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/actions/admin.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "lib/actions/admin.ts",
+      "to": "lib/r2.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/email.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/password.ts"
+    },
+    {
+      "from": "lib/actions/auth.ts",
+      "to": "lib/r2.ts"
+    },
+    {
+      "from": "lib/actions/drive.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/drive.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/drive.ts",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "lib/actions/likes.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/likes.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/likes.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/actions/likes.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/actions/likes.ts",
+      "to": "lib/db/scoped.ts"
+    },
+    {
+      "from": "lib/actions/messages.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/messages.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/messages.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/actions/messages.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/actions/messages.ts",
+      "to": "lib/email.ts"
+    },
+    {
+      "from": "lib/actions/messages.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "lib/actions/rate-limit.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/actions/reports.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/reports.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/reports.ts",
+      "to": "lib/db/scoped.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/db/scoped.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/drive.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/r2.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/uploads.ts"
+    },
+    {
+      "from": "lib/actions/resources.ts",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "lib/actions/search.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/actions/search.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "lib/actions/search.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/actions/search.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/actions/search.ts",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "lib/alerts.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/alerts.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/auth.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/auth.ts",
+      "to": "lib/constants.ts"
+    },
+    {
+      "from": "lib/auth.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/auth.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/auth.ts",
+      "to": "lib/email.ts"
+    },
+    {
+      "from": "lib/cleanup.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/cleanup.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/constants.ts",
+      "to": "lib/generated/deploy-version.ts"
+    },
+    {
+      "from": "lib/db/index.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/db/index.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/email.ts",
+      "to": "lib/actions/rate-limit.ts"
+    },
+    {
+      "from": "lib/email.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/email.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "lib/email.ts",
+      "to": "lib/utils.ts"
+    },
+    {
+      "from": "lib/ip-block.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "lib/ip-block.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "proxy.ts",
+      "to": "lib/alerts.ts"
+    },
+    {
+      "from": "proxy.ts",
+      "to": "lib/auth.ts"
+    },
+    {
+      "from": "proxy.ts",
+      "to": "lib/cleanup.ts"
+    },
+    {
+      "from": "proxy.ts",
+      "to": "lib/db/index.ts"
+    },
+    {
+      "from": "proxy.ts",
+      "to": "lib/db/schema.ts"
+    },
+    {
+      "from": "proxy.ts",
+      "to": "lib/ip-block.ts"
+    },
+    {
+      "from": "proxy.ts",
+      "to": "lib/utils.ts"
+    }
+  ]
+}

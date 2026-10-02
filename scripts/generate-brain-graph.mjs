@@ -1,0 +1,157 @@
+// Code-graph generator for Student Hub.
+//
+// Scans the project's own TypeScript/TSX source, resolves every local import
+// (`@/…`, `./…`, `../…`), and emits two artifacts consumed by brain.md:
+//
+//   brain.graph.json  – machine-readable file-level graph: nodes (files) and
+//                       edges (import relations) + a few stats. Feed this to
+//                       any tool (Graphviz, Neo4j, an LLM) that needs the
+//                       dependency structure.
+//   brain.graph.mmd   – a Mermaid directory-level diagram (app/components/lib
+//                       → …). File-level Mermaid for ~150 files is an
+//                       unreadable hairball, so the diagram aggregates to
+//                       module (directory) granularity; the JSON keeps the
+//                       full detail.
+//
+// Run with: npm run brain   (or: node scripts/generate-brain-graph.mjs)
+//
+// No dependencies — plain Node ESM, fs + path only.
+
+import { readdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
+import { join, dirname, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+// Directories that hold project source (scanned) vs. everything else (skipped).
+const SOURCE_ROOTS = ["app", "components", "lib", "types", "proxy.ts"];
+const SKIP_DIRS = new Set([
+  "node_modules",
+  ".next",
+  ".git",
+  ".kilo",
+  ".vercel",
+  ".vscode",
+  "public",
+  "drizzle",
+  "scripts",
+]);
+
+const EXTENSIONS = ["", ".ts", ".tsx", ".mts", ".js", ".jsx", "/index.ts", "/index.tsx"];
+
+/** Recursively collect every .ts/.tsx/.mts file under a source root. */
+function collectFiles(entry, out = []) {
+  const abs = join(ROOT, entry);
+  let stat;
+  try {
+    stat = statSync(abs);
+  } catch {
+    return out;
+  }
+  if (stat.isFile()) {
+    if (/\.(ts|tsx|mts)$/.test(entry)) out.push(entry.split(sep).join("/"));
+    return out;
+  }
+  for (const name of readdirSync(abs)) {
+    if (SKIP_DIRS.has(name) || name.startsWith(".")) continue;
+    const childRel = join(entry, name);
+    const childStat = statSync(join(ROOT, childRel));
+    if (childStat.isDirectory()) collectFiles(childRel, out);
+    else if (/\.(ts|tsx|mts)$/.test(name)) out.push(childRel.split(sep).join("/"));
+  }
+  return out;
+}
+
+/** Resolve an import specifier to a project-relative file, or null if external. */
+function resolveImport(spec, fromFile) {
+  let base;
+  if (spec.startsWith("@/")) base = spec.slice(2);
+  else if (spec.startsWith("./") || spec.startsWith("../"))
+    base = relative(ROOT, resolve(ROOT, dirname(fromFile), spec));
+  else return null; // bare package import — external
+
+  base = base.split(sep).join("/");
+  for (const ext of EXTENSIONS) {
+    const candidate = base + ext;
+    try {
+      if (statSync(join(ROOT, candidate)).isFile()) return candidate;
+    } catch {
+      /* keep trying */
+    }
+  }
+  return null;
+}
+
+const IMPORT_RE = /(?:import|export)\s[^;]*?from\s+["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']\s*\)/g;
+
+const files = [];
+for (const root of SOURCE_ROOTS) collectFiles(root, files);
+const fileSet = new Set(files);
+
+const edges = [];
+for (const file of files) {
+  const source = readFileSync(join(ROOT, file), "utf8");
+  let match;
+  while ((match = IMPORT_RE.exec(source)) !== null) {
+    const spec = match[1] || match[2];
+    if (!spec) continue;
+    const target = resolveImport(spec, file);
+    if (target && fileSet.has(target)) edges.push({ from: file, to: target });
+  }
+}
+
+// ----- Directory-level aggregation for the Mermaid diagram -----
+const dirOf = (file) => {
+  const parts = file.split("/");
+  return parts.length > 1 ? parts.slice(0, 2).join("/") : parts[0];
+};
+const dirEdges = new Map();
+for (const { from, to } of edges) {
+  const a = dirOf(from);
+  const b = dirOf(to);
+  if (a === b) continue;
+  dirEdges.set(`${a}→${b}`, (dirEdges.get(`${a}→${b}`) ?? 0) + 1);
+}
+
+const json = {
+  generatedBy: "scripts/generate-brain-graph.mjs",
+  generatedAt: new Date().toISOString(),
+  root: ".",
+  stats: {
+    files: files.length,
+    edges: edges.length,
+    modules: new Set(files.map(dirOf)).size,
+  },
+  nodes: files
+    .map((file) => ({
+      id: file,
+      module: dirOf(file),
+      inbound: edges.filter((e) => e.to === file).length,
+      outbound: edges.filter((e) => e.from === file).length,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id)),
+  edges: edges
+    .map((e) => `${e.from}|${e.to}`)
+    .filter((v, i, arr) => arr.indexOf(v) === i) // de-dupe
+    .map((v) => {
+      const [from, to] = v.split("|");
+      return { from, to };
+    })
+    .sort((a, b) => (a.from + a.to).localeCompare(b.from + b.to)),
+};
+
+writeFileSync(join(ROOT, "brain.graph.json"), JSON.stringify(json, null, 2) + "\n");
+
+const safeId = (s) => s.replace(/[^a-zA-Z0-9]/g, "_");
+const lines = ["%% Auto-generated by scripts/generate-brain-graph.mjs — do not edit by hand.", "graph LR"];
+const moduleSet = [...new Set(files.map(dirOf))].sort();
+for (const m of moduleSet) lines.push(`  ${safeId(m)}["${m}"]`);
+for (const [key, count] of [...dirEdges.entries()].sort()) {
+  const [a, b] = key.split("→");
+  lines.push(`  ${safeId(a)} -->|${count}| ${safeId(b)}`);
+}
+writeFileSync(join(ROOT, "brain.graph.mmd"), lines.join("\n") + "\n");
+
+console.log(
+  `brain: ${json.stats.files} files, ${json.stats.edges} edges, ${json.stats.modules} modules → brain.graph.json + brain.graph.mmd`
+);

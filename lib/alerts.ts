@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { emailEvents, adminEmails } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
-// ponytail: Resend is dynamically imported in the one place it sends, so the
+// Resend is dynamically imported in the one place it sends, so the
 // middleware bundle's cold start (every request's TTFB) doesn't parse it.
 import type { Resend as ResendType } from "resend";
 
@@ -101,7 +101,9 @@ export async function notifyAutoBlock(
   const body = [
     `An IP was automatically blocked by the proxy for attack behavior.`,
     ``,
-    `IP:      ${ip}`,`    Reason:  ${reason}`,`    Time:    ${new Date().toISOString()}`,
+    `IP:      ${ip}`,
+    `Reason:  ${reason}`,
+    `Time:    ${new Date().toISOString()}`,
     ``,
     `If this is a false positive (e.g. a shared campus NAT), unblock it in`,
     `Admin → Security. Repeated lockouts from one campus = revisit the heuristic.`,

@@ -15,6 +15,14 @@ const eslintConfig = defineConfig([
     // Standalone plain-JS service worker: never imported by the app, and the
     // Next/TS parser can't handle its file layout (parsing error at 182:0).
     "public/sw.js",
+    // Vendored minified pdf.js worker: content-fixed per pdfjs-dist release,
+    // never imported by app code, and linting it emits thousands of warnings
+    // that drown out real findings.
+    "public/pdfjs/**",
+    // Tool/VCS/editor scratch dirs — never project source.
+    ".kilo/**",
+    ".vercel/**",
+    ".vscode/**",
   ]),
 ]);
 

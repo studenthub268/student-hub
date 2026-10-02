@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { webVitals } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { checkRateLimit } from "@/lib/actions/rate-limit";
