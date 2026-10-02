@@ -109,33 +109,19 @@ export default {
         headers: securityHeaders,
       },
       {
-        source: "/api/(.*)",
+        // No-store for every API route EXCEPT the PDF byte proxy: the route
+        // handler sets its own per-status caching there (cacheable successes,
+        // uncachable errors). Config headers beat route-set headers in Next,
+        // so a blanket /api/(.*) rule here would have stamped no-store over
+        // the proxy's cacheable responses — forcing every resource-page view
+        // to re-download the full PDF body. The named-param regex skips any
+        // path whose first segment is "pdf" (i.e. /api/pdf/<id> only).
+        source: "/api/:path((?!pdf).*)",
         headers: [
           ...securityHeaders,
           {
             key: "Cache-Control",
             value: "no-store, no-cache, must-revalidate",
-          },
-        ],
-      },
-      {
-        // MUST come after the /api/(.*) rule: with multiple matching rules the
-        // later one wins, and the blanket no-store above was overriding the
-        // PDF proxy's own cacheable Cache-Control — forcing every resource-page
-        // view to re-download the full PDF body (Range-cached chunks never had
-        // a chance either). Config headers beat route-set headers in Next, so
-        // the cacheable value lives HERE, not only in the route handler.
-        // Vary: Range keeps range-cached chunks correct per browser.
-        source: "/api/pdf/:id",
-        headers: [
-          ...securityHeaders,
-          {
-            key: "Cache-Control",
-            value: "public, max-age=86400",
-          },
-          {
-            key: "Vary",
-            value: "Range",
           },
         ],
       },

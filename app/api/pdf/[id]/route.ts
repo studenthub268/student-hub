@@ -140,9 +140,17 @@ export async function GET(
     // to the CDN edge — the second student to open a past paper in a
     // region gets bytes from the POP, not a cold origin fetch.
     "Cache-Control": "public, max-age=86400, immutable",
+    // Only successful bodies carry the cache headers above — error branches
+    // below return without them, so a 429/404/502 is never cached (the old
+    // config-level rule stamped public max-age=86400 onto EVERY response
+    // from this path, including rate-limit errors: one 429 and the browser
+    // served "Couldn't load the PDF" for the next day).
     // A stable validator independent of upstream quirks: the resource id
     // IS the content version. Lets conditional revalidates work at the edge.
     ETag: `"pdf-${id}"`,
+    // Range-cached chunks are per-range: without this, a cached full-body
+    // response could be (incorrectly) reused to answer a Range request.
+    Vary: "Range",
   };
   if (isPartial) {
     const contentRange = upstream.headers.get("content-range");

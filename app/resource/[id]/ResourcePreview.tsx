@@ -10,7 +10,17 @@ import { isDriveHosted, DRIVE_FILE_TYPE, DRIVE_FOLDER_TYPE, driveEmbeddedFolderU
 
 // Custom PDF viewer, loaded only when a PDF is actually opened — image
 // pages never download pdf.js (~400 KB gzipped).
-const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
+const loadPdfViewer = () => import("./PdfViewer");
+/* Warm the viewer chunk at module-evaluation time (i.e. as soon as the
+   route's JS arrives) rather than waiting for hydration to commit and the
+   inline viewer to mount. On a PDF page the chunk is needed within a
+   moment either way; starting it here overlaps its download with the rest
+   of the route JS instead of adding it to the serial chain afterwards.
+   webpack/turbopack dedupe the import, so the dynamic() below reuses this
+   promise. Non-PDF pages never call the loader, so they still download
+   nothing extra. */
+if (typeof window !== "undefined") loadPdfViewer();
+const PdfViewer = dynamic(loadPdfViewer, { ssr: false });
 
 /**
  * The download filename is the resource title, which has no extension —
@@ -152,6 +162,21 @@ export default function ResourcePreview({
 
   return (
     <>
+      {/* Warm the two heaviest PDF downloads from the server HTML itself —
+          React hoists these into <head> during SSR, so the browser starts
+          them while it is still parsing the page, in parallel with the JS
+          chunks, instead of serially behind hydration → pdf.js chunk →
+          worker. The worker (1.4 MB raw; brotli on Vercel) is the single
+          largest asset on the page, and the PDF bytes are what page 1 is
+          waiting for; both are immutable-cached, so pdf.js's own requests
+          moments later are served from the HTTP cache (repeat opens hit
+          the browser cache with no network at all). */}
+      {isPDF && (
+        <>
+          <link rel="preload" href={`/api/pdf/${resourceId}`} as="fetch" />
+          <link rel="preload" href="/pdfjs/pdf.worker.min.mjs" as="fetch" />
+        </>
+      )}
       <div
         id="preview-stage"
         className={`overflow-hidden rounded-[2rem] border-2 border-ink bg-surface shadow-hard ${

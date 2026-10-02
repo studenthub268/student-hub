@@ -203,10 +203,13 @@ export async function proxy(request: NextRequest) {
   );
 
   // Same hint as above: signed-in responses must not be shared/cached by
-  // intermediaries. A guest with a leftover cookie getting one extra private
-  // header is harmless; the reverse (missing it) is not, and the real
-  // rendering layer re-verifies the session itself.
-  if (hasSessionCookie) {
+  // intermediaries — EXCEPT the PDF byte proxy, whose route handler sets
+  // its own per-status caching (public+immutable successes keyed by
+  // resource id — no user data in them; errors stay uncachable). Header
+  // precedence here beats route-set headers, so skipping the override is
+  // what lets signed-in students get edge/browser-cached PDF bytes like
+  // guests do instead of re-downloading every open.
+  if (hasSessionCookie && !pathname.startsWith("/api/pdf/")) {
     response.headers.set(
       "Cache-Control",
       "private, no-cache, no-store, must-revalidate"
