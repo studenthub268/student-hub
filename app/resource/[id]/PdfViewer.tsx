@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RotateCcw,
+  X,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
+  FileText,
+} from "lucide-react";
 
 /**
  * Custom PDF viewer — renders pages onto canvas with pdf.js, themed to match
@@ -11,7 +22,15 @@ import { ChevronLeft, ChevronRight, Loader2, RotateCcw, X, ZoomIn, ZoomOut } fro
  *  - "inline": rendered inside the resource preview stage. Shows the first
  *    page immediately and scrolls through the rest — reading starts with
  *    zero clicks, like the image preview.
- *  - "fullscreen": fixed overlay with a toolbar (used by the expand button).
+ *  - "fullscreen": fixed overlay with a two-row toolbar (used by the expand
+ *    button). Row 1 = page indicator (editable jump) + close; Row 2 = zoom
+ *    controls + page nav + fullscreen toggle.
+ *
+ * Toolbar redesign: the old single-row toolbar crammed page jump, zoom, nav
+ * and close into one row that wrapped badly on mobile and hid the page number
+ * in a tiny input. The new two-row layout makes the page number large and
+ * clearly editable, gives every control a comfortable tap target, and adds a
+ * dedicated fullscreen maximize/restore toggle.
  *
  * pdf.js is dynamically imported on first mount, so the ~400 KB library is
  * only downloaded by visitors who actually view a PDF. Bytes come from
@@ -31,11 +50,104 @@ interface PdfViewerProps {
   onClose?: () => void;
 }
 
-export default function PdfViewer({ resourceId, title, variant = "fullscreen", onClose }: PdfViewerProps) {
+/** Thick ink ring for toolbar buttons — matches the site's border-2 ink
+  aesthetic. 44px+ tap target (h-10 ≈ 40px + padding), grows to h-11 on sm+. */
+const tbBtn =
+  "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-ink bg-surface text-foreground transition-all hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed sm:h-11 sm:w-11";
+
+/** Close button on the fullscreen toolbar — ink toolbar, so a filled-ink
+  button with background text (the canonical light-on-ink pattern). */
+const closeBtn =
+  "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-ink bg-ink text-background transition-all hover:bg-ink hover:shadow-hard-sm disabled:opacity-40 sm:h-11 sm:w-11";
+
+/** A single numeric page-jump input: type a number, Enter jumps, Escape
+  cancels. Clamped to [1, numPages]. Large enough to read and tap on mobile. */
+function PageJumpInput({
+  page,
+  numPages,
+  onJump,
+}: {
+  page: number;
+  numPages: number;
+  onJump: (n: number) => void;
+}) {
+  const [text, setText] = useState<string>(String(page));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync the input when the page changes from outside (scroll, arrow keys).
+  useEffect(() => {
+    setText(String(page));
+  }, [page]);
+
+  const commit = useCallback(() => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const n = parseInt(trimmed, 10);
+    if (Number.isFinite(n)) onJump(n); // jumpToPage clamps to [1, numPages]
+  }, [text, onJump]);
+
+  const clampToWidth = (v: string) => v.replace(/[^0-9]/g, "").slice(0, 4);
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <FileText size={14} className="shrink-0 text-foreground/60" aria-hidden />
+      <span className="shrink-0 text-xs font-bold uppercase tracking-widest text-foreground/60">
+        Page
+      </span>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        aria-label="Current page number — edit to jump"
+        value={text}
+        onChange={(e) => setText(clampToWidth(e.target.value))}
+        onFocus={(e) => e.target.select()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+          } else if (e.key === "Escape") {
+            setText(String(page));
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        onBlur={() => {
+          const n = parseInt(text, 10);
+          if (Number.isFinite(n)) onJump(n);
+          setText(String(page));
+        }}
+        disabled={numPages === 0}
+        className="
+          w-12 sm:w-14 flex-shrink-0 h-8 rounded-md border-2 border-ink
+          bg-surface text-center text-sm font-bold text-foreground
+          shadow-hard-sm focus:outline-none focus:border-accent focus:ring-2
+          focus:ring-accent/30 transition-all disabled:opacity-50
+        "
+      />
+      <span className="shrink-0 text-xs font-bold text-foreground/40" aria-hidden>
+        of
+      </span>
+      <span
+        className="shrink-0 min-w-[1.6rem] text-center text-sm font-bold tabular-nums text-foreground/70"
+        aria-live="polite"
+      >
+        {numPages || "…"}
+      </span>
+    </div>
+  );
+}
+
+export default function PdfViewer({
+  resourceId,
+  title,
+  variant = "fullscreen",
+  onClose,
+}: PdfViewerProps) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1); // 1 = fit width
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -192,7 +304,10 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
         el.dataset.rendered = String(zoom);
         const h = (targetW * viewport1.height) / viewport1.width;
         el.style.height = `${Math.floor(h)}px`;
-        const task = pdfPage.render({ canvasContext: canvas.getContext("2d")!, viewport });
+        const task = pdfPage.render({
+          canvasContext: canvas.getContext("2d")!,
+          viewport,
+        });
         task.promise.catch(() => {}); // cancelled renders reject — ignore
       } catch {
         // render race lost or doc destroyed — next pass re-renders
@@ -227,7 +342,9 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
     if (state !== "ready" || !scrollRef.current) return;
     const scroller = scrollRef.current;
     const onScroll = () => {
-      const els = [...(canvasWrapRef.current?.querySelectorAll<HTMLElement>("[data-page]") ?? [])];
+      const els = [
+        ...(canvasWrapRef.current?.querySelectorAll<HTMLElement>("[data-page]") ?? []),
+      ];
       let current = 1;
       for (const el of els) {
         if (el.offsetTop - scroller.scrollTop <= scroller.clientHeight / 2) {
@@ -240,13 +357,22 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
     return () => scroller.removeEventListener("scroll", onScroll);
   }, [state]);
 
-  const jumpToPage = useCallback((n: number) => {
-    const target = Math.min(numPages, Math.max(1, n));
-    setPage(target);
-    canvasWrapRef.current
-      ?.querySelector(`[data-page="${target}"]`)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [numPages]);
+  const jumpToPage = useCallback(
+    (n: number) => {
+      const target = Math.min(numPages, Math.max(1, n));
+      setPage(target);
+      canvasWrapRef.current
+        ?.querySelector(`[data-page="${target}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [numPages]
+  );
+
+  /* Fullscreen toggle — Enter/Exit fullscreen. The maximize/restore button
+     is on the bottom toolbar row. Esc also closes (fullscreen only). */
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => !prev);
+  }, []);
 
   /* Fullscreen only: Esc closes, page scroll locks, arrows page.
      Key events originating inside form fields are ignored so the caret
@@ -255,7 +381,13 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
     if (variant !== "fullscreen") return;
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      )
+        return;
       if (e.key === "Escape") onClose?.();
       if (e.key === "ArrowRight" || e.key === "PageDown") jumpToPage(page + 1);
       if (e.key === "ArrowLeft" || e.key === "PageUp") jumpToPage(page - 1);
@@ -268,7 +400,8 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
     };
   }, [variant, page, jumpToPage, onClose]);
 
-  const applyZoom = (next: number) => setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next)));
+  const applyZoom = (next: number) =>
+    setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next)));
 
   /* Ctrl/Cmd+wheel zoom. */
   const onWheel = (e: React.WheelEvent) => {
@@ -277,48 +410,95 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
     applyZoom(zoom * (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP));
   };
 
-  const ctrlBtn =
-    "inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-surface text-foreground transition-all hover:bg-surface-muted disabled:opacity-40 disabled:hover:bg-transparent";
-
+  /** Zoom controls: out / in / reset. */
   const zoomControls = (
     <>
-      <button onClick={() => applyZoom(zoom / ZOOM_STEP)} disabled={zoom <= ZOOM_MIN || state !== "ready"} className={ctrlBtn} aria-label="Zoom out">
-        <ZoomOut size={16} strokeWidth={2.25} aria-hidden />
+      <button
+        onClick={() => applyZoom(zoom / ZOOM_STEP)}
+        disabled={zoom <= ZOOM_MIN || state !== "ready"}
+        className={tbBtn}
+        aria-label="Zoom out"
+      >
+        <ZoomOut size={18} strokeWidth={2.25} aria-hidden />
       </button>
-      <button onClick={() => applyZoom(zoom * ZOOM_STEP)} disabled={zoom >= ZOOM_MAX || state !== "ready"} className={ctrlBtn} aria-label="Zoom in">
-        <ZoomIn size={16} strokeWidth={2.25} aria-hidden />
+      <button
+        onClick={() => applyZoom(zoom * ZOOM_STEP)}
+        disabled={zoom >= ZOOM_MAX || state !== "ready"}
+        className={tbBtn}
+        aria-label="Zoom in"
+      >
+        <ZoomIn size={18} strokeWidth={2.25} aria-hidden />
       </button>
-      <button onClick={() => applyZoom(1)} disabled={zoom === 1 || state !== "ready"} className={ctrlBtn} aria-label="Reset zoom to fit width">
-        <RotateCcw size={15} strokeWidth={2.25} aria-hidden />
+      <button
+        onClick={() => applyZoom(1)}
+        disabled={zoom === 1 || state !== "ready"}
+        className={tbBtn}
+        aria-label="Reset zoom to fit width"
+      >
+        <RotateCcw size={16} strokeWidth={2.25} aria-hidden />
       </button>
     </>
   );
 
-  const pager = (
+  /** Page nav: previous / next. */
+  const pageNav = (
     <>
-      <button onClick={() => jumpToPage(page - 1)} disabled={page <= 1} className={ctrlBtn} aria-label="Previous page">
-        <ChevronLeft size={16} strokeWidth={2.25} aria-hidden />
+      <button
+        onClick={() => jumpToPage(page - 1)}
+        disabled={page <= 1}
+        className={tbBtn}
+        aria-label="Previous page"
+      >
+        <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
       </button>
-      <PageJump page={page} numPages={numPages} onJump={jumpToPage} />
-      <button onClick={() => jumpToPage(page + 1)} disabled={page >= numPages} className={ctrlBtn} aria-label="Next page">
-        <ChevronRight size={16} strokeWidth={2.25} aria-hidden />
+      <button
+        onClick={() => jumpToPage(page + 1)}
+        disabled={page >= numPages}
+        className={tbBtn}
+        aria-label="Next page"
+      >
+        <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
       </button>
     </>
   );
 
-  /* ---------- Inline variant: floats above the pages, sticky at the top
-     of the scroller. ---------- */
+  /** Fullscreen toggle: maximize ↔ restore. */
+  const fullscreenToggle = (
+    <button
+      onClick={toggleFullscreen}
+      className={tbBtn}
+      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+      title={isFullscreen ? "Exit fullscreen (Esc)" : "Enter fullscreen"}
+    >
+      {isFullscreen ? (
+        <Minimize2 size={18} strokeWidth={2.25} aria-hidden />
+      ) : (
+        <Maximize2 size={18} strokeWidth={2.25} aria-hidden />
+      )}
+    </button>
+  );
+
+  /* ---------- Inline variant: two-row toolbar floating above the pages. ---------- */
   if (variant === "inline") {
     return (
-      <div className="relative flex h-full w-full flex-col" aria-label={`PDF reader — ${title}`}>
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center"
-          aria-hidden
-        >
-          <div className="pointer-events-auto mt-3 flex items-center gap-1.5 rounded-full border-2 border-ink bg-surface/95 px-2.5 py-1.5 shadow-hard-sm backdrop-blur">
+      <div
+        className="relative flex h-full w-full flex-col"
+        aria-label={`PDF reader — ${title}`}
+      >
+        {/* Toolbar — Row 1: page indicator; Row 2: zoom + nav. Sticky at top
+            of the scroller so it floats while reading. */}
+        <div className="flex shrink-0 flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-2 rounded-2xl border-2 border-ink bg-surface/95 px-3 py-2.5 shadow-hard-sm backdrop-blur sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:shadow-none z-10">
+          {/* Row 1: Page indicator — large, clearly editable, always visible. */}
+          <div className="flex items-center justify-center sm:justify-start gap-2 py-1.5">
+            <PageJumpInput page={page} numPages={numPages} onJump={jumpToPage} />
+          </div>
+          {/* Row 2: Zoom controls + page nav. Hidden on mobile inline (the
+              stage is small and the page number is the priority); shown on
+              sm+ where there's room. */}
+          <div className="hidden sm:flex items-center gap-1.5">
             {zoomControls}
             <span className="mx-0.5 h-5 w-px bg-line-strong" aria-hidden />
-            {pager}
+            {pageNav}
           </div>
         </div>
 
@@ -328,7 +508,9 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
               <Loader2 className="h-7 w-7 animate-spin text-foreground/60" aria-hidden />
               <p className="text-sm font-bold text-foreground/60">Loading PDF…</p>
               {progressLabel && (
-                <p className="text-xs font-medium tabular-nums text-foreground/40">{progressLabel}</p>
+                <p className="text-xs font-medium tabular-nums text-foreground/40">
+                  {progressLabel}
+                </p>
               )}
             </div>
           )}
@@ -336,7 +518,8 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
             <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-2 px-6 text-center">
               <p className="text-lg font-bold text-foreground">Couldn&apos;t load the PDF</p>
               <p className="text-sm font-medium text-foreground/60">
-                The file may be temporarily unavailable — try again in a moment, or use Download below.
+                The file may be temporarily unavailable — try again in a moment, or use
+                Download below.
               </p>
             </div>
           )}
@@ -359,7 +542,7 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
     );
   }
 
-  /* ---------- Fullscreen variant. ---------- */
+  /* ---------- Fullscreen variant: two-row toolbar + page area. ---------- */
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col bg-ink/95 p-2 sm:p-4"
@@ -367,18 +550,38 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
       aria-modal="true"
       aria-label={`PDF viewer — ${title}`}
     >
-      {/* Toolbar */}
-      <div className="flex shrink-0 items-center justify-between gap-2 rounded-2xl border-2 border-ink bg-surface px-3 py-2 shadow-hard-sm sm:px-4">
-        <span className="min-w-0 truncate text-sm font-bold text-foreground">{title}</span>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          {zoomControls}
-          <span className="mx-0.5 h-5 w-px bg-line-strong" aria-hidden />
-          {pager}
-          <span className="mx-0.5 hidden h-5 w-px bg-line-strong sm:block" aria-hidden />
-          <button onClick={onClose} className={`${ctrlBtn} border-background bg-ink on-ink hover:bg-ink`} aria-label="Close viewer">
-            <X size={16} strokeWidth={2.25} aria-hidden />
+      {/* Toolbar — two rows: Row 1 = page indicator (left) + close (right);
+          Row 2 = zoom controls + page nav + fullscreen toggle (centered). */}
+      <div className="flex shrink-0 flex-col gap-2 rounded-2xl border-2 border-ink bg-surface px-3 py-2.5 sm:px-4 shadow-hard-sm z-20">
+        {/* Row 1: Page indicator (left) + close button (right). */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="min-w-0 truncate text-sm font-bold text-foreground">
+              {title}
+            </span>
+            <span className="mx-0.5 h-5 w-px bg-line-strong hidden sm:inline" aria-hidden />
+            <PageJumpInput page={page} numPages={numPages} onJump={jumpToPage} />
+          </div>
+          <button
+            onClick={onClose}
+            className={closeBtn}
+            aria-label="Close viewer"
+          >
+            <X size={18} strokeWidth={2.25} aria-hidden />
           </button>
+        </div>
+
+        {/* Row 2: Zoom controls (left) + page nav (center) + fullscreen toggle (right). */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            {zoomControls}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {pageNav}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {fullscreenToggle}
+          </div>
         </div>
       </div>
 
@@ -389,7 +592,9 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
             <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
             <p className="text-sm font-bold">Loading PDF…</p>
             {progressLabel && (
-              <p className="text-xs font-medium tabular-nums opacity-60">{progressLabel}</p>
+              <p className="text-xs font-medium tabular-nums opacity-60">
+                {progressLabel}
+              </p>
             )}
           </div>
         )}
@@ -397,12 +602,13 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
           <div className="flex h-full flex-col items-center justify-center gap-3 text-background">
             <p className="text-lg font-bold">Couldn&apos;t load the PDF</p>
             <p className="max-w-xs text-center text-sm font-medium opacity-70">
-              The file may be temporarily unavailable — try again in a moment, or use Download instead.
+              The file may be temporarily unavailable — try again in a moment, or use
+              Download instead.
             </p>
           </div>
         )}
         {state === "ready" && (
-          <div ref={canvasWrapRef} className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 p-4">
+          <div ref={canvasWrapRef} className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 p-4">
             {Array.from({ length: numPages }, (_, i) => (
               <div
                 key={i}
@@ -414,66 +620,5 @@ export default function PdfViewer({ resourceId, title, variant = "fullscreen", o
         )}
       </div>
     </div>
-  );
-}
-
-/**
- * The page indicator as an editable jump field: shows "page / total" like
- * before, but the current page is an input — type a number, press Enter and
- * the viewer scrolls straight to that page (past exam papers are often
- * dozens of pages; chevron-walking to page 37 is not viable on a phone).
- *
- * Local text state so typing "3" then "7" doesn't jump mid-typing; Enter
- * commits, blur/Escape revert to the live page. The input re-syncs when the
- * page changes underneath it (scrolling, arrow keys) via the keyed value —
- * clamped silently to [1, numPages] so "999" lands on the last page.
- */
-function PageJump({
-  page,
-  numPages,
-  onJump,
-}: {
-  page: number;
-  numPages: number;
-  onJump: (n: number) => void;
-}) {
-  const [text, setText] = useState<string | null>(null);
-  const shown = text ?? String(page);
-  const commit = () => {
-    if (text === null) return;
-    const n = parseInt(text, 10);
-    setText(null);
-    if (Number.isFinite(n)) onJump(n); // jumpToPage clamps
-  };
-
-  return (
-    <span className="flex items-center gap-0.5 text-xs font-bold tabular-nums text-foreground">
-      <input
-        type="text"
-        inputMode="numeric"
-        aria-label="Jump to page"
-        value={shown}
-        onChange={(e) => {
-          const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
-          setText(v);
-        }}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            commit();
-            (e.target as HTMLInputElement).blur();
-          } else if (e.key === "Escape") {
-            setText(null);
-            (e.target as HTMLInputElement).blur();
-          }
-        }}
-        disabled={numPages === 0}
-        className="w-9 rounded-md border-2 border-transparent bg-transparent px-1 py-0.5 text-center transition-colors hover:border-line focus:border-ink focus:bg-surface focus:outline-none disabled:opacity-50"
-        style={{ width: `${Math.max(2, shown.length)}ch` }}
-      />
-      <span aria-hidden>/</span>
-      <span aria-live="polite">{numPages || "…"}</span>
-    </span>
   );
 }

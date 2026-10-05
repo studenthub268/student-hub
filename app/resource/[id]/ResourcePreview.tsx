@@ -162,21 +162,20 @@ export default function ResourcePreview({
 
   return (
     <>
-      {/* Warm the two heaviest PDF downloads from the server HTML itself —
-          React hoists these into <head> during SSR, so the browser starts
-          them while it is still parsing the page, in parallel with the JS
-          chunks, instead of serially behind hydration → pdf.js chunk →
-          worker. The worker (1.4 MB raw; brotli on Vercel) is the single
-          largest asset on the page, and the PDF bytes are what page 1 is
-          waiting for; both are immutable-cached, so pdf.js's own requests
-          moments later are served from the HTTP cache (repeat opens hit
-          the browser cache with no network at all). */}
-      {isPDF && (
-        <>
-          <link rel="preload" href={`/api/pdf/${resourceId}`} as="fetch" />
-          <link rel="preload" href="/pdfjs/pdf.worker.min.mjs" as="fetch" />
-        </>
-      )}
+      {/* Warm the pdf.js WORKER from the server HTML itself — React hoists
+          these into <head> during SSR, so the browser starts it while it is
+          still parsing the page, in parallel with the JS chunks, instead of
+          serially behind hydration → pdf.js chunk → worker. The worker (1.4 MB
+          raw; brotli on Vercel) is the single largest asset on the page and
+          immutable-cached, so a repeat open is served from the HTTP cache.
+
+          The PDF BYTES are deliberately NOT preloaded. Now that /api/pdf
+          advertises Accept-Ranges: bytes, pdf.js never issues a full-file GET
+          — it asks for a few 64KB ranges instead. A preload always fetches the
+          WHOLE file (measured 2251ms of bandwidth on this route) whose 200-body
+          cannot satisfy a ranged request (the response is Vary: Range), so it
+          only saturated the connection the viewer's fast little ranges need. */}
+      {isPDF && <link rel="preload" href="/pdfjs/pdf.worker.min.mjs" as="fetch" />}
       <div
         id="preview-stage"
         className={`overflow-hidden rounded-[2rem] border-2 border-ink bg-surface shadow-hard ${
