@@ -21,6 +21,10 @@ interface ResourceActionsProps {
   uploadedAt: string; // ISO string
   uploader: string;
   professor: string | null;
+  author: string | null;
+  contributorValue: string | null;
+  contributorLabel: string;
+  contributorIcon: React.ReactNode;
   isOwner: boolean;
   isSignedIn: boolean;
 }
@@ -40,6 +44,10 @@ export default function ResourceActions({
   uploadedAt,
   uploader,
   professor,
+  author,
+  contributorValue,
+  contributorLabel,
+  contributorIcon,
   isOwner,
   isSignedIn,
 }: ResourceActionsProps) {
@@ -224,13 +232,10 @@ export default function ResourceActions({
             )}
             <span className="min-w-0 truncate text-sm font-bold text-foreground">{uploader}</span>
           </div>
-          {professor && (
+          {contributorValue && (
             <div className="flex items-center justify-between gap-3">
-              {metaLabel(
-                <GraduationCap size={18} strokeWidth={2} className="shrink-0 text-foreground" aria-hidden />,
-                "Professor",
-              )}
-              <span className="min-w-0 truncate text-sm font-bold text-foreground">{professor}</span>
+              {metaLabel(contributorIcon, contributorLabel)}
+              <span className="min-w-0 truncate text-sm font-bold text-foreground">{contributorValue}</span>
             </div>
           )}
           <div className="flex items-center justify-between gap-3">

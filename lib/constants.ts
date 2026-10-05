@@ -72,12 +72,15 @@ export const SUBJECTS = [
   "Workshop Practice",
 ];
 
+export type ResourceType = typeof RESOURCE_TYPES[number];
+
 export const RESOURCE_TYPES = [
-  { value: "assignment", label: "Assignment", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
-  { value: "quiz", label: "Quiz", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" },
-  { value: "past-paper", label: "Past Paper", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-  { value: "notes", label: "Notes", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
-  { value: "other", label: "Other", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
+  { value: "assignment", label: "Assignment", fieldLabel: "Professor", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300", icon: "FileText" },
+  { value: "quiz", label: "Quiz", fieldLabel: "Professor", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300", icon: "ClipboardList" },
+  { value: "past-paper", label: "Past Paper", fieldLabel: "Professor", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300", icon: "FileText" },
+  { value: "notes", label: "Notes", fieldLabel: "Professor", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300", icon: "FileText" },
+  { value: "book", label: "Book", fieldLabel: "Author", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300", icon: "BookOpen" },
+  { value: "other", label: "Other", fieldLabel: "Professor", color: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300", icon: "File" },
 ];
 
 export function getTypeConfig(type: string) {

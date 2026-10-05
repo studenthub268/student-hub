@@ -3,13 +3,24 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
-import { Upload, File, X, AlertTriangle, Link as LinkIcon, HardDrive, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Upload, File, X, AlertTriangle, Link as LinkIcon, HardDrive, Loader2, CheckCircle2, XCircle, BookOpen, GraduationCap, FileText, ClipboardList } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
   notify,
   requestNotificationPermission,
 } from "@/lib/notify";
 import { SUBJECTS, RESOURCE_TYPES, DEPARTMENTS } from "@/lib/constants";
+
+function contributorIconFor(type: string) {
+  const def = RESOURCE_TYPES.find((t) => t.value === type);
+  switch (def?.icon) {
+    case "BookOpen": return BookOpen;
+    case "GraduationCap": return GraduationCap;
+    case "FileText": return FileText;
+    case "ClipboardList": return ClipboardList;
+    default: return File;
+  }
+}
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_MB } from "@/lib/uploads";
 import { DRIVE_FILE_TYPE } from "@/lib/drive";
 import { formatFileSize, formatFileType, getErrorMessage } from "@/lib/utils";
@@ -26,6 +37,7 @@ export default function UploadForm() {
   const [subject, setSubject] = useState("");
   const [type, setType] = useState("");
   const [professor, setProfessor] = useState("");
+  const [author, setAuthor] = useState("");
   const [department, setDepartment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [duplicates, setDuplicates] = useState<{ id: string; title: string; subject: string; department: string | null; uploader: { name: string | null } | null }[]>([]);
@@ -195,7 +207,8 @@ export default function UploadForm() {
           description,
           type,
           subject,
-          professor: professor.trim() || undefined,
+          professor: type === "book" ? undefined : professor.trim() || undefined,
+          author: type === "book" ? author.trim() || undefined : undefined,
           department: department.trim() || undefined,
           file_url: trimmed,
           file_key: trimmed, // replaced by the real file id server-side
@@ -225,7 +238,8 @@ export default function UploadForm() {
           description,
           type,
           subject,
-          professor: professor.trim() || undefined,
+          professor: type === "book" ? undefined : professor.trim() || undefined,
+          author: type === "book" ? author.trim() || undefined : undefined,
           department: department.trim() || undefined,
           file_url: publicUrl,
           file_key: key,
@@ -376,16 +390,29 @@ export default function UploadForm() {
         </div>
       </div>
 
+      {/* Contributor field: label changes per resource type. Books show
+          "Author", everything else shows "Professor". The value is stored in
+          the matching column (author / professor) on the server. */}
       <div>
-        <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">Professor Name</label>
+        <label className="mb-2 block text-sm font-bold text-foreground tracking-wider">
+          {type === "book" ? "Author Name" : "Professor Name"}
+          <span className="text-red-500">*</span>
+        </label>
         <input
           type="text"
-          value={professor}
-          onChange={(e) => setProfessor(e.target.value)}
-          placeholder="e.g., Dr. Ahmed Khan"
+          value={type === "book" ? author : professor}
+          onChange={(e) => {
+            if (type === "book") setAuthor(e.target.value);
+            else setProfessor(e.target.value);
+          }}
+          placeholder={type === "book" ? "e.g., Jane Austen" : "e.g., Dr. Ahmed Khan"}
           className="w-full h-14 px-4 rounded-xl border-2 border-ink bg-surface text-base font-medium text-foreground shadow-hard-sm focus:outline-none focus:shadow-hard transition-all placeholder:text-foreground/60"
         />
-        <p className="mt-1.5 text-xs font-medium text-foreground/60">Optional — helps other students find the right materials</p>
+        <p className="mt-1.5 text-xs font-medium text-foreground/60">
+          {type === "book"
+            ? "The book&apos;s author — helps other students find the right materials"
+            : "Optional — helps other students find the right materials"}
+        </p>
       </div>
 
       <div>

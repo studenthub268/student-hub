@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails, pageViews, webVitals } from "@/lib/db/schema";
+import { blockedIps, adminEmails, resources, messages, reports, users, accounts, emailEvents, suppressedEmails, pageViews, webVitals, resourceTypeConfigs } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { eq, desc, sql, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -47,8 +47,9 @@ const adminResourceUpdateSchema = z
     title: z.string().min(3).max(100),
     description: z.string().max(500),
     subject: z.string().min(2).max(50),
-    type: z.enum(["assignment", "quiz", "past-paper", "notes", "other"]),
+    type: z.enum(["assignment", "quiz", "past-paper", "notes", "book", "other"]),
     professor: z.string().max(50),
+    author: z.string().max(100),
     department: z.string().max(50),
   })
   .partial()
@@ -77,6 +78,7 @@ export async function getAdminPanelData() {
         subject: resources.subject,
         department: resources.department,
         professor: resources.professor,
+        author: resources.author,
         likes: resources.likes,
         createdAt: resources.createdAt,
         uploader: { name: users.name, email: users.email },
@@ -321,6 +323,154 @@ export async function unblockIp(ip: string) {
   return { success: true };
 }
 
+// ============ RESOURCE TYPE CONFIGS ============
+
+const typeValueSchema = z.string().min(2).max(30).regex(/^[a-z][a-z0-9-]*$/);
+const typeLabelSchema = z.string().min(2).max(40);
+const fieldLabelSchema = z.string().min(2).max(40);
+const typeColorSchema = z.string().max(80);
+const typeIconSchema = z.string().max(30).nullable().default(null);
+
+/** Add a new resource type (or reactivate a soft-deleted one). Admin-only.
+ *  The `value` must be a stable slug — it's stored in resources.type and
+ *  used as the FK target for resource_type_configs.value. */
+export async function addResourceType(data: {
+  value: string;
+  label: string;
+  fieldLabel: string;
+  color: string;
+  icon?: string;
+}) {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  const admin = await isAdmin(session.user.email);
+  if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "add-type", 20, 3600);
+
+  const parsed = z.object({
+    value: typeValueSchema,
+    label: typeLabelSchema,
+    fieldLabel: fieldLabelSchema,
+    color: typeColorSchema,
+    icon: typeIconSchema,
+  }).safeParse(data);
+  if (!parsed.success) throw new Error("Invalid type data");
+
+  const { value, label, fieldLabel, color, icon } = parsed.data;
+
+  // Upsert: if a row exists (even soft-deleted), reactivate + update.
+  await db.insert(resourceTypeConfigs).values({
+    value,
+    label,
+    fieldLabel,
+    color,
+    icon: icon ?? null,
+    isActive: true,
+  }).onConflictDoUpdate({
+    target: resourceTypeConfigs.value,
+    set: { label, fieldLabel, color, icon: icon ?? null, isActive: true },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/browse");
+  return { success: true };
+}
+
+/** Update an existing resource type's display settings. Admin-only. */
+export async function updateResourceType(data: {
+  value: string;
+  label?: string;
+  fieldLabel?: string;
+  color?: string;
+  icon?: string | null;
+  isActive?: boolean;
+}) {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  const admin = await isAdmin(session.user.email);
+  if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "update-type", 30, 300);
+
+  const parsed = z.object({
+    value: typeValueSchema,
+    label: typeLabelSchema.optional(),
+    fieldLabel: fieldLabelSchema.optional(),
+    color: typeColorSchema.optional(),
+    icon: typeIconSchema.optional(),
+    isActive: z.boolean().optional(),
+  }).safeParse(data);
+  if (!parsed.success) throw new Error("Invalid type data");
+
+  const { value, label, fieldLabel, color, icon, isActive } = parsed.data;
+
+  const existing = await db.query.resourceTypeConfigs.findFirst({
+    where: eq(resourceTypeConfigs.value, value),
+  });
+  if (!existing) throw new Error("Type not found");
+
+  await db.update(resourceTypeConfigs).set({
+    label: label ?? existing.label,
+    fieldLabel: fieldLabel ?? existing.fieldLabel,
+    color: color ?? existing.color,
+    icon: icon !== undefined ? icon : existing.icon,
+    ...(isActive !== undefined ? { isActive } : {}),
+  }).where(eq(resourceTypeConfigs.value, value));
+
+  revalidatePath("/admin");
+  revalidatePath("/browse");
+  return { success: true };
+}
+
+/** Soft-delete a resource type (sets isActive = false). Cannot delete the
+ *  built-in fallback types that have existing resources using them — that
+ *  would leave resources.type pointing at a non-configured value. Admins
+ *  can still reactivate via addResourceType. */
+export async function removeResourceType(value: string) {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  const admin = await isAdmin(session.user.email);
+  if (!admin) throw new Error("Admin only");
+  await adminActionGuard(session.user.email, "remove-type", 10, 3600);
+
+  if (!typeValueSchema.safeParse(value).success) throw new Error("Invalid type value");
+
+  // Don't allow removing a type that has live resources using it.
+  const inUse = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(resources)
+    .where(eq(resources.type, value));
+  if ((inUse[0]?.count ?? 0) > 0) {
+    throw new Error("Cannot remove a type that has resources using it");
+  }
+
+  await db.update(resourceTypeConfigs).set({ isActive: false }).where(eq(resourceTypeConfigs.value, value));
+
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+/** Get all resource type configs (including inactive) for the admin manager UI. */
+export async function getAllResourceTypeConfigs() {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
+
+  return db.select().from(resourceTypeConfigs).orderBy(resourceTypeConfigs.sortOrder, resourceTypeConfigs.label);
+}
+
+/** Get the count of live resources per type (for the admin manager UI). */
+export async function getResourceCountByValue(value: string): Promise<number> {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Not authenticated");
+  if (!(await isAdmin(session.user.email))) throw new Error("Admin only");
+
+  const row = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(resources)
+    .where(eq(resources.type, value));
+  return row[0]?.count ?? 0;
+}
+
 export async function removeAdminEmail(email: string) {
   const session = await auth();
   if (!session?.user?.email) throw new Error("Not authenticated");
@@ -366,7 +516,7 @@ export async function adminDeleteResource(resourceId: string) {
 
 export async function adminUpdateResource(
   resourceId: string,
-  data: { title?: string; description?: string; subject?: string; type?: string; professor?: string; department?: string }
+  data: { title?: string; description?: string; subject?: string; type?: string; professor?: string; author?: string; department?: string }
 ) {
   const session = await auth();
   if (!session?.user?.email) throw new Error("Not authenticated");

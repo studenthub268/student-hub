@@ -13,6 +13,11 @@ import {
   deleteMessage,
   deleteReport,
   dismissReportAndDeleteResource,
+  addResourceType,
+  updateResourceType,
+  removeResourceType,
+  getAllResourceTypeConfigs,
+  getResourceCountByValue,
 } from "@/lib/actions/admin";
 import { toast } from "react-hot-toast";
 import {
@@ -41,11 +46,14 @@ import {
   CheckCheck,
   Loader2,
   Gauge,
+  BookOpen,
+  ClipboardList,
+  Type,
 } from "lucide-react";
 import Link from "next/link";
 import { replyToMessage } from "@/lib/actions/messages";
 import { getErrorMessage } from "@/lib/utils";
-import { isPermanentAdmin } from "@/lib/constants";
+import { isPermanentAdmin, RESOURCE_TYPES } from "@/lib/constants";
 import type { BlockedIp, AdminEmail, Message } from "@/lib/db/schema";
 import type { LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
@@ -58,7 +66,7 @@ const TrafficTab = dynamic(() => import("./TrafficTab"));
 // Same for the Vitals tab (getWebVitalsData) — real-user Core Web Vitals.
 const VitalsTab = dynamic(() => import("./VitalsTab"));
 
-type Tab = "overview" | "moderation" | "security" | "users" | "diagnostics";
+type Tab = "overview" | "moderation" | "security" | "users" | "diagnostics" | "types";
 
 // sessionStorage cache so revisits within the same tab render instantly and
 // revalidate in the background. Stale-while-revalidate: cached data shows
@@ -106,11 +114,25 @@ interface AdminResource {
   description: string | null;
   type: string;
   subject: string;
+  author: string | null;
   department: string | null;
   professor: string | null;
   likes: number;
   createdAt: Date;
   uploader: { name: string | null; email: string | null } | null;
+}
+
+interface ResourceTypeConfigRow {
+  id: string;
+  value: string;
+  label: string;
+  fieldLabel: string;
+  color: string;
+  icon: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  resourceCount: number;
 }
 
 interface AdminReport {
@@ -164,7 +186,15 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(!initialCache);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [editingResource, setEditingResource] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: "", description: "", subject: "", type: "", professor: "", department: "" });
+  const [editForm, setEditForm] = useState({ title: "", description: "", subject: "", type: "", professor: "", author: "", department: "" });
+  const [resourceTypeConfigs, setResourceTypeConfigs] = useState<ResourceTypeConfigRow[]>([]);
+  const [newTypeName, setNewTypeName] = useState("");
+  const [newTypeLabel, setNewTypeLabel] = useState("");
+  const [newTypeFieldLabel, setNewTypeFieldLabel] = useState("");
+  const [newTypeColor, setNewTypeColor] = useState("");
+  const [newTypeIcon, setNewTypeIcon] = useState("");
+  const [savingType, setSavingType] = useState(false);
+  const [typeError, setTypeError] = useState<string | null>(null);
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
   const [emailStats, setEmailStats] = useState<EmailStats | null>(initialCache?.data.emailStats ?? null);
   const [autoBlocks, setAutoBlocks] = useState<AutoBlock[]>(initialCache?.data.autoBlocks ?? []);
@@ -191,6 +221,19 @@ export default function AdminPanel() {
       setEmailStats(data.emailStats);
       setAutoBlocks(data.autoBlocks);
       setUsersList(data.users);
+      // Load resource type configs separately (not in the main panel data).
+      try {
+        const configs = await getAllResourceTypeConfigs();
+        // Attach resource counts.
+        setResourceTypeConfigs(
+          await Promise.all(
+            configs.map(async (c) => ({
+              ...c,
+              resourceCount: await getResourceCountByValue(c.value),
+            }))
+          )
+        );
+      } catch {}
       writeCache(data);
     } catch (error) {
       if (!opts?.background) toast.error(getErrorMessage(error, "Failed to load admin data"));
@@ -249,8 +292,86 @@ export default function AdminPanel() {
       subject: resource.subject || "",
       type: resource.type || "",
       professor: resource.professor || "",
+      author: resource.author || "",
       department: resource.department || "",
     });
+  };
+
+  const handleAddType = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTypeName.trim() || !newTypeLabel.trim() || !newTypeFieldLabel.trim()) {
+      toast.error("Fill in all fields");
+      return;
+    }
+    setSavingType(true);
+    setTypeError(null);
+    try {
+      await addResourceType({
+        value: newTypeName.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+        label: newTypeLabel.trim(),
+        fieldLabel: newTypeFieldLabel.trim(),
+        color: newTypeColor.trim() || "bg-gray-100 text-gray-800",
+        icon: newTypeIcon.trim() || "File",
+      });
+      toast.success("Type added");
+      setNewTypeName("");
+      setNewTypeLabel("");
+      setNewTypeFieldLabel("");
+      setNewTypeColor("");
+      setNewTypeIcon("");
+      const configs = await getAllResourceTypeConfigs();
+      setResourceTypeConfigs(
+        await Promise.all(
+          configs.map(async (c) => ({
+            ...c,
+            resourceCount: await getResourceCountByValue(c.value),
+          }))
+        )
+      );
+      // Also refresh the resources list so the new type appears in the edit form dropdown.
+      const panel = await getAdminPanelData();
+      setResourcesList(panel.resources);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to add type"));
+    } finally {
+      setSavingType(false);
+    }
+  };
+
+  const handleUpdateType = async (value: string, fields: { label?: string; fieldLabel?: string; color?: string; icon?: string | null; isActive?: boolean }) => {
+    try {
+      await updateResourceType({ value, ...fields });
+      toast.success("Type updated");
+      const configs = await getAllResourceTypeConfigs();
+      setResourceTypeConfigs(
+        await Promise.all(
+          configs.map(async (c) => ({
+            ...c,
+            resourceCount: await getResourceCountByValue(c.value),
+          }))
+        )
+      );
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to update type"));
+    }
+  };
+
+  const handleDeleteType = async (value: string) => {
+    try {
+      await removeResourceType(value);
+      toast.success("Type removed");
+      const configs = await getAllResourceTypeConfigs();
+      setResourceTypeConfigs(
+        await Promise.all(
+          configs.map(async (c) => ({
+            ...c,
+            resourceCount: await getResourceCountByValue(c.value),
+          }))
+        )
+      );
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to remove type"));
+    }
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -262,6 +383,11 @@ export default function AdminPanel() {
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingResource(null);
+    setEditForm({ title: "", description: "", subject: "", type: "", professor: "", author: "", department: "" });
   };
 
   // ---- Message Management ----
@@ -411,6 +537,7 @@ export default function AdminPanel() {
     { key: "security", label: "Security", icon: ShieldOff, count: blockedIps.length, alert: attentionAutoBlocks > 0 },
     { key: "users", label: "Users", icon: Users, count: usersList.length },
     { key: "diagnostics", label: "Diagnostics", icon: Eye, alert: highBounce },
+    { key: "types", label: "Resource Types", icon: Type, count: resourceTypeConfigs.length },
   ];
 
   return (
@@ -751,8 +878,22 @@ export default function AdminPanel() {
                           <button onClick={() => setEditingResource(null)} className="p-1 hover:bg-surface-muted rounded-lg" aria-label="Cancel edit"><X className="w-4 h-4" aria-hidden /></button>
                         </div>
                         <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Title" />
-                        <input value={editForm.subject} onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Subject" />
-                        <input value={editForm.professor} onChange={(e) => setEditForm({ ...editForm, professor: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Professor" />
+                        <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value, professor: "", author: "" })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none">
+                          <option value="" disabled>Type...</option>
+                          {resourceTypeConfigs
+                            .filter((c) => c.isActive)
+                            .map((c) => (
+                              <option key={c.value} value={c.value}>{c.label}</option>
+                            ))}
+                          {RESOURCE_TYPES.map((t) => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                        {editForm.type === "book" ? (
+                          <input value={editForm.author} onChange={(e) => setEditForm({ ...editForm, author: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Author name" />
+                        ) : (
+                          <input value={editForm.professor} onChange={(e) => setEditForm({ ...editForm, professor: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Professor name" />
+                        )}
                         <input value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} className="w-full h-10 px-3 rounded-lg border-2 border-line text-sm font-medium focus:outline-none" placeholder="Department" />
                         <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full h-20 px-3 py-2 rounded-lg border-2 border-line text-sm font-medium focus:outline-none resize-none" placeholder="Description" />
                         <div className="flex gap-2">
@@ -1019,6 +1160,188 @@ export default function AdminPanel() {
               <Eye className="h-4 w-4" aria-hidden /> Traffic
             </h3>
             <TrafficTab />
+          </section>
+        </div>
+      )}
+
+      {/* ===== RESOURCE TYPES (admin-managed type definitions) ===== */}
+      {activeTab === "types" && (
+        <div className="space-y-6">
+          <section>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Type className="h-4 w-4" aria-hidden />
+              Resource type definitions
+            </h3>
+            <p className="text-sm font-medium text-foreground/60 mb-6">
+              Each resource type has a label, a contributor-field label (shown on
+              resource pages instead of &quot;Professor&quot; — e.g. &quot;Author&quot; for books),
+              a color, and an icon. Drive the upload form&apos;s type dropdown and the
+              labels on resource detail pages from here.
+            </p>
+
+            {/* Add new type form */}
+            <form onSubmit={handleAddType} noValidate className="bg-surface-muted rounded-2xl p-6 border-2 border-line">
+              <h4 className="font-bold text-base mb-4">Add a new type</h4>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-foreground/60">Value (slug)</label>
+                  <input
+                    type="text"
+                    value={newTypeName}
+                    onChange={(e) => setNewTypeName(e.target.value)}
+                    placeholder="e.g. book"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-ink bg-surface text-sm font-medium focus:outline-none focus:shadow-hard-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-foreground/60">Label</label>
+                  <input
+                    type="text"
+                    value={newTypeLabel}
+                    onChange={(e) => setNewTypeLabel(e.target.value)}
+                    placeholder="e.g. Book"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-ink bg-surface text-sm font-medium focus:outline-none focus:shadow-hard-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-foreground/60">Field label</label>
+                  <input
+                    type="text"
+                    value={newTypeFieldLabel}
+                    onChange={(e) => setNewTypeFieldLabel(e.target.value)}
+                    placeholder="e.g. Author"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-ink bg-surface text-sm font-medium focus:outline-none focus:shadow-hard-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-foreground/60">Color</label>
+                  <input
+                    type="text"
+                    value={newTypeColor}
+                    onChange={(e) => setNewTypeColor(e.target.value)}
+                    placeholder="bg-amber-100 text-amber-800"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-ink bg-surface text-sm font-medium focus:outline-none focus:shadow-hard-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-foreground/60">Icon</label>
+                  <input
+                    type="text"
+                    value={newTypeIcon}
+                    onChange={(e) => setNewTypeIcon(e.target.value)}
+                    placeholder="BookOpen"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-ink bg-surface text-sm font-medium focus:outline-none focus:shadow-hard-sm"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="submit"
+                  disabled={savingType}
+                  className="px-5 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-sm tracking-wider shadow-hard-sm transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                >
+                  {savingType ? <Loader2 className="h-4 w-4 animate-spin inline" aria-hidden /> : <Plus className="h-4 w-4 inline" aria-hidden />}
+                  {savingType ? "Adding..." : "Add type"}
+                </button>
+              </div>
+            </form>
+
+            {/* Type list */}
+            {resourceTypeConfigs.length === 0 ? (
+              <p className="text-sm text-foreground/60 font-medium p-4 rounded-xl bg-surface-muted">
+                No custom types yet. Add one above, or the built-in defaults will be used.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {resourceTypeConfigs.map((config) => {
+                  const isBuiltIn = !config.id; // rows from constants have no DB id
+                  // For the UI, merge DB configs with the constants fallback info.
+                  const fallback = RESOURCE_TYPES.find((t) => t.value === config.value);
+                  const label = config.label || fallback?.label || config.value;
+                  const fieldLabel = config.fieldLabel || fallback?.fieldLabel || "Professor";
+                  const color = config.color || fallback?.color || "bg-gray-100 text-gray-800";
+                  const isInUse = config.resourceCount > 0;
+
+                  return (
+                    <div
+                      key={config.id || config.value}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border-2 border-line bg-surface"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`flex h-10 w-10 rounded-full border-2 border-ink flex items-center justify-center shrink-0`}
+                          style={{ backgroundColor: "transparent" }}
+                        >
+                          <div className={color.replace(/dark:\S+/g, "").trim()}>
+                            {color.includes("text-") ? (
+                              <Type className="h-4 w-4" style={{ color: "inherit" }} aria-hidden />
+                            ) : (
+                              <Type className="h-4 w-4 text-foreground/60" aria-hidden />
+                            )}
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-sm">{label}</p>
+                            {isBuiltIn ? (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-surface-muted text-foreground/60 border border-line">
+                                built-in
+                              </span>
+                            ) : config.isActive ? (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                active
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
+                                inactive
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-foreground/60 font-medium">
+                            Contributor field: <strong>{fieldLabel}</strong>
+                            {isInUse ? ` · ${config.resourceCount} resource${config.resourceCount === 1 ? "" : "s"} using it` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                        {!isBuiltIn && config.isActive && (
+                          <button
+                            onClick={() => handleUpdateType(config.value, { isActive: false })}
+                            className="px-3 py-1.5 rounded-full border-2 border-red-300 text-red-600 text-xs font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                            title="Deactivate type"
+                          >
+                            Deactivate
+                          </button>
+                        )}
+                        {!isBuiltIn && !config.isActive && (
+                          <button
+                            onClick={() => handleUpdateType(config.value, { isActive: true })}
+                            className="px-3 py-1.5 rounded-full border-2 border-green-300 text-green-600 text-xs font-bold hover:bg-green-500 hover:text-white hover:border-green-500 transition-all"
+                            title="Reactivate type"
+                          >
+                            Reactivate
+                          </button>
+                        )}
+                        {config.isActive && !isInUse && (
+                          <button
+                            onClick={() => { if (confirm(`Remove &quot;${label}&quot;? It has no resources using it.`)) handleDeleteType(config.value); }}
+                            className="p-1.5 rounded-lg border-2 border-line hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
+                            title="Remove type"
+                            aria-label="Remove type"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden />
+                          </button>
+                        )}
+                        {!config.isActive && (
+                          <span className="text-xs text-foreground/40 font-medium">
+                            (no resources — can be removed)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         </div>
       )}

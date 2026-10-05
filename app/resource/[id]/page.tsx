@@ -6,8 +6,19 @@ import { eq, and, ne, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { unstable_cache } from "next/cache";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
-import { getTypeConfig } from "@/lib/constants";
-import { isDriveHosted } from "@/lib/drive";
+import { isDriveHosted, DRIVE_ID_RE } from "@/lib/drive";
+import { getTypeConfig } from "@/lib/actions/type-config";
+import { BookOpen, GraduationCap, FileText, ClipboardList, File } from "lucide-react";
+
+function contributorIconFor(iconName: string) {
+  switch (iconName) {
+    case "BookOpen": return BookOpen;
+    case "GraduationCap": return GraduationCap;
+    case "FileText": return FileText;
+    case "ClipboardList": return ClipboardList;
+    default: return File;
+  }
+}
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import ResourcePreview from "./ResourcePreview";
 import ResourceActions from "./ResourceActions";
@@ -24,6 +35,7 @@ const queryResourceCached = (id: string) =>
           type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
           fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
           uploaderId: resources.uploaderId, professor: resources.professor,
+          author: resources.author,
           department: resources.department,
           downloads: resources.downloads, likes: resources.likes, createdAt: resources.createdAt,
           uploader: { name: users.name },
@@ -54,6 +66,7 @@ const queryRelatedCached = (id: string, subject: string) =>
           type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
           fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
           uploaderId: resources.uploaderId, professor: resources.professor,
+          author: resources.author,
           department: resources.department, downloads: resources.downloads, likes: resources.likes,
           uploadKey: resources.uploadKey, createdAt: resources.createdAt,
           uploader: { name: users.name },
@@ -143,7 +156,12 @@ export default async function ResourceDetailPage({
     }
   }
 
-  const typeConfig = getTypeConfig(resource.type);
+  const typeConfig = await getTypeConfig(resource.type);
+  // Which contributor field to show: books show author, everything else shows
+  // professor. The type's fieldLabel + icon come from the merged config (DB
+  // override or constants fallback).
+  const contributorValue = typeConfig.fieldLabel === "Author" ? resource.author : resource.professor;
+  const ContributorIcon = contributorIconFor(typeConfig.icon);
   const related = await queryRelated(id, resource.subject);
 
   // Drive-hosted resources render without the preview stage unless the
@@ -158,12 +176,28 @@ export default async function ResourceDetailPage({
       resource.fileType === "external/drive-folder" ||
         resource.fileType?.match(/^(application\/pdf|image\/|video\/)/)
     );
+  // Drive-hosted files fetch bytes from drive.usercontent.google.com.
+  // A preconnect hint opens the TCP+TLS connection early (during HTML parse)
+  // so the viewer's first range request doesn't pay the connection-setup
+  // latency on top of the Drive round-trip.
+  const drivePreconnect =
+    isDriveResource &&
+    DRIVE_ID_RE.test(resource.fileKey ?? "") &&
+    resource.fileType?.includes("pdf");
 
   const uploaderName = resource.uploader?.name || "Unknown";
   const isOwner = Boolean(session?.user?.id) && session!.user!.id === resource.uploaderId;
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-3 pt-4 pb-14 sm:px-6 sm:pt-6 lg:px-8 lg:pb-12">
+    <>
+      {drivePreconnect && (
+        <link
+          rel="preconnect"
+          href="https://drive.usercontent.google.com"
+          crossOrigin="anonymous"
+        />
+      )}
+      <div className="mx-auto w-full max-w-[1400px] px-3 pt-4 pb-14 sm:px-6 sm:pt-6 lg:px-8 lg:pb-12">
       {/* Breadcrumb — hidden on phones: the navbar already shows a back
           button there, and two back affordances stacked read as clutter
           (and disagree on destination). Desktop keeps it since the navbar
@@ -246,6 +280,10 @@ export default async function ResourceDetailPage({
               uploadedAt={new Date(resource.createdAt).toISOString()}
               uploader={uploaderName}
               professor={resource.professor}
+              author={resource.author}
+              contributorValue={contributorValue}
+              contributorLabel={typeConfig.fieldLabel}
+              contributorIcon={<ContributorIcon size={18} strokeWidth={2} className="shrink-0 text-foreground" aria-hidden />}
               isOwner={isOwner}
               isSignedIn={Boolean(session?.user)}
             />
@@ -288,5 +326,6 @@ export default async function ResourceDetailPage({
         </section>
       )}
     </div>
+    </>
   );
 }

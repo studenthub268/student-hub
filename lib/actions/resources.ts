@@ -52,9 +52,10 @@ async function uploadKeyColumnAvailable(): Promise<boolean> {
 const resourceSchema = z.object({
   title: z.string().min(3).max(100),
   description: z.string().max(500).optional(),
-  type: z.enum(["assignment", "quiz", "past-paper", "notes", "other"]),
+  type: z.enum(["assignment", "quiz", "past-paper", "notes", "book", "other"]),
   subject: z.string().min(2).max(50),
   professor: z.string().max(50).optional(),
+  author: z.string().max(100).optional(), // book-type resources: author name
   department: z.string().max(50).optional(),
   // R2-hosted resources carry the public URL + object key. Drive-hosted
   // resources ("source: drive") carry the share URL in file_url and the
@@ -87,6 +88,7 @@ export async function uploadResource(formData: {
   type: string;
   subject: string;
   professor?: string;
+  author?: string;
   department?: string;
   file_url: string;
   file_key: string;
@@ -253,18 +255,18 @@ export async function uploadResource(formData: {
     session.user.id,
     hasUploadKeyColumn
       ? (sql) => [
-          sql`insert into resources (title, description, type, subject, professor, department, file_url, file_key, file_type, file_size, uploader_id, upload_key)
+          sql`insert into resources (title, description, type, subject, professor, author, department, file_url, file_key, file_type, file_size, uploader_id, upload_key)
               values (${validatedData.title}, ${validatedData.description ?? null}, ${validatedData.type}, ${validatedData.subject},
-                      ${validatedData.professor ?? null}, ${validatedData.department ?? null}, ${validatedData.file_url},
+                      ${validatedData.professor ?? null}, ${validatedData.author ?? null}, ${validatedData.department ?? null}, ${validatedData.file_url},
                       ${validatedData.file_key}, ${validatedData.file_type}, ${validatedData.file_size ?? null}, ${session.user.id}, ${uploadKey})
               on conflict (upload_key) do nothing
               returning id`,
         ]
       : // Column not migrated yet — plain insert (no idempotency, no dupes created).
         (sql) => [
-          sql`insert into resources (title, description, type, subject, professor, department, file_url, file_key, file_type, file_size, uploader_id)
+          sql`insert into resources (title, description, type, subject, professor, author, department, file_url, file_key, file_type, file_size, uploader_id)
               values (${validatedData.title}, ${validatedData.description ?? null}, ${validatedData.type}, ${validatedData.subject},
-                      ${validatedData.professor ?? null}, ${validatedData.department ?? null}, ${validatedData.file_url},
+                      ${validatedData.professor ?? null}, ${validatedData.author ?? null}, ${validatedData.department ?? null}, ${validatedData.file_url},
                       ${validatedData.file_key}, ${validatedData.file_type}, ${validatedData.file_size ?? null}, ${session.user.id})
               returning id`,
         ]

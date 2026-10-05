@@ -36,6 +36,11 @@ export const DRIVE_FILE_TYPE = "external/drive";
  */
 export const DRIVE_FOLDER_TYPE = "external/drive-folder";
 
+/** Drive file IDs: the driveUserContentDownloadUrl / uc?export=download paths
+  build a URL from a file id, so several routes validate the id shape with
+  this regex before interpolating it into a URL. */
+export const DRIVE_ID_RE = /^[A-Za-z0-9_-]{20,64}$/;
+
 /** Drive file URLs: /file/d/<id>/…, open?id=<id>, uc?id=<id> */
 const DRIVE_FILE_RE =
   /(?:\/file\/d\/|\/open\?id=|\/uc\?(?:export=download&)?id=)([\w-]{20,})/;

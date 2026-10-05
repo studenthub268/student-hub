@@ -119,6 +119,10 @@ export async function proxy(request: NextRequest) {
     // PDF viewer byte proxy — same deal: guests read PDFs in the site's
     // viewer, and pdf.js must receive the binary stream, not a login page.
     pathname.startsWith("/api/pdf/") ||
+    // Drive PDF optimization proxy (linearized, cached) — guests can stream
+    // linearized PDFs; the route itself rate-limits and serves binary, so a
+    // login redirect would hand HTML to pdf.js and break the viewer.
+    pathname.startsWith("/api/stream-pdf") ||
     // PDF.js worker for the custom viewer — a static file, but module
     // scripts are fetched without credentials, so the login redirect would
     // hand back HTML and the worker would fail strict MIME checking.
@@ -209,7 +213,14 @@ export async function proxy(request: NextRequest) {
   // precedence here beats route-set headers, so skipping the override is
   // what lets signed-in students get edge/browser-cached PDF bytes like
   // guests do instead of re-downloading every open.
-  if (hasSessionCookie && !pathname.startsWith("/api/pdf/")) {
+  // Signed-in responses must not be shared/cached by intermediaries —
+  // EXCEPT the PDF byte proxies, whose route handlers set their own
+  // per-status caching (public + immutable successes keyed by resource/drive
+  // id — no user data in them; errors stay uncacheable). Header precedence
+  // here beats both route-set and config-set headers, so skipping the
+  // override is what lets signed-in students get edge/browser-cached PDF
+  // bytes like guests do instead of re-downloading every open.
+  if (hasSessionCookie && !pathname.startsWith("/api/pdf/") && !pathname.startsWith("/api/stream-pdf")) {
     response.headers.set(
       "Cache-Control",
       "private, no-cache, no-store, must-revalidate"

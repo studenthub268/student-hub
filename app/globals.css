@@ -295,6 +295,8 @@ html {
 /* ---- Motion system: subtle, GPU-composited, zero JS ----
    fade-up: entrance used on page sections and cards.
    scale-in: dialogs and popovers (search popup, confirm dialog).
+   dropdown-in: mobile menu — drops from above so it reads as a floating panel
+     landing below the navbar, not scaling from the top edge.
    shimmer: skeleton loading state.
    Respect users who prefer reduced motion. */
 @keyframes fade-up {
@@ -316,6 +318,17 @@ html {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -346,6 +359,10 @@ html {
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
+}
+
+.dropdown-in {
+  animation: dropdown-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 :root {
@@ -414,6 +431,7 @@ html {
   .fade-up,
   .fade-up-stagger > *,
   .scale-in,
+  .dropdown-in,
   .shimmer {
     animation: none;
   }

@@ -164,7 +164,7 @@ export function Navbar() {
         <div className="md:hidden fixed inset-0 z-[100]">
           {/* Click-away catcher — transparent, sits behind the panel */}
           <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[4.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border-2 border-ink bg-surface/95 backdrop-blur-xl shadow-hard-lg scale-in origin-top">
+          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 top-[6.25rem] max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border-2 border-ink bg-surface shadow-hard-lg dropdown-in">
             {/* Profile identity — the very first thing in the menu (only when
                 signed in; guests get nothing here). */}
             <NavbarAuth mobile section="header" onClose={() => setMobileOpen(false)} />

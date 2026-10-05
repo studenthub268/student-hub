@@ -16,6 +16,46 @@ const DRIVE_ID_RE = /^[A-Za-z0-9_-]{20,64}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
+ * Resource metadata is IMMUTABLE per id (a re-upload always creates a new row
+ * and therefore a new id), so the id → storage-URL mapping is cached in memory.
+ *
+ * Why this matters for first paint: pdf.js issues SEVERAL range requests to
+ * render page 1 (document header, the xref tail, then the page's objects), and
+ * each one is a separate invocation of this handler. The Neon round trip on
+ * every request used to sit at the front of each of those, multiplying into
+ * hundreds of milliseconds of pure latency before any bytes moved.
+ */
+const RESOURCE_CACHE_TTL_MS = 5 * 60 * 1000;
+const RESOURCE_CACHE_MAX = 500;
+type CachedResource = { fileUrl: string; fileType: string | null; fileKey: string };
+const resourceCache = new Map<string, { value: CachedResource; at: number }>();
+
+/** Resolve + cache a resource's storage location. Misses (deleted rows) are
+ *  NOT cached so a resource that reappears isn't shadowed for the TTL. */
+async function resolveResource(id: string): Promise<CachedResource | null> {
+  const hit = resourceCache.get(id);
+  if (hit && Date.now() - hit.at < RESOURCE_CACHE_TTL_MS) return hit.value;
+
+  const [row] = await db
+    .select({
+      fileUrl: resources.fileUrl,
+      fileType: resources.fileType,
+      fileKey: resources.fileKey,
+    })
+    .from(resources)
+    .where(eq(resources.id, id))
+    .limit(1);
+  if (!row) return null;
+
+  if (resourceCache.size >= RESOURCE_CACHE_MAX) {
+    const oldest = resourceCache.keys().next().value;
+    if (oldest !== undefined) resourceCache.delete(oldest);
+  }
+  resourceCache.set(id, { value: row, at: Date.now() });
+  return row;
+}
+
+/**
  * Same-origin PDF byte proxy for the custom viewer — tuned for speed.
  *
  * The custom PDF viewer (PdfViewer.tsx) renders pages onto <canvas> with
@@ -55,15 +95,7 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const [resource] = await db
-    .select({
-      fileUrl: resources.fileUrl,
-      fileType: resources.fileType,
-      fileKey: resources.fileKey,
-    })
-    .from(resources)
-    .where(eq(resources.id, id))
-    .limit(1);
+  const resource = await resolveResource(id);
 
   // PDFs only — this endpoint exists for the viewer; other types have no
   // reason to be fetched through it.
@@ -93,17 +125,19 @@ export async function GET(
   // across every student. 60/min was hit in the wild and 429'd real readers
   // into the viewer's error state ("Couldn't load the PDF"), which reads as
   // "preview blocked". 240 still caps scripted scraping.
-  if (!(await checkRateLimit(`pdf-view:${ip}`, 240, 60))) {
-    return new NextResponse("Too many requests — slow down.", {
-      status: 429,
-      headers: { "Retry-After": "60" },
-    });
-  }
-
   // Forward the viewer's Range header upstream so partial requests stay
   // partial — the difference between "first page in 100 KB" and "first
   // page after the whole file downloads".
   const range = request.headers.get("range");
+
+  // Start the rate-limit round trip NOW and let it overlap the upstream fetch
+  // rather than blocking it. pdf.js issues SEVERAL range requests to paint
+  // page 1, and paying this Neon round trip serially before every storage
+  // fetch stacked up across them. Both settle concurrently, so per-request
+  // latency is max(rate-limit, upstream TTFB) instead of their sum. The limit
+  // is still enforced — a denied request discards its (already-started) body.
+  const allowedPromise = checkRateLimit(`pdf-view:${ip}`, 240, 60);
+
   let upstream: Response;
   try {
     upstream = await fetch(upstreamUrl, {
@@ -116,6 +150,15 @@ export async function GET(
     });
   } catch {
     return new NextResponse("File storage unavailable", { status: 502 });
+  }
+
+  if (!(await allowedPromise)) {
+    // Stop pulling storage bytes for a request we're about to refuse.
+    upstream.body?.cancel().catch(() => {});
+    return new NextResponse("Too many requests — slow down.", {
+      status: 429,
+      headers: { "Retry-After": "60" },
+    });
   }
   if (!upstream.ok || !upstream.body) {
     return new NextResponse("File not found in storage", { status: 502 });
@@ -134,6 +177,19 @@ export async function GET(
   const outHeaders: Record<string, string> = {
     "Content-Type": "application/pdf",
     "Content-Disposition": "inline",
+    /**
+     * REQUIRED for pdf.js to use range requests at all.
+     *
+     * pdf.js's `validateRangeRequestCapabilities()` enables range mode ONLY if
+     * the very first response advertises `Accept-Ranges: bytes` (plus a
+     * Content-Length larger than 2× rangeChunkSize). Without it, `allowRangeRequests`
+     * stays false — and since PdfViewer sets `disableStream: true`, pdf.js can
+     * then neither stream nor range, so it falls back to buffering the ENTIRE
+     * file before it can parse the xref. Measured on this route: full file =
+     * 2251ms before page 1 could even start parsing; a 64KB range = 75ms.
+     * Adding this one header is what actually makes the viewer fast.
+     */
+    "Accept-Ranges": "bytes",
     // Immutable per resource id: the file behind an id never changes (a
     // re-upload is a new id), so edge + browser can cache for a full day
     // without staleness risk. `public` moves the caching from per-browser

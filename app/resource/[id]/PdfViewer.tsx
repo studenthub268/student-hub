@@ -157,20 +157,28 @@ export default function PdfViewer({
 
   /* Dynamic import: resolves to the ESM build; worker URL points at the
      copy in /public (same version — they ship together in the repo).
-     disableAutoFetch + disableStream: pdf.js's default behavior fetches
-     the WHOLE file in the background even when only page 1 is on screen.
-     With the proxy now answering Range requests, these flags make page 1
-     paint after ~1 chunk instead of after the full download — the single
-     biggest perceived-speed win for big scans. The full file still arrives
-     as the reader scrolls (each chunk is fetched on demand).
-     rangeChunkSize 64KB (pdf.js's floor): measured on throttled downloads
-     through the proxy, a 256KB chunk needs 9.3s at Slow 3G / 6.8s at 3G
-     before the first page can paint; 64KB paints in roughly a quarter of
-     that. Small chunks only add request overhead when a reader scrolls
-     through EVERY page of a huge scan — where 4x faster first paint is
+
+     disableStream: false (the default) — lets pdf.js use its streaming
+     parser with Range requests. The /api/pdf proxy forwards Range headers
+     to the upstream (R2 or Drive), so pdf.js fetches only the bytes it
+     needs for each page instead of the whole file. Page 1 paints from the
+     first ~64 KB (document header + xref) instead of waiting for the full
+     download — the single biggest perceived-speed win for big scans.
+
+     disableAutoFetch: true — pdf.js will not pre-fetch pages beyond what
+     the viewer asks for. Combined with our own renderPages() that only
+     rasterizes visible pages, this keeps unnecessary range requests out of
+     the network while the reader scrolls.
+
+     rangeChunkSize 64 KB (pdf.js's floor): small chunks mean the first
+     paint arrives after ~1 range round-trip instead of after the whole
+     file. The extra request overhead only matters when a reader scrolls
+     through EVERY page of a huge scan — where 4× faster first paint is
      worth ~4 extra range round trips per MB.
-     Repeat visitors don't pay either way: the browser caches the body
-     (Cache-Control on /api/pdf), so a second open paints from disk. */
+
+     Repeat visitors don't pay either way: Cache-Control: public,
+     max-age=86400, immutable on /api/pdf means the browser serves a second
+     open from disk with no network at all. */
   const loadTask = useCallback((url: string) => {
     // Synchronous import kick-off; returns the LOADING TASK (not the doc
     // promise) so the caller can hook onProgress for byte-level loading UX.
@@ -181,7 +189,6 @@ export default function PdfViewer({
         withCredentials: false,
         rangeChunkSize: 65536,
         disableAutoFetch: true,
-        disableStream: true,
       });
     });
   }, []);

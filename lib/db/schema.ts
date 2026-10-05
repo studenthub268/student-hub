@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, doublePrecision, timestamp, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, doublePrecision, timestamp, uniqueIndex, primaryKey, boolean } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
@@ -65,6 +65,7 @@ export const resources = pgTable('resources', {
   fileSize: integer('file_size'),
   uploaderId: uuid('uploader_id').references(() => users.id, { onDelete: 'cascade' }),
   professor: text('professor'),
+  author: text('author'), // book-type resources: author name (replaces professor label for books)
   department: text('department'),
   downloads: integer('downloads').default(0).notNull(),
   likes: integer('likes').default(0).notNull(),
@@ -81,6 +82,31 @@ export const resources = pgTable('resources', {
 }));
 
 export type Resource = InferSelectModel<typeof resources>;
+
+/**
+ * Admin-managed resource type definitions.
+ *
+ * Lets admins add new types (e.g. "book"), rename existing ones, and —
+ * key for this feature — set a per-type `fieldLabel` so the same
+ * "contributor" metadata field renders as "Professor", "Author", "Instructor"
+ * etc. depending on the resource type.
+ *
+ * The constants in lib/constants.ts (RESOURCE_TYPES) are the default set;
+ * rows here override them at runtime when present.
+ */
+export const resourceTypeConfigs = pgTable('resource_type_configs', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  value: text('value').notNull().unique(), // e.g. "assignment", "book" — matches resources.type
+  label: text('label').notNull(), // display name, e.g. "Past Paper"
+  fieldLabel: text('fieldLabel').notNull().default('Professor'), // label for the contributor field
+  color: text('color').notNull().default('bg-gray-100 text-gray-800'),
+  icon: text('icon'), // optional lucide icon name
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export type ResourceTypeConfig = InferSelectModel<typeof resourceTypeConfigs>;
 
 export const likes = pgTable('likes', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
@@ -222,6 +248,10 @@ export const resourcesRelations = relations(resources, ({ one, many }) => ({
   uploader: one(users, {
     fields: [resources.uploaderId],
     references: [users.id],
+  }),
+  typeConfig: one(resourceTypeConfigs, {
+    fields: [resources.type],
+    references: [resourceTypeConfigs.value],
   }),
   likes: many(likes),
   reports: many(reports),

@@ -109,13 +109,31 @@ export default {
         headers: securityHeaders,
       },
       {
-        // No-store for every API route EXCEPT the PDF byte proxy: the route
-        // handler sets its own per-status caching there (cacheable successes,
+        // Drive PDF optimization proxy — cacheable successes (immutable per
+        // drive file id), uncacheable errors. MUST come BEFORE the blanket
+        // /api/:path((?!pdf).*) no-store rule (Next uses the LAST matching
+        // headers rule), otherwise no-store stamps over every cacheable proxy
+        // response and defeats the caching.
+        source: "/api/stream-pdf",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, immutable",
+          },
+        ],
+      },
+      {
+        // No-store for every API route EXCEPT the PDF byte proxies: the route
+        // handlers set their own per-status caching there (cacheable successes,
         // uncachable errors). Config headers beat route-set headers in Next,
         // so a blanket /api/(.*) rule here would have stamped no-store over
-        // the proxy's cacheable responses — forcing every resource-page view
+        // the proxies' cacheable responses — forcing every resource-page view
         // to re-download the full PDF body. The named-param regex skips any
-        // path whose first segment is "pdf" (i.e. /api/pdf/<id> only).
+        // path whose first segment is "pdf" (i.e. /api/pdf/<id> and
+        // /api/stream-pdf only). Note: /api/stream-pdf is matched separately
+        // ABOVE this rule (it appears first), so this no-store rule never
+        // applies to it — the ordering is what protects its cache headers.
         source: "/api/:path((?!pdf).*)",
         headers: [
           ...securityHeaders,

@@ -30,6 +30,7 @@ const CARD_COLUMNS = {
   fileSize: resources.fileSize,
   uploaderId: resources.uploaderId,
   professor: resources.professor,
+  author: resources.author,
   department: resources.department,
   downloads: resources.downloads,
   likes: resources.likes,
