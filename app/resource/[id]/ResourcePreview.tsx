@@ -7,6 +7,8 @@ import { ExternalLink, File, FileImage, FileText, Folder, HardDrive, Maximize2, 
 import { toast } from "react-hot-toast";
 import { formatFileType, formatFileSize } from "@/lib/utils";
 import { isDriveHosted, DRIVE_FILE_TYPE, DRIVE_FOLDER_TYPE, driveEmbeddedFolderUrl, parseDriveFolderLink } from "@/lib/drive";
+import { saveResourceThumbnail } from "@/lib/actions/resources";
+import { resizeThumbnail } from "@/lib/pdf-thumbnail";
 
 // Custom PDF viewer, loaded only when a PDF is actually opened — image
 // pages never download pdf.js (~400 KB gzipped).
@@ -43,6 +45,8 @@ interface ResourcePreviewProps {
   fileUrl: string;
   fileType: string | null;
   fileSize: number | null;
+  /** Base64 data URL of a rendered first-page thumbnail (for Drive PDFs). */
+  thumbnail?: string | null;
 }
 
 export default function ResourcePreview({
@@ -51,10 +55,12 @@ export default function ResourcePreview({
   fileUrl,
   fileType,
   fileSize,
+  thumbnail,
 }: ResourcePreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
+  const [thumbnailCaptured, setThumbnailCaptured] = useState(false);
 
   const isDrive = isDriveHosted(fileType, fileUrl);
   /* Drive-hosted PDFs and images CAN render inline: PDF bytes stream
@@ -154,6 +160,43 @@ export default function ResourcePreview({
       document.body.style.overflow = "";
     };
   }, [lightboxOpen]);
+
+  /*
+   * Thumbnail capture: after the PdfViewer renders page 1 to canvas, capture
+   * it and send to the server for caching. Only does this once per session
+   * (thumbnailCaptured flag) and only for Drive-hosted PDFs.
+   *
+   * The actual capture happens in PdfViewer via a callback ref — we check
+   * for the rendered canvas and grab it.
+   */
+  useEffect(() => {
+    if (!isDrive || !isPDF || thumbnailCaptured || !thumbnail) return;
+
+    // Look for the rendered canvas in the PdfViewer
+    const canvasEl = document.querySelector("#preview-stage canvas[data-page]");
+    if (!canvasEl || !(canvasEl instanceof HTMLCanvasElement)) return;
+    const canvas = canvasEl;
+
+    const captureAndSave = async () => {
+      try {
+        // Resize to a reasonable thumbnail size before uploading
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const resized = await resizeThumbnail(dataUrl, 400);
+        
+        // Save to server (owner only — silently fails for others)
+        saveResourceThumbnail(resourceId, resized).catch(() => {
+          // Silently fail — thumbnail caching is a bonus, not critical
+        });
+        setThumbnailCaptured(true);
+      } catch {
+        // Capture failed — not critical
+      }
+    };
+
+    // Small delay to ensure canvas is fully rendered
+    const timer = setTimeout(captureAndSave, 500);
+    return () => clearTimeout(timer);
+  }, [isDrive, isPDF, resourceId, thumbnailCaptured]);
 
   /* Bold icon buttons for the toolbar: ink-bordered circles like the
      site's pills. */
@@ -282,10 +325,16 @@ export default function ResourcePreview({
               // whole document scrolls right here, like the image preview.
               // pdf.js lazy-loads on first view; the expand button opens the
               // same document in a fullscreen overlay with a toolbar.
+              //
+              // If a thumbnail was cached in the DB (from a previous visitor),
+              // show it immediately as a preview while pdf.js loads — this
+              // gives instant visual feedback for Drive-hosted PDFs on first
+              // load, instead of waiting for the Drive fetch + pdf.js init.
               <PdfViewer
                 resourceId={resourceId}
                 title={title}
                 variant="inline"
+                thumbnail={thumbnail}
               />
             ) : isDrive && !isPreviewable ? (
               // Drive-hosted, non-previewable type (ZIP, docs): the bytes

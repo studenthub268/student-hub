@@ -41,6 +41,7 @@ async function getRecentResources() {
         likes: resources.likes,
         uploadKey: resources.uploadKey,
         createdAt: resources.createdAt,
+        thumbnail: resources.thumbnail,
         uploader: { name: users.name },
       })
       .from(resources)

@@ -73,6 +73,10 @@ export const resources = pgTable('resources', {
   // logical upload, so a retry after a lost response (flaky network, function
   // timeout) inserts-on-conflict instead of creating a duplicate resource.
   uploadKey: uuid('upload_key'),
+  // First-page thumbnail (PNG base64) for Drive-hosted PDFs — stored on upload
+  // so the resource page can show a preview instantly without hitting Drive.
+  // Null for R2-hosted files (they're served directly) and non-PDF types.
+  thumbnail: text('thumbnail'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   // One resource per upload key — retries after a lost response hit this

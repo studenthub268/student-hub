@@ -48,6 +48,8 @@ interface PdfViewerProps {
   /** inline = in-flow first-page reader; fullscreen = fixed overlay. */
   variant?: "inline" | "fullscreen";
   onClose?: () => void;
+  /** Base64 data URL of a cached first-page thumbnail, if available. */
+  thumbnail?: string | null;
 }
 
 /** Thick ink ring for toolbar buttons — matches the site's border-2 ink
@@ -142,6 +144,7 @@ export default function PdfViewer({
   title,
   variant = "fullscreen",
   onClose,
+  thumbnail,
 }: PdfViewerProps) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [numPages, setNumPages] = useState(0);
@@ -512,8 +515,21 @@ export default function PdfViewer({
         <div ref={scrollRef} onWheel={onWheel} className="min-h-0 w-full flex-1 overflow-auto rounded-xl bg-surface-muted">
           {state === "loading" && (
             <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
-              <Loader2 className="h-7 w-7 animate-spin text-foreground/60" aria-hidden />
-              <p className="text-sm font-bold text-foreground/60">Loading PDF…</p>
+              {thumbnail ? (
+                // Cached thumbnail from a previous visitor — shows instantly
+                // while pdf.js loads, so the reader sees something immediately.
+                <img
+                  src={thumbnail}
+                  alt={`${title} — page 1 preview`}
+                  className="h-full w-full object-contain rounded-lg border-2 border-ink/10 bg-white/5"
+                  loading="eager"
+                />
+              ) : (
+                <Loader2 className="h-7 w-7 animate-spin text-foreground/60" aria-hidden />
+              )}
+              <p className="text-sm font-bold text-foreground/60">
+                {thumbnail ? "Loading full PDF…" : "Loading PDF…"}
+              </p>
               {progressLabel && (
                 <p className="text-xs font-medium tabular-nums text-foreground/40">
                   {progressLabel}
@@ -596,8 +612,19 @@ export default function PdfViewer({
       <div ref={scrollRef} onWheel={onWheel} className="mt-2 min-h-0 flex-1 overflow-auto rounded-2xl">
         {state === "loading" && (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-background">
-            <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
-            <p className="text-sm font-bold">Loading PDF…</p>
+            {thumbnail ? (
+              <img
+                src={thumbnail}
+                alt={`${title} — page 1 preview`}
+                className="h-auto max-h-[60vh] w-auto max-w-[80vw] object-contain rounded-lg border border-white/10 bg-white/5 shadow-hard"
+                loading="eager"
+              />
+            ) : (
+              <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
+            )}
+            <p className="text-sm font-bold">
+              {thumbnail ? "Loading full PDF…" : "Loading PDF…"}
+            </p>
             {progressLabel && (
               <p className="text-xs font-medium tabular-nums opacity-60">
                 {progressLabel}

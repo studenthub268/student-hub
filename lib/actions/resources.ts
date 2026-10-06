@@ -329,6 +329,62 @@ export async function deleteResource(resourceId: string) {
   revalidateTag("recent-resources", "default");
 }
 
+/**
+ * Get a resource by ID (used by thumbnail generation and other helpers).
+ * Returns the full resource row or null.
+ */
+export async function getResourceById(id: string) {
+  const parsed = z.string().uuid().safeParse(id);
+  if (!parsed.success) return null;
+  const [row] = await db
+    .select()
+    .from(resources)
+    .where(eq(resources.id, parsed.data))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * Save a generated thumbnail for a resource.
+ * Only the resource owner (uploader) can set the thumbnail.
+ * The thumbnail is a data URL (base64-encoded image).
+ */
+export async function saveResourceThumbnail(
+  resourceId: string,
+  thumbnailDataUrl: string
+) {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Authentication required");
+  }
+
+  const parsed = z.string().uuid().safeParse(resourceId);
+  if (!parsed.success) throw new Error("Invalid resource id");
+
+  // Verify ownership
+  const resource = await db.query.resources.findFirst({
+    where: eq(resources.id, parsed.data),
+  });
+  if (!resource) throw new Error("Resource not found");
+  if (resource.uploaderId !== session.user.id) {
+    throw new Error("Unauthorized to update this resource");
+  }
+
+  // Validate it's a data URL
+  if (!thumbnailDataUrl.startsWith("data:image/")) {
+    throw new Error("Invalid thumbnail format");
+  }
+
+  // Update the thumbnail column
+  await db
+    .update(resources)
+    .set({ thumbnail: thumbnailDataUrl })
+    .where(eq(resources.id, parsed.data));
+
+  revalidatePath(`/resource/${resourceId}`);
+  return { success: true };
+}
+
 export async function checkDuplicateResources(
   title: string,
   subject: string,

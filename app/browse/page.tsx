@@ -36,6 +36,7 @@ const CARD_COLUMNS = {
   likes: resources.likes,
   uploadKey: resources.uploadKey,
   createdAt: resources.createdAt,
+  thumbnail: resources.thumbnail,
   uploader: { name: users.name },
 };
 

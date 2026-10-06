@@ -35,7 +35,7 @@ const queryResourceCached = (id: string) =>
           type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
           fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
           uploaderId: resources.uploaderId, professor: resources.professor,
-          author: resources.author,
+          author: resources.author, thumbnail: resources.thumbnail,
           department: resources.department,
           downloads: resources.downloads, likes: resources.likes, createdAt: resources.createdAt,
           uploader: { name: users.name },
@@ -66,7 +66,7 @@ const queryRelatedCached = (id: string, subject: string) =>
           type: resources.type, subject: resources.subject, fileUrl: resources.fileUrl,
           fileKey: resources.fileKey, fileType: resources.fileType, fileSize: resources.fileSize,
           uploaderId: resources.uploaderId, professor: resources.professor,
-          author: resources.author,
+          author: resources.author, thumbnail: resources.thumbnail,
           department: resources.department, downloads: resources.downloads, likes: resources.likes,
           uploadKey: resources.uploadKey, createdAt: resources.createdAt,
           uploader: { name: users.name },
@@ -161,6 +161,9 @@ export default async function ResourceDetailPage({
   // professor. The type's fieldLabel + icon come from the merged config (DB
   // override or constants fallback).
   const contributorValue = typeConfig.fieldLabel === "Author" ? resource.author : resource.professor;
+  // Cached first-page thumbnail (base64 PNG data URL) for Drive-hosted PDFs.
+  // Shown instantly before pdf.js loads — saves a Drive round-trip on first view.
+  const thumbnail = resource.thumbnail ?? null;
   const ContributorIcon = contributorIconFor(typeConfig.icon);
   const related = await queryRelated(id, resource.subject);
 
@@ -263,6 +266,7 @@ export default async function ResourceDetailPage({
               fileUrl={resource.fileUrl}
               fileType={resource.fileType}
               fileSize={resource.fileSize}
+              thumbnail={thumbnail}
             />
           </div>
         )}
