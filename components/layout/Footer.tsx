@@ -35,7 +35,7 @@ export default function Footer() {
             <Link href="/" className="inline-flex items-center gap-3 group">
               <span className="rounded-full border-2 border-background bg-surface p-1">
                 <Image
-                  src="/logo.png"
+                  src="/logo.svg"
                   alt="Student Hub logo"
                   width={64}
                   height={64}

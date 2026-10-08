@@ -216,7 +216,18 @@ export default function PdfViewer({
   /* Load document once. onProgress surfaces byte-level progress so the
      loading state shows real movement ("4.2 MB of 12 MB") instead of an
      indeterminate spinner for a 30 MB scan — the difference between
-     "it's working" and "it's broken" on a slow connection. */
+     "it's working" and "it's broken" on a slow connection.
+
+     The /api/pdf proxy sends Accept-Ranges: bytes and forwards Range headers
+     upstream, so pdf.js fetches only the bytes it needs via HTTP range
+     requests instead of downloading the entire file. Page 1 paints from the
+     first ~100-500KB (document header + xref) instead of waiting for the
+     full 30MB download — but only if the PDF is linearized or pdf.js can
+     find the xref at the end without fetching everything.
+
+     For non-linearized PDFs hosted on Drive/R2, pdf.js may still need to
+     fetch the whole file to locate the xref table. The progress indicator
+     shows this happening so users know it's working, not stuck. */
   const [progressLabel, setProgressLabel] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;

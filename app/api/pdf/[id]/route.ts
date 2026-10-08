@@ -9,6 +9,8 @@ import {
   isDriveHosted,
   driveUserContentDownloadUrl,
 } from "@/lib/drive";
+import { serveCachedRange, getCachedPdf, setCachedPdf } from "@/lib/pdf-cache";
+import { linearizePdf, fetchDrivePdfBytes } from "@/lib/pdf-linearizer";
 
 // Drive file id shape — guards the interpolation into the download URL.
 const DRIVE_ID_RE = /^[A-Za-z0-9_-]{20,64}$/;
@@ -125,9 +127,6 @@ export async function GET(
   // across every student. 60/min was hit in the wild and 429'd real readers
   // into the viewer's error state ("Couldn't load the PDF"), which reads as
   // "preview blocked". 240 still caps scripted scraping.
-  // Forward the viewer's Range header upstream so partial requests stay
-  // partial — the difference between "first page in 100 KB" and "first
-  // page after the whole file downloads".
   const range = request.headers.get("range");
 
   // Start the rate-limit round trip NOW and let it overlap the upstream fetch
@@ -138,6 +137,38 @@ export async function GET(
   // is still enforced — a denied request discards its (already-started) body.
   const allowedPromise = checkRateLimit(`pdf-view:${ip}`, 240, 60);
 
+  // Check if we have a cached linearized version first (fast path)
+  // For Drive-hosted PDFs, use the fileKey as the cache key
+  // For R2-hosted PDFs, use the fileKey (R2 object key) as the cache key
+  const cacheKey = resource.fileKey;
+  if (cacheKey) {
+    // Try to serve from cache first
+    const cached = await serveCachedRange(cacheKey, range);
+    if (cached) {
+      // Cache hit — serve the linearized version immediately
+      const cachedStream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(cached.data);
+          controller.close();
+        },
+      });
+      return new NextResponse(cachedStream, {
+        status: cached.status,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": "inline",
+          "Accept-Ranges": "bytes",
+          "Content-Range": cached.contentRange,
+          "Content-Length": String(cached.contentLength),
+          "Cache-Control": "public, max-age=86400, immutable",
+          ETag: `"pdf-${id}"`,
+          Vary: "Range",
+        },
+      });
+    }
+  }
+
+  // Cache miss — fetch from upstream and linearize if needed
   let upstream: Response;
   try {
     upstream = await fetch(upstreamUrl, {
@@ -222,8 +253,32 @@ export async function GET(
   const contentLength = upstream.headers.get("content-length");
   if (contentLength) outHeaders["Content-Length"] = contentLength;
 
+  // For full file responses (not range requests), we can cache the linearized
+  // version for future requests. This makes subsequent views instant.
+  // But we need to read the body first, then serve it.
+  if (!range && upstream.status === 200 && cacheKey) {
+    // Read the full response body
+    const arrayBuffer = await upstream.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    // Try to linearize and cache it (best effort — doesn't fail the request)
+    const result = await linearizePdf(bytes);
+    if (result.linearized && result.buffer.length > 0) {
+      // Cache the linearized version for future requests
+      await setCachedPdf(cacheKey, result.buffer).catch(() => {});
+    }
+    
+    // Serve the original bytes (not linearized — that would require re-encoding)
+    // The linearization is cached for the NEXT request
+    const buffer = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: outHeaders,
+    });
+  }
+
   return new NextResponse(upstream.body, {
-    status: 200,
+    status: isPartial ? 206 : 200,
     headers: outHeaders,
   });
 }

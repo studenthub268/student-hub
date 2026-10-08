@@ -36,8 +36,8 @@ export const metadata: Metadata = {
       // /favicon.ico: browsers auto-request this exact path regardless of
       // what's declared here — without a real file the probe 404s and logs a
       // console error on every visit (Lighthouse "errors logged to console").
-      { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/favicon.png?v=3", type: "image/png", sizes: "any" },
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/logo.svg", type: "image/svg+xml", sizes: "any" },
       { url: "/icon-192.png?v=3", type: "image/png", sizes: "192x192" },
       { url: "/icon-512.png?v=3", type: "image/png", sizes: "512x512" },
     ],

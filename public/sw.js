@@ -26,9 +26,7 @@ const IS_DEV =
 // snapshot that no longer updates when a new deploy ships (offline caching
 // below keeps visited pages available without that trap).
 const PRECACHE_URLS = [
-  "/offline", // must be precached: it is the offline fallback for any uncached page
-  "/logo.png",
-  "/favicon.png?v=3",
+  "/offline", // must be precached: it is the offline fallback for any uncached page    "/logo.svg",
   "/icon-192.png?v=3",
   "/icon-512.png?v=3",
   "/manifest.json",

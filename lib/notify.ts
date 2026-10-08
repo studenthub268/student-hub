@@ -15,7 +15,7 @@ import { toast } from "react-hot-toast";
  */
 
 const ICON = "/icon-192.png?v=3";
-const BADGE = "/favicon.png?v=3";
+const BADGE = "/logo.svg";
 
 export type NotifyKind = "success" | "error";
 

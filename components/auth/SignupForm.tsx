@@ -47,7 +47,7 @@ function BrandMark() {
   return (
     <div className="flex items-center gap-3">
       <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-surface shadow-hard-accent-sm">
-        <Image src="/logo.png" alt="" width={64} height={64} className="w-7 h-7 object-contain" />
+        <Image src="/logo.svg" alt="" width={64} height={64} className="w-7 h-7 object-contain" unoptimized />
       </span>
       <span className="text-xl font-bold tracking-tighter">Student Hub</span>
     </div>

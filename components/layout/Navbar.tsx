@@ -112,7 +112,7 @@ export function Navbar() {
             </button>
           )}
           <Link href="/" prefetch className="flex items-center gap-1.5 sm:gap-2 group min-w-0">
-            <Image src="/logo.png" alt="Student Hub Logo" width={64} height={64} className="w-8 h-8 rounded-full object-contain shrink-0" priority />
+            <Image src="/logo.svg" alt="Student Hub Logo" width={64} height={64} className="w-8 h-8 rounded-full object-contain shrink-0" priority unoptimized />
             {/* text-base below sm: at ~320px viewports a text-xl nowrap wordmark
                 overflows into the search/hamburger buttons; min-w-0 + truncate
                 let it yield the last few pixels with an ellipsis instead of
