@@ -335,6 +335,7 @@ export default function ResourcePreview({
                 title={title}
                 variant="inline"
                 thumbnail={thumbnail}
+                fileUrl={fileUrl}
               />
             ) : isDrive && !isPreviewable ? (
               // Drive-hosted, non-previewable type (ZIP, docs): the bytes
@@ -432,6 +433,7 @@ export default function ResourcePreview({
           title={fileName}
           variant="fullscreen"
           onClose={() => setPdfOpen(false)}
+          fileUrl={fileUrl}
         />
       )}
     </>

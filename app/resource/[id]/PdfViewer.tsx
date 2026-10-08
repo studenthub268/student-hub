@@ -12,6 +12,7 @@ import {
   Maximize2,
   Minimize2,
   FileText,
+  Download,
 } from "lucide-react";
 
 /**
@@ -50,6 +51,8 @@ interface PdfViewerProps {
   onClose?: () => void;
   /** Base64 data URL of a cached first-page thumbnail, if available. */
   thumbnail?: string | null;
+  /** Download URL shown when the connection is too slow to stream the PDF. */
+  fileUrl?: string;
 }
 
 /** Thick ink ring for toolbar buttons — matches the site's border-2 ink
@@ -145,12 +148,14 @@ export default function PdfViewer({
   variant = "fullscreen",
   onClose,
   thumbnail,
+  fileUrl,
 }: PdfViewerProps) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1); // 1 = fit width
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [downloadSuggested, setDownloadSuggested] = useState(false);
 
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -229,6 +234,52 @@ export default function PdfViewer({
      fetch the whole file to locate the xref table. The progress indicator
      shows this happening so users know it's working, not stuck. */
   const [progressLabel, setProgressLabel] = useState<string | null>(null);
+  const [slowConnection, setSlowConnection] = useState(false);
+  const progressRef = useRef<{ loaded: number; total: number; t: number } | null>(null);
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Classify the connection as slow when the transfer rate stays under 50 KB/s
+  // for more than 3s, or when progress has not advanced for 8s (the stream is
+  // stalled but the request is still alive — common on flaky campus wifi).
+  useEffect(() => {
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    };
+  }, []);
+
+  const updateSlowFlag = useCallback((
+    loaded: number,
+    total: number,
+    t: number
+  ) => {
+    progressRef.current = { loaded, total, t };
+    if (!total || total <= 0) return;
+    if (loaded >= total) {
+      setSlowConnection(false);
+      return;
+    }
+    // Compute instantaneous speed from the last sample.
+    const prev = progressRef.current;
+    if (prev && prev.t && t - prev.t > 0) {
+      const dt = (t - prev.t) / 1000;
+      const speed = (loaded - prev.loaded) / dt; // bytes/sec
+      if (speed < 50_000) {
+        // Under 50 KB/s — mark slow, but only after it's been like this for 3s.
+        if (!slowTimerRef.current) {
+          slowTimerRef.current = setTimeout(() => setSlowConnection(true), 3000);
+        }
+      } else {
+        if (slowTimerRef.current) {
+          clearTimeout(slowTimerRef.current);
+          slowTimerRef.current = null;
+        }
+        setSlowConnection(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     loadTaskWithRetry(`/api/pdf/${resourceId}`).then((task) => {
@@ -238,12 +289,29 @@ export default function PdfViewer({
       }
       task.onProgress = ({ loaded, total }: { loaded: number; total: number }) => {
         if (!total || total <= 0) return;
+        const t = Date.now();
         setProgressLabel(
           loaded >= total
             ? null
             : `${(loaded / 1_048_576).toFixed(1)} MB of ${(total / 1_048_576).toFixed(1)} MB`
         );
+        updateSlowFlag(loaded, total, t);
       };
+
+      // Stalled-progress detector: if bytes haven't moved in 8s, treat as slow
+      // (covers the case where onProgress keeps firing with the same loaded value
+      // because the stream is blocked, e.g. a hanging proxy to Drive).
+      progressTimerRef.current = setInterval(() => {
+        if (cancelled) return;
+        const p = progressRef.current;
+        if (!p || !p.t) return;
+        if (p.loaded >= p.total) {
+          setSlowConnection(false);
+          return;
+        }
+        if (Date.now() - p.t > 8000) setSlowConnection(true);
+      }, 1000);
+
       task.promise
         .then((doc) => {
           if (cancelled) {
@@ -261,10 +329,12 @@ export default function PdfViewer({
     });
     return () => {
       cancelled = true;
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       docRef.current?.destroy();
       docRef.current = null;
     };
-  }, [resourceId, loadTaskWithRetry]);
+  }, [resourceId, loadTaskWithRetry, updateSlowFlag]);
 
   /* Render visible pages. Fit-width base scale; zoom multiplies it. Renders
      are versioned — a newer request invalidates older in-flight ones. */
@@ -535,13 +605,46 @@ export default function PdfViewer({
                   className="h-full w-full object-contain rounded-lg border-2 border-ink/10 bg-white/5"
                   loading="eager"
                 />
+              ) : slowConnection ? (
+                // Connection too slow to stream the PDF comfortably — offer a
+                // download instead. The download URL is the resource's fileUrl,
+                // which for Drive-hosted PDFs is the Drive viewer link and for
+                // R2-hosted PDFs is the direct object URL.
+                <div className="flex flex-col items-center gap-3 px-6 text-center">
+                  <Loader2 className="h-7 w-7 animate-spin text-ink" aria-hidden />
+                  <p className="text-sm font-bold text-foreground">
+                    Slow internet connection
+                  </p>
+                  <p className="max-w-[220px] text-xs font-medium text-foreground/60">
+                    The PDF is taking too long to load. Download it to view offline instead.
+                  </p>
+                  {fileUrl ? (
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-ink bg-ink text-background px-4 text-xs font-bold uppercase tracking-wider hover:bg-ink/90 transition-colors"
+                    >
+                      <Download size={13} strokeWidth={2.25} aria-hidden />
+                      Download resource
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => setDownloadSuggested(true)}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-ink bg-ink text-background px-4 text-xs font-bold uppercase tracking-wider hover:bg-ink/90 transition-colors"
+                    >
+                      <Download size={13} strokeWidth={2.25} aria-hidden />
+                      Download resource
+                    </button>
+                  )}
+                </div>
               ) : (
                 <Loader2 className="h-7 w-7 animate-spin text-foreground/60" aria-hidden />
               )}
               <p className="text-sm font-bold text-foreground/60">
-                {thumbnail ? "Loading full PDF…" : "Loading PDF…"}
+                {thumbnail ? "Loading full PDF…" : slowConnection ? "Loading PDF…" : "Loading PDF…"}
               </p>
-              {progressLabel && (
+              {progressLabel && !slowConnection && (
                 <p className="text-xs font-medium tabular-nums text-foreground/40">
                   {progressLabel}
                 </p>
@@ -630,13 +733,41 @@ export default function PdfViewer({
                 className="h-auto max-h-[60vh] w-auto max-w-[80vw] object-contain rounded-lg border border-white/10 bg-white/5 shadow-hard"
                 loading="eager"
               />
+            ) : slowConnection ? (
+              <div className="flex flex-col items-center gap-3 px-6 text-center">
+                <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
+                <p className="text-base font-bold">Slow internet connection</p>
+                <p className="max-w-xs text-sm font-medium opacity-70">
+                  The PDF is taking too long to load over this connection. Download it to view offline instead.
+                </p>
+                {fileUrl ? (
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-10 items-center gap-2 rounded-full border-2 border-background bg-ink text-background px-5 text-sm font-bold hover:bg-ink/90 transition-colors"
+                  >
+                    <Download size={15} strokeWidth={2.25} aria-hidden />
+                    Download resource
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => {/* download URL not available in this context */}}
+                    className="inline-flex h-10 items-center gap-2 rounded-full border-2 border-background bg-ink text-background px-5 text-sm font-bold hover:bg-ink/90 transition-colors disabled:opacity-50"
+                    disabled
+                  >
+                    <Download size={15} strokeWidth={2.25} aria-hidden />
+                    Download resource
+                  </button>
+                )}
+              </div>
             ) : (
               <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
             )}
             <p className="text-sm font-bold">
-              {thumbnail ? "Loading full PDF…" : "Loading PDF…"}
+              {thumbnail ? "Loading full PDF…" : slowConnection ? "Loading PDF…" : "Loading PDF…"}
             </p>
-            {progressLabel && (
+            {progressLabel && !slowConnection && (
               <p className="text-xs font-medium tabular-nums opacity-60">
                 {progressLabel}
               </p>
