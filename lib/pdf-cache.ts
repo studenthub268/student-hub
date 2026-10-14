@@ -91,17 +91,22 @@ const accessTimes = new Map<string, number>();
 
 ensureDirStamp();
 
-/** Ensure the cache directory exists once. */
-function ensureDirStamp() {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const _ = (async () => {
-    const d = cacheDir();
-    try {
-      await mkdir(d, { recursive: true });
-    } catch {
-      // Disk might be unavailable — cache becomes a no-op. That's fine.
-    }
-  })();
+/** Ensure the cache directory exists once. Fire-and-forget on module
+ *  load — failures are ignored because the rest of the module already
+ *  guards every disk op. */
+function ensureDirStamp(): void {
+  void ensureDirStampImpl();
+}
+
+/** The actual async init; kept separate so `ensureDirStamp()` stays
+ *  sync and void-calls a Promise-returning function without an IIFE. */
+async function ensureDirStampImpl(): Promise<void> {
+  const d = cacheDir();
+  try {
+    await mkdir(d, { recursive: true });
+  } catch {
+    // Disk might be unavailable — cache becomes a no-op. That's fine.
+  }
 }
 
 // ---- public API ----
