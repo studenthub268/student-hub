@@ -6,9 +6,9 @@ import Image from "next/image";
 import { ExternalLink, File, FileImage, FileText, Folder, HardDrive, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatFileType, formatFileSize } from "@/lib/utils";
-import { isDriveHosted, DRIVE_FILE_TYPE, DRIVE_FOLDER_TYPE, driveEmbeddedFolderUrl, parseDriveFolderLink } from "@/lib/drive";
+import { isDriveHosted, DRIVE_FILE_TYPE, DRIVE_FOLDER_TYPE, driveEmbeddedFolderUrl, parseDriveFolderLink } from "@/lib/storage/drive";
 import { saveResourceThumbnail } from "@/lib/actions/resources";
-import { resizeThumbnail } from "@/lib/pdf-thumbnail";
+import { resizeThumbnail } from "@/lib/storage/pdf-thumbnail";
 
 // Custom PDF viewer, loaded only when a PDF is actually opened — image
 // pages never download pdf.js (~400 KB gzipped).
@@ -196,7 +196,7 @@ export default function ResourcePreview({
     // Small delay to ensure canvas is fully rendered
     const timer = setTimeout(captureAndSave, 500);
     return () => clearTimeout(timer);
-  }, [isDrive, isPDF, resourceId, thumbnailCaptured]);
+  }, [isDrive, isPDF, resourceId, thumbnailCaptured, thumbnail]);
 
   /* Bold icon buttons for the toolbar: ink-bordered circles like the
      site's pills. */
@@ -289,9 +289,15 @@ export default function ResourcePreview({
               : "h-[56vh] min-h-[340px] p-2 sm:h-[64vh] sm:p-5 lg:h-[calc(100dvh-16rem)] lg:min-h-[480px]"
           }`}
         >
+          {/* Frame fills the stage. In the inline (card) state it carries NO
+              border and NO radius of its own — a rounded+bordered box nested
+              inside the rounded 2rem card stacked two contours and broke the
+              visual flow. Square, borderless, it dissolves into the card so the
+              file's content sits flush inside the single outer contour. The
+              fullscreen overlay is not nested, so it keeps its own hairline. */}
           <div
-            className={`relative h-full w-full overflow-hidden rounded-2xl border-2 bg-surface ${
-              isFullscreen ? "border-background/20" : "border-ink"
+            className={`relative h-full w-full overflow-hidden bg-surface ${
+              isFullscreen ? "border border-background/20" : ""
             }`}
           >
             {isFolder && folderId ? (
