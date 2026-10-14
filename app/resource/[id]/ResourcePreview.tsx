@@ -6,9 +6,9 @@ import Image from "next/image";
 import { ExternalLink, File, FileImage, FileText, Folder, HardDrive, Maximize2, Minimize2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatFileType, formatFileSize } from "@/lib/utils";
-import { isDriveHosted, DRIVE_FILE_TYPE, DRIVE_FOLDER_TYPE, driveEmbeddedFolderUrl, parseDriveFolderLink } from "@/lib/storage/drive";
+import { isDriveHosted, DRIVE_FILE_TYPE, DRIVE_FOLDER_TYPE, driveEmbeddedFolderUrl, parseDriveFolderLink } from "@/lib/drive";
 import { saveResourceThumbnail } from "@/lib/actions/resources";
-import { resizeThumbnail } from "@/lib/storage/pdf-thumbnail";
+import { resizeThumbnail } from "@/lib/pdf-thumbnail";
 
 // Custom PDF viewer, loaded only when a PDF is actually opened — image
 // pages never download pdf.js (~400 KB gzipped).

@@ -36,6 +36,8 @@
 
 import { readFileSync, writeFileSync, statSync, unlinkSync, existsSync } from "fs";
 import { join } from "path";
+import { mkdir } from "fs/promises";
+import { readdirSync } from "fs";
 
 // ---- config ----
 
@@ -95,8 +97,7 @@ function ensureDirStamp() {
   const _ = (async () => {
     const d = cacheDir();
     try {
-      const fs = require("fs");
-      fs.promises.mkdir(d, { recursive: true }).catch(() => {});
+      await mkdir(d, { recursive: true });
     } catch {
       // Disk might be unavailable — cache becomes a no-op. That's fine.
     }
@@ -220,7 +221,7 @@ export async function cachedBytes(): Promise<number> {
 function resolveFromDisk(driveFileId: string): string | null {
   const d = cacheDir();
   try {
-    const entries = (require("fs") as typeof import("fs")).readdirSync(d).filter((n: string) => n.endsWith(".pdf"));
+    const entries = readdirSync(d).filter((n: string) => n.endsWith(".pdf"));
     for (const name of entries) {
       if (name === `${driveFileId}.pdf`) {
         const p = join(d, name);
